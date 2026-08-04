@@ -1,16 +1,11 @@
-/* 首页 Hero 横幅样式 */
+/* 首页 Hero 横幅样式：完全透明，文字色跟随背景明暗自动切换 */
 .mdx-hero {
   position: relative;
+  z-index: 1;
   overflow: hidden;
-  background: linear-gradient(135deg, rgba(26, 35, 126, 0.5) 0%, rgba(83, 109, 254, 0.5) 60%, rgba(124, 77, 255, 0.5) 100%);
-  color: var(--md-primary-bg-color);
+  background: transparent;
   padding: 2.5rem 0 3rem;
   margin: 0;
-}
-
-/* 深色模式下也保持这个渐变 */
-[data-md-color-scheme="slate"] .mdx-hero {
-  background: linear-gradient(135deg, rgba(26, 35, 126, 0.7) 0%, rgba(40, 53, 144, 0.7) 55%, rgba(57, 74, 169, 0.7) 100%);
 }
 
 .mdx-hero__inner {
@@ -26,16 +21,17 @@
 }
 
 .mdx-hero h1 {
-  color: #fff;
+  color: var(--fx-hero-fg, var(--md-default-fg-color));
   font-size: 2.4rem;
   font-weight: 700;
   margin: 0 0 0.6rem;
 }
 
 .mdx-hero p {
-  color: rgba(255, 255, 255, 0.92);
+  color: var(--fx-hero-fg, var(--md-default-fg-color));
   font-size: 1.1rem;
   margin: 0 0 1.6rem;
+  opacity: 0.92;
 }
 
 .mdx-hero__actions {
@@ -44,20 +40,21 @@
   flex-wrap: wrap;
 }
 
+/* 透明背景下：描边按钮跟随 hero 文字明暗，主按钮用主题色实底 */
 .mdx-hero .md-button {
-  color: #fff;
-  border-color: rgba(255, 255, 255, 0.85);
+  color: var(--fx-hero-fg, var(--md-default-fg-color));
+  border-color: var(--fx-hero-fg, var(--md-default-fg-color));
 }
 
 .mdx-hero .md-button--primary {
-  color: var(--md-primary-fg-color);
-  border-color: #fff;
-  background: #fff;
+  color: #fff;
+  border-color: var(--md-primary-fg-color);
+  background: var(--md-primary-fg-color);
 }
 
 .mdx-hero .md-button--primary:hover {
-  background: rgba(255, 255, 255, 0.9);
-  border-color: #fff;
+  background: var(--md-primary-fg-color);
+  filter: brightness(1.1);
 }
 
 .mdx-hero .md-button .twemoji {
@@ -81,12 +78,13 @@
   display: block;
   font-size: 2rem;
   line-height: 1.1;
-  color: #fff;
+  color: var(--fx-hero-fg, var(--md-default-fg-color));
 }
 
 .mdx-hero__stat span {
   font-size: 0.8rem;
-  color: rgba(255, 255, 255, 0.85);
+  color: var(--fx-hero-fg, var(--md-default-fg-color));
+  opacity: 0.85;
 }
 
 /* 首页主体内容去掉侧边栏留白，让内容居中 */

@@ -142,6 +142,30 @@
     return s.bgCustom ? (s.bgUrl || '') : (BG_PRESETS[s.bgPresetIdx] ? BG_PRESETS[s.bgPresetIdx][1] : '');
   }
 
+  // 采样背景图亮度：暗图 -> 白字，亮图 -> 深色字
+  function setHeroFg(dark) {
+    document.body.style.setProperty('--fx-hero-fg', dark ? '#ffffff' : '#1a1a2e');
+  }
+  function applyHeroText() {
+    var url = currentBgUrl();
+    if (!url) { document.body.style.removeProperty('--fx-hero-fg'); return; }
+    var img = new Image();
+    img.crossOrigin = 'anonymous';
+    img.onload = function () {
+      var c = document.createElement('canvas');
+      c.width = c.height = 8;
+      var g = c.getContext('2d');
+      g.drawImage(img, 0, 0, 8, 8);
+      try {
+        var d = g.getImageData(0, 0, 8, 8).data;
+        var sum = 0;
+        for (var i = 0; i < d.length; i += 4) sum += 0.299 * d[i] + 0.587 * d[i + 1] + 0.114 * d[i + 2];
+        setHeroFg(sum / (d.length / 4) / 255 < 0.55);
+      } catch (e) { /* CORS 阻止采样：保持主题默认色 */ }
+    };
+    img.src = url;
+  }
+
   function applyBg() {
     var url = currentBgUrl();
     var body = document.body;
@@ -154,6 +178,7 @@
     } else {
       body.classList.remove('fx-bg');
     }
+    applyHeroText();
   }
 
   // ---------- 设置应用 ----------
