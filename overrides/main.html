@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+
+{% block hero %}
+  {% if page.is_homepage and "homepage" not in page.meta.hide %}
+  <section class="mdx-hero">
+    <div class="mdx-hero__inner md-grid md-typeset">
+      <div class="mdx-hero__content">
+        <h1>嵌入式工作笔记</h1>
+        <p>软件 / 硬件调试心得 · 工作备忘 · 踩坑记录</p>
+        <div class="mdx-hero__actions">
+          <a class="md-button md-button--primary" href="mcu/stm32-notes/">
+            开始阅读
+          </a>
+          <a class="md-button" href="https://github.com/hellobugger/embedded-notes">
+            <span class="twemoji">
+              {% include ".icons/fontawesome/brands/github.svg" %}
+            </span>
+            GitHub
+          </a>
+        </div>
+      </div>
+      <div class="mdx-hero__stats">
+        <div class="mdx-hero__stat">
+          <strong>3</strong>
+          <span>主题板块</span>
+        </div>
+        <div class="mdx-hero__stat">
+          <strong>6</strong>
+          <span>篇笔记</span>
+        </div>
+        <div class="mdx-hero__stat">
+          <strong>∞</strong>
+          <span>持续更新</span>
+        </div>
+      </div>
+    </div>
+  </section>
+  {% endif %}
+{% endblock %}

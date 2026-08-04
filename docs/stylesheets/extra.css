@@ -1,0 +1,98 @@
+/* 首页 Hero 横幅样式 */
+.mdx-hero {
+  background: linear-gradient(135deg, var(--md-primary-fg-color) 0%, #536dfe 60%, #7c4dff 100%);
+  color: var(--md-primary-bg-color);
+  padding: 2.5rem 0 3rem;
+  margin: 0;
+}
+
+/* 深色模式下也保持这个渐变 */
+[data-md-color-scheme="slate"] .mdx-hero {
+  background: linear-gradient(135deg, #1a237e 0%, #283593 55%, #3949ab 100%);
+}
+
+.mdx-hero__inner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 2rem;
+  flex-wrap: wrap;
+}
+
+.mdx-hero__content {
+  flex: 1 1 20rem;
+}
+
+.mdx-hero h1 {
+  color: #fff;
+  font-size: 2.4rem;
+  font-weight: 700;
+  margin: 0 0 0.6rem;
+}
+
+.mdx-hero p {
+  color: rgba(255, 255, 255, 0.92);
+  font-size: 1.1rem;
+  margin: 0 0 1.6rem;
+}
+
+.mdx-hero__actions {
+  display: flex;
+  gap: 0.8rem;
+  flex-wrap: wrap;
+}
+
+.mdx-hero .md-button {
+  color: #fff;
+  border-color: rgba(255, 255, 255, 0.85);
+}
+
+.mdx-hero .md-button--primary {
+  color: var(--md-primary-fg-color);
+  border-color: #fff;
+  background: #fff;
+}
+
+.mdx-hero .md-button--primary:hover {
+  background: rgba(255, 255, 255, 0.9);
+  border-color: #fff;
+}
+
+.mdx-hero .md-button .twemoji {
+  vertical-align: -0.2em;
+  margin-right: 0.3em;
+}
+
+.mdx-hero__stats {
+  display: flex;
+  gap: 1.5rem;
+  flex: 1 1 auto;
+  justify-content: center;
+}
+
+.mdx-hero__stat {
+  text-align: center;
+  min-width: 4.5rem;
+}
+
+.mdx-hero__stat strong {
+  display: block;
+  font-size: 2rem;
+  line-height: 1.1;
+  color: #fff;
+}
+
+.mdx-hero__stat span {
+  font-size: 0.8rem;
+  color: rgba(255, 255, 255, 0.85);
+}
+
+/* 首页主体内容去掉侧边栏留白，让内容居中 */
+.mdx-hero + .md-main .md-sidebar {
+  display: none;
+}
+
+/* 首页 grid cards 间距 */
+.md-grid.grid {
+  margin-top: 1rem;
+}
