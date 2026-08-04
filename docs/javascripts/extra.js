@@ -1,9 +1,5 @@
 // 鼠标粒子拖尾：划过时产生彩色小颗粒与星星，缓缓飘散
 (function () {
-  if (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
-    return; // 尊重系统"减弱动态"设置
-  }
-
   var canvas = document.createElement('canvas');
   canvas.id = 'fx-canvas';
   canvas.style.cssText =
