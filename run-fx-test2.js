@@ -3,8 +3,10 @@ const fs = require('fs');
 
 function makeEl(tag) {
   return {
-    tagName: tag, style: {}, hidden: false, className: '', id: '', title: '',
+    tagName: tag, hidden: false, className: '', id: '', title: '',
     innerHTML: '', type: '', value: '', checked: false, _listeners: {},
+    classList: { add() {}, remove() {}, contains: () => false },
+    style: { cssText: '', setProperty(k, v) { this[k] = v; } },
     setAttribute() {}, appendChild() {},
     querySelector: () => makeEl('input'),
     addEventListener(type, fn) { (this._listeners[type] = this._listeners[type] || []).push(fn); },

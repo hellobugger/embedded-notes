@@ -178,3 +178,47 @@
 }
 .fx-row input[type='range'] { width: 90px; }
 .fx-row input[type='checkbox'] { width: auto; }
+
+/* ---------- 背景图 ---------- */
+body.fx-bg {
+  background-image: var(--fx-bg-url);
+  background-size: cover;
+  background-position: center;
+  background-attachment: fixed;
+}
+/* 半透明遮罩：保证文字可读，透明度由 JS 控制 */
+body.fx-bg::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background-color: var(--md-default-bg-color);
+  opacity: var(--fx-bg-overlay-alpha, 0.7);
+  z-index: 0;
+  pointer-events: none;
+}
+body.fx-bg .md-header,
+body.fx-bg .md-tabs,
+body.fx-bg .md-footer,
+body.fx-bg .md-main,
+body.fx-bg .md-container {
+  position: relative;
+  z-index: 1;
+}
+
+.fx-divider {
+  height: 1px;
+  background: var(--md-default-fg-color--light);
+  margin: 0.7rem 0;
+}
+
+.fx-url {
+  width: 100%;
+  box-sizing: border-box;
+  font-size: 0.78rem;
+  padding: 0.3rem 0.4rem;
+  margin: 0.3rem 0 0.5rem;
+  border-radius: 4px;
+  border: 1px solid var(--md-default-fg-color--light);
+  background: var(--md-code-bg-color);
+  color: var(--md-default-fg-color);
+}
