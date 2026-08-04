@@ -1,5 +1,7 @@
 /* 首页 Hero 横幅样式 */
 .mdx-hero {
+  position: relative;
+  overflow: hidden;
   background: linear-gradient(135deg, var(--md-primary-fg-color) 0%, #536dfe 60%, #7c4dff 100%);
   color: var(--md-primary-bg-color);
   padding: 2.5rem 0 3rem;
@@ -17,6 +19,30 @@
   justify-content: space-between;
   gap: 2rem;
   flex-wrap: wrap;
+  transition: transform 0.25s cubic-bezier(0.22, 1, 0.36, 1);
+  will-change: transform;
+}
+
+/* 鼠标跟随光斑 */
+.mdx-hero__glow {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 550px;
+  height: 550px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(255, 255, 255, 0.28) 0%, transparent 60%);
+  transform: translate(-1000px, -1000px);
+  transition: opacity 0.5s ease;
+  opacity: 0;
+  pointer-events: none;
+  z-index: 0;
+}
+
+.mdx-hero__content,
+.mdx-hero__stats {
+  position: relative;
+  z-index: 1;
 }
 
 .mdx-hero__content {
@@ -95,4 +121,29 @@
 /* 首页 grid cards 间距 */
 .md-grid.grid {
   margin-top: 1rem;
+}
+
+/* 卡片悬停动效 */
+.grid.cards > ul > li {
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.grid.cards > ul > li:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 10px 20px rgba(0, 0, 0, 0.15);
+}
+
+/* 按钮悬停动效 */
+.md-typeset .md-button {
+  transition: transform 0.15s ease, box-shadow 0.15s ease, background-color 0.15s ease;
+}
+
+.md-typeset .md-button:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.25);
+}
+
+/* 鼠标在非首页时隐藏光斑层，避免影响其他页面 */
+.md-main .mdx-hero__glow {
+  display: none;
 }
