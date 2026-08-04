@@ -124,7 +124,8 @@
     panel.querySelector('#fx-enabled').checked = s.enabled;
   }
 
-  btn.addEventListener('click', function () {
+  btn.addEventListener('click', function (e) {
+    e.stopPropagation(); // 关键：阻止冒泡，避免 document 监听器立刻把面板关掉
     panel.hidden = !panel.hidden;
   });
   panel.addEventListener('click', function (e) { e.stopPropagation(); });
