@@ -3,8 +3,16 @@
   'use strict';
 
   var KEY = 'mdx-fx-settings';
-  var DEFAULTS = { enabled: true, mode: 'star', density: 2 };
-  var s = Object.assign({}, DEFAULTS, JSON.parse(localStorage.getItem(KEY) || '{}'));
+  var MODES = ['star', 'bubble', 'snow', 'none'];
+
+  // 读取并规范化设置（防御 localStorage 里的旧/脏数据）
+  var raw = {};
+  try { raw = JSON.parse(localStorage.getItem(KEY) || '{}'); } catch (e) {}
+  var s = {
+    enabled: raw.enabled !== false,
+    mode: MODES.indexOf(raw.mode) >= 0 ? raw.mode : 'star',
+    density: Math.max(1, Math.min(4, +raw.density || 2))
+  };
 
   // ---------- 画布 ----------
   var canvas = document.createElement('canvas');
@@ -21,27 +29,46 @@
   window.addEventListener('resize', resize);
 
   var COLORS = ['#536dfe', '#7c4dff', '#40c4ff', '#ffd740', '#69f0ae', '#ff5252'];
+  var SNOW_COLORS = ['#ffffff', '#cfe8ff', '#a8d8ff'];
   var particles = [];
   var rafId = null;
 
-  function spawn(x, y) {
-    if (!(s.enabled && s.mode !== 'none')) return;
-    for (var i = 0; i < s.density; i++) {
-      var roll = Math.random();
-      var type = s.mode === 'star' ? (roll < 0.25 ? 'star' : 'dot') : s.mode;
-      var isBubble = s.mode === 'bubble';
-      particles.push({
-        type: type,
-        x: x + (Math.random() - 0.5) * 4,
-        y: y + (Math.random() - 0.5) * 4,
-        vx: (Math.random() - 0.5) * 3,
-        vy: (Math.random() - 0.5) * 3 - (isBubble ? 1.4 : 0.4),
-        life: 0,
-        maxLife: s.mode === 'snow' ? 70 + Math.random() * 40 : 40 + Math.random() * 30,
-        size: 1.5 + Math.random() * 2.5,
-        color: COLORS[(Math.random() * COLORS.length) | 0],
-        rot: Math.random() * Math.PI * 2
-      });
+  // 生成一个粒子（按当前模式决定外观与运动）
+  function makeParticle(x, y, vx, vy) {
+    var p = { x: x, y: y, vx: vx, vy: vy, life: 0, type: s.mode };
+    if (s.mode === 'star') {
+      p.maxLife = 50 + Math.random() * 30;
+      p.size = 2 + Math.random() * 3;
+      p.color = COLORS[(Math.random() * COLORS.length) | 0];
+      p.isStar = Math.random() < 0.3;   // 约 1/3 是星星
+    } else if (s.mode === 'bubble') {
+      p.maxLife = 60 + Math.random() * 40;
+      p.size = 4 + Math.random() * 5;   // 更大
+      p.color = COLORS[(Math.random() * COLORS.length) | 0];
+    } else { // snow
+      p.maxLife = 90 + Math.random() * 60;   // 更持久
+      p.size = 2.5 + Math.random() * 3.5;
+      p.color = SNOW_COLORS[(Math.random() * SNOW_COLORS.length) | 0]; // 白/冰蓝，深浅主题都可见
+    }
+    return p;
+  }
+
+  // count: 数量；radial: 是否从中心爆开（点击）
+  function spawn(x, y, count, radial) {
+    var c = Math.round(count);
+    for (var i = 0; i < c; i++) {
+      var vx, vy;
+      if (radial) {
+        var a = Math.random() * Math.PI * 2;
+        var sp = 1 + Math.random() * 4;
+        vx = Math.cos(a) * sp; vy = Math.sin(a) * sp - 1;
+      } else {
+        vx = (Math.random() - 0.5) * 3;
+        vy = (Math.random() - 0.5) * 3 - (s.mode === 'bubble' ? 1.6 : 0.4);
+      }
+      particles.push(makeParticle(
+        x + (Math.random() - 0.5) * 4, y + (Math.random() - 0.5) * 4, vx, vy
+      ));
     }
     if (particles.length > 500) particles.splice(0, particles.length - 500);
   }
@@ -63,26 +90,42 @@
     for (var i = particles.length - 1; i >= 0; i--) {
       var p = particles[i];
       p.life++; p.x += p.vx; p.y += p.vy;
-      if (p.type === 'dot' || p.type === 'star') p.vy += 0.02;      // 星尘：下落
-      else if (p.type === 'bubble') p.vy -= 0.015;                  // 泡泡：上浮
-      else if (p.type === 'snow') { p.vx += Math.sin(p.life * 0.05) * 0.06; p.vy += 0.02; } // 雪花：飘
+      if (p.type === 'star') p.vy += 0.02;                       // 星尘：下落
+      else if (p.type === 'snow') { p.vx += Math.sin(p.life * 0.04) * 0.05; p.vy += 0.015; } // 雪花：飘落
+      // bubble：自然上浮并缓慢减速
 
       var t = 1 - p.life / p.maxLife;
       if (t <= 0) { particles.splice(i, 1); continue; }
 
-      ctx.globalAlpha = p.type === 'bubble' ? t * 0.5 : t;
-      ctx.fillStyle = p.color;
-      var r = p.size * t + 0.5;
-      if (p.type === 'star') drawStar(p.x, p.y, r * 2, p.rot);
-      else if (p.type === 'bubble') { ctx.beginPath(); ctx.arc(p.x, p.y, r * 1.6, 0, Math.PI * 2); ctx.fill(); }
-      else { ctx.beginPath(); ctx.arc(p.x, p.y, r, 0, Math.PI * 2); ctx.fill(); }
+      var r = p.size * (0.5 + 0.5 * t);
+      if (p.type === 'bubble') {
+        // 空心泡泡：内部淡色填充 + 外圈描边
+        ctx.globalAlpha = t * 0.35;
+        ctx.fillStyle = p.color;
+        ctx.beginPath(); ctx.arc(p.x, p.y, r, 0, Math.PI * 2); ctx.fill();
+        ctx.globalAlpha = t * 0.85;
+        ctx.strokeStyle = p.color;
+        ctx.lineWidth = 1.5;
+        ctx.beginPath(); ctx.arc(p.x, p.y, r, 0, Math.PI * 2); ctx.stroke();
+      } else if (p.type === 'star' && p.isStar) {
+        ctx.globalAlpha = Math.min(1, t * 1.3);
+        ctx.fillStyle = p.color;
+        drawStar(p.x, p.y, r * 2, p.life * 0.1);
+      } else {
+        ctx.globalAlpha = Math.min(1, t * 1.3);
+        ctx.fillStyle = p.color;
+        ctx.beginPath(); ctx.arc(p.x, p.y, r, 0, Math.PI * 2); ctx.fill();
+      }
     }
     ctx.globalAlpha = 1;
     rafId = requestAnimationFrame(frame);
   }
 
   window.addEventListener('mousemove', function (e) {
-    if (s.enabled && s.mode !== 'none') spawn(e.clientX, e.clientY);
+    if (s.enabled && s.mode !== 'none') spawn(e.clientX, e.clientY, s.density * 2, false);
+  });
+  document.addEventListener('click', function (e) {
+    if (s.enabled && s.mode !== 'none') spawn(e.clientX, e.clientY, s.density * 8, true); // 点击爆一下，立刻能看到
   });
 
   // ---------- 应用设置 ----------
@@ -93,10 +136,13 @@
     else if (!active) { cancelAnimationFrame(rafId); rafId = null; particles = []; ctx.clearRect(0, 0, W, H); }
     syncPanel();
     try { localStorage.setItem(KEY, JSON.stringify(s)); } catch (e) {}
+    console.log('[鼠标特效] 已应用: 模式=' + s.mode + ' 密度=' + s.density + ' 开启=' + s.enabled);
   }
 
   // ---------- 设置面板 UI ----------
-  var MODES = [['star', '⭐ 星尘'], ['bubble', '🫧 泡泡'], ['snow', '❄️ 雪花'], ['none', '🚫 关闭']];
+  var MODE_ITEMS = [
+    ['star', '⭐ 星尘'], ['bubble', '🫧 泡泡'], ['snow', '❄️ 雪花'], ['none', '🚫 关闭']
+  ];
 
   var btn = document.createElement('button');
   btn.className = 'fx-gear';
@@ -112,7 +158,7 @@
   panel.innerHTML =
     '<div class="fx-panel__title">鼠标特效</div>' +
     '<label class="fx-row">模式<select id="fx-mode">' +
-      MODES.map(function (m) { return '<option value="' + m[0] + '"' + (s.mode === m[0] ? ' selected' : '') + '>' + m[1] + '</option>'; }).join('') +
+      MODE_ITEMS.map(function (m) { return '<option value="' + m[0] + '"' + (s.mode === m[0] ? ' selected' : '') + '>' + m[1] + '</option>'; }).join('') +
     '</select></label>' +
     '<label class="fx-row">密度<input id="fx-density" type="range" min="1" max="4" step="1" value="' + s.density + '"></label>' +
     '<label class="fx-row"><span>开启</span><input id="fx-enabled" type="checkbox"' + (s.enabled ? ' checked' : '') + '></label>';
@@ -125,7 +171,7 @@
   }
 
   btn.addEventListener('click', function (e) {
-    e.stopPropagation(); // 关键：阻止冒泡，避免 document 监听器立刻把面板关掉
+    e.stopPropagation(); // 阻止冒泡，避免 document 监听器立刻把面板关掉
     panel.hidden = !panel.hidden;
   });
   panel.addEventListener('click', function (e) { e.stopPropagation(); });
