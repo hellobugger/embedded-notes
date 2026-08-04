@@ -19,30 +19,6 @@
   justify-content: space-between;
   gap: 2rem;
   flex-wrap: wrap;
-  transition: transform 0.25s cubic-bezier(0.22, 1, 0.36, 1);
-  will-change: transform;
-}
-
-/* 鼠标跟随光斑 */
-.mdx-hero__glow {
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 550px;
-  height: 550px;
-  border-radius: 50%;
-  background: radial-gradient(circle, rgba(255, 255, 255, 0.28) 0%, transparent 60%);
-  transform: translate(-1000px, -1000px);
-  transition: opacity 0.5s ease;
-  opacity: 0;
-  pointer-events: none;
-  z-index: 0;
-}
-
-.mdx-hero__content,
-.mdx-hero__stats {
-  position: relative;
-  z-index: 1;
 }
 
 .mdx-hero__content {
@@ -141,9 +117,4 @@
 .md-typeset .md-button:hover {
   transform: translateY(-1px);
   box-shadow: 0 4px 10px rgba(0, 0, 0, 0.25);
-}
-
-/* 鼠标在非首页时隐藏光斑层，避免影响其他页面 */
-.md-main .mdx-hero__glow {
-  display: none;
 }
