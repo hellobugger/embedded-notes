@@ -2,7 +2,7 @@
 .mdx-hero {
   position: relative;
   overflow: hidden;
-  background: linear-gradient(135deg, var(--md-primary-fg-color) 0%, #536dfe 60%, #7c4dff 100%);
+  background: linear-gradient(135deg, rgba(26, 35, 126, 0.5) 0%, rgba(83, 109, 254, 0.5) 60%, rgba(124, 77, 255, 0.5) 100%);
   color: var(--md-primary-bg-color);
   padding: 2.5rem 0 3rem;
   margin: 0;
@@ -10,7 +10,7 @@
 
 /* 深色模式下也保持这个渐变 */
 [data-md-color-scheme="slate"] .mdx-hero {
-  background: linear-gradient(135deg, #1a237e 0%, #283593 55%, #3949ab 100%);
+  background: linear-gradient(135deg, rgba(26, 35, 126, 0.7) 0%, rgba(40, 53, 144, 0.7) 55%, rgba(57, 74, 169, 0.7) 100%);
 }
 
 .mdx-hero__inner {
