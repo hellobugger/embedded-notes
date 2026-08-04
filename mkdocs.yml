@@ -1,27 +1,46 @@
 site_name: 嵌入式工作笔记
 site_description: 嵌入式软件/硬件调试心得与工作备忘
 site_author: 聂文俊
+site_url: https://hellobugger.github.io/embedded-notes/
+
+repo_name: hellobugger/embedded-notes
+repo_url: https://github.com/hellobugger/embedded-notes
+edit_uri: blob/main/docs/
 
 theme:
   name: material
   language: zh
+  icon:
+    repo: fontawesome/brands/github
   features:
     - navigation.tabs
     - navigation.sections
+    - navigation.top
     - toc.integrate
     - search.highlight
+    - search.suggest
     - content.code.copy
+    - content.code.annotate
+    - content.action.edit
   palette:
     - scheme: default
       primary: indigo
+      accent: indigo
       toggle:
         icon: material/brightness-7
         name: 切换至深色模式
     - scheme: slate
       primary: indigo
+      accent: indigo
       toggle:
         icon: material/brightness-4
         name: 切换至浅色模式
+
+plugins:
+  - search:
+      separator: '[\s​\-、。，；：！？（）【】“”‘’]+'
+  - git-revision-date-localized:
+      enable_creation_date: true
 
 markdown_extensions:
   - pymdownx.highlight:
@@ -31,6 +50,15 @@ markdown_extensions:
   - admonition
   - pymdownx.details
   - footnotes
+  - pymdownx.emoji:
+      emoji_index: !!python/name:material.extensions.emoji.twemoji
+      emoji_generator: !!python/name:material.extensions.emoji.to_svg
+
+extra:
+  generator: false
+  social:
+    - icon: fontawesome/brands/github
+      link: https://github.com/hellobugger
 
 # 导航菜单（你以后可自行修改）
 nav:
