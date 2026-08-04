@@ -1,0 +1,46 @@
+site_name: 嵌入式工作笔记
+site_description: 嵌入式软件/硬件调试心得与工作备忘
+site_author: 聂文俊
+
+theme:
+  name: material
+  language: zh
+  features:
+    - navigation.tabs
+    - navigation.sections
+    - toc.integrate
+    - search.highlight
+    - content.code.copy
+  palette:
+    - scheme: default
+      primary: indigo
+      toggle:
+        icon: material/brightness-7
+        name: 切换至深色模式
+    - scheme: slate
+      primary: indigo
+      toggle:
+        icon: material/brightness-4
+        name: 切换至浅色模式
+
+markdown_extensions:
+  - pymdownx.highlight:
+      anchor_linenums: true
+  - pymdownx.superfences
+  - pymdownx.inlinehilite
+  - admonition
+  - pymdownx.details
+  - footnotes
+
+# 导航菜单（你以后可自行修改）
+nav:
+  - 首页: index.md
+  - MCU 与驱动:
+    - STM32 踩坑记录: mcu/stm32-notes.md
+    - 裸机外设驱动: mcu/peripheral-drivers.md
+  - RTOS:
+    - FreeRTOS 任务调度: rtos/freertos-scheduler.md
+    - 队列与信号量: rtos/queue-semaphore.md
+  - 硬件调试:
+    - 示波器使用技巧: hardware/scope-tips.md
+    - 电源纹波测试: hardware/power-ripple.md
