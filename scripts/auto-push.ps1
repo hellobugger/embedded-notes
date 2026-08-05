@@ -14,5 +14,5 @@ if ([string]::IsNullOrWhiteSpace($status)) {
 }
 
 & "D:\Git\cmd\git.exe" add -A
-& "D:\Git\cmd\git.exe" commit -m "自动提交 $(Get-Date -Format 'yyyy-MM-dd HH:mm')"
+& "D:\Git\cmd\git.exe" commit -m "auto commit $(Get-Date -Format 'yyyy-MM-dd HH:mm')"
 & "D:\Git\cmd\git.exe" push origin main
