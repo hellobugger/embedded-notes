@@ -12,10 +12,14 @@
 ```
 embedded-notes/
 ├── mkdocs.yml              # 站点配置（主题、导航、插件）
+├── hooks.py                # 自动生成首页分类卡片 + 导航
+├── requirements.txt        # Python 依赖（pip install -r）
+├── .github/workflows/      # GitHub Actions 自动部署
 ├── overrides/
 │   └── main.html           # 首页 Hero 横幅（顶部渐变区）
 ├── docs/                   # 你的笔记（Markdown）
 │   ├── index.md            # 首页
+│   ├── environment/        # 开发环境搭建
 │   ├── mcu/                # MCU 与驱动
 │   ├── rtos/               # RTOS
 │   ├── hardware/           # 硬件调试
@@ -41,7 +45,7 @@ embedded-notes/
 PowerShell 中执行：
 
 ```powershell
-pip install mkdocs-material mkdocs-git-revision-date-localized-plugin
+pip install -r requirements.txt
 ```
 
 ### 3. 克隆仓库
@@ -70,10 +74,13 @@ mkdocs serve            # 本地预览（可选，Ctrl+C 停止）
 # …修改 / 新增 docs/ 下的 .md 文件…
 git add .
 git commit -m "这次改了什么"
-mkdocs gh-deploy        # 发布到线上
+git push                # 推送后 GitHub Actions 自动部署，网页约 1 分钟后更新
 ```
 
-发布后约 1 分钟，刷新 https://hellobugger.github.io/embedded-notes/ 即可看到更新。
+发布后约 1 分钟，刷新 https://hellobugger.github.io/embedded-notes/ 即可看到更新（建议 **Ctrl+Shift+R** 强制刷新，防止缓存）。
+
+!!! tip "自动部署"
+    仓库已配置 GitHub Actions，推送 `main` 后自动构建部署到 `gh-pages`，**无需再手动执行 `mkdocs gh-deploy`**。若只想手动更新网页（改分支、调试部署流程），仍可用 `mkdocs gh-deploy --force`。
 
 ---
 

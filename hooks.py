@@ -14,6 +14,7 @@ CATEGORIES = [
     ("mcu", "MCU 与驱动", "fontawesome-solid-microchip"),
     ("rtos", "RTOS", "fontawesome-solid-gears"),
     ("hardware", "硬件调试", "fontawesome-solid-bolt"),
+    ("environment", "开发环境", "fontawesome-solid-toolbox"),
 ]
 
 PLACEHOLDER = "<!-- category-cards -->"
