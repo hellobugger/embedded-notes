@@ -1,6 +1,6 @@
 # VSCode + ESP-IDF 使用技巧
 
-> 配合[开发环境搭建](develop-environment.md)使用。所有操作都在命令面板 `Ctrl+Shift+P` 里搜 `ESP-IDF:` 前缀。
+> 配合[开发环境搭建](../environment/develop-environment.md)使用。所有操作都在命令面板 `Ctrl+Shift+P` 里搜 `ESP-IDF:` 前缀。
 
 ## 常用命令
 

@@ -1,6 +1,6 @@
 # Keil5 + CubeMX 使用技巧
 
-> 配合[开发环境搭建](develop-environment.md)使用。这里只讲用得溜的技巧，安装/建工程见搭建文档。
+> 配合[开发环境搭建](../environment/develop-environment.md)使用。这里只讲用得溜的技巧，安装/建工程见搭建文档。
 
 ## 日常快捷键
 

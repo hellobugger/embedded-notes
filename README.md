@@ -20,6 +20,7 @@ embedded-notes/
 ├── docs/                   # 你的笔记（Markdown）
 │   ├── index.md            # 首页
 │   ├── environment/        # 开发环境搭建
+│   ├── environment-tips/   # 各开发环境使用技巧
 │   ├── mcu/                # MCU 与驱动
 │   ├── rtos/               # RTOS
 │   ├── hardware/           # 硬件调试

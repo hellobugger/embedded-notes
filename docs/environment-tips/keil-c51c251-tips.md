@@ -1,6 +1,6 @@
 # Keil C51 / C251 使用技巧
 
-> 配合[开发环境搭建](develop-environment.md)使用。C51/C251 和 MDK 共用同一个 uVision，快捷键一致（F7 编译、F8 下载等），这里只讲 C51/C251 特有的坑和技巧。
+> 配合[开发环境搭建](../environment/develop-environment.md)使用。C51/C251 和 MDK 共用同一个 uVision，快捷键一致（F7 编译、F8 下载等），这里只讲 C51/C251 特有的坑和技巧。
 
 ## 实用技巧
 

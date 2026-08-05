@@ -6,14 +6,14 @@
 
 | 环境                | 适用场景                                 | 状态   | 使用技巧 |
 | ------------------- | ---------------------------------------- | ------ | -------- |
-| Keil5 + STM32CubeMX | STM32 裸机/寄存器开发，老工程多          | ✅ 已写 | [查看](keil5-cubemx-tips.md) |
-| Keil C51 / C251     | STC / 8051 单片机，与 MDK-ARM 共存       | ✅ 已写 | [查看](keil-c51c251-tips.md) |
-| VSCode + EIDE       | 用 VSCode 打开 Keil 工程，体验现代编辑器 | ✅ 已写 | [查看](eide-tips.md) |
-| STM32CubeIDE        | STM32 一体化 IDE，免费无代码限制         | ✅ 已写 | [查看](stm32cubeide-tips.md) |
-| CLion + CubeMX      | 编辑器体验最佳，远程/跨平台开发          | ✅ 已写 | [查看](clion-tips.md) |
-| VSCode + PlatformIO | **ESP32 / Arduino** / 多平台             | ✅ 已写 | [查看](platformio-tips.md) |
-| VSCode + ESP-IDF    | ESP32 官方框架，深度开发 ESP32           | ✅ 已写 | [查看](esp-idf-tips.md) |
-| RT-Thread Studio    | 国产 RTOS 生态，RT-Thread 开发           | ✅ 已写 | [查看](rtthread-studio-tips.md) |
+| Keil5 + STM32CubeMX | STM32 裸机/寄存器开发，老工程多          | ✅ 已写 | [查看](../environment-tips/keil5-cubemx-tips.md) |
+| Keil C51 / C251     | STC / 8051 单片机，与 MDK-ARM 共存       | ✅ 已写 | [查看](../environment-tips/keil-c51c251-tips.md) |
+| VSCode + EIDE       | 用 VSCode 打开 Keil 工程，体验现代编辑器 | ✅ 已写 | [查看](../environment-tips/eide-tips.md) |
+| STM32CubeIDE        | STM32 一体化 IDE，免费无代码限制         | ✅ 已写 | [查看](../environment-tips/stm32cubeide-tips.md) |
+| CLion + CubeMX      | 编辑器体验最佳，远程/跨平台开发          | ✅ 已写 | [查看](../environment-tips/clion-tips.md) |
+| VSCode + PlatformIO | **ESP32 / Arduino** / 多平台             | ✅ 已写 | [查看](../environment-tips/platformio-tips.md) |
+| VSCode + ESP-IDF    | ESP32 官方框架，深度开发 ESP32           | ✅ 已写 | [查看](../environment-tips/esp-idf-tips.md) |
+| RT-Thread Studio    | 国产 RTOS 生态，RT-Thread 开发           | ✅ 已写 | [查看](../environment-tips/rtthread-studio-tips.md) |
 
 ---
 

@@ -1,6 +1,6 @@
 # VSCode + EIDE 使用技巧
 
-> 配合[开发环境搭建](develop-environment.md)使用。EIDE 把 Keil 工程搬进 VSCode，这里讲日常用得溜的操作。
+> 配合[开发环境搭建](../environment/develop-environment.md)使用。EIDE 把 Keil 工程搬进 VSCode，这里讲日常用得溜的操作。
 
 ## 日常快捷键
 

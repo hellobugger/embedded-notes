@@ -1,6 +1,6 @@
 # STM32CubeIDE 使用技巧
 
-> 配合[开发环境搭建](develop-environment.md)使用。CubeIDE 是 Eclipse 内核，快捷键与 Eclipse 一致。
+> 配合[开发环境搭建](../environment/develop-environment.md)使用。CubeIDE 是 Eclipse 内核，快捷键与 Eclipse 一致。
 
 ## 日常快捷键
 

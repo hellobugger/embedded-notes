@@ -1,6 +1,6 @@
 # CLion + CubeMX 使用技巧
 
-> 配合[开发环境搭建](develop-environment.md)使用。CLion 是 JetBrains 内核，快捷键是 IntelliJ 风格。
+> 配合[开发环境搭建](../environment/develop-environment.md)使用。CLion 是 JetBrains 内核，快捷键是 IntelliJ 风格。
 
 ## 日常快捷键
 

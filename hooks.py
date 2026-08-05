@@ -15,6 +15,7 @@ CATEGORIES = [
     ("rtos", "RTOS", "fontawesome-solid-gears"),
     ("hardware", "硬件调试", "fontawesome-solid-bolt"),
     ("environment", "开发环境", "fontawesome-solid-toolbox"),
+    ("environment-tips", "开发环境技巧", "fontawesome-solid-lightbulb"),
 ]
 
 PLACEHOLDER = "<!-- category-cards -->"
