@@ -4,30 +4,7 @@
 
 ---
 
-<div class="grid cards" markdown>
-
--   :fontawesome-solid-microchip: **MCU 与驱动**
-
-    ---
-
-    - [STM32 踩坑记录](mcu/stm32-notes.md)
-    - [裸机外设驱动](mcu/peripheral-drivers.md)
-
--   :fontawesome-solid-microchip: **RTOS**
-
-    ---
-
-    - [FreeRTOS 任务调度](rtos/freertos-scheduler.md)
-    - [队列与信号量](rtos/queue-semaphore.md)
-
--   :fontawesome-solid-bolt: **硬件调试**
-
-    ---
-
-    - [示波器使用技巧](hardware/scope-tips.md)
-    - [电源纹波测试](hardware/power-ripple.md)
-
-</div>
+<!-- category-cards -->
 
 ---
 

@@ -7,6 +7,10 @@ repo_name: hellobugger/embedded-notes
 repo_url: https://github.com/hellobugger/embedded-notes
 edit_uri: blob/main/docs/
 
+# 构建时自动生成首页分类卡片，见 hooks.py
+hooks:
+  - hooks.py
+
 theme:
   name: material
   language: zh
@@ -66,15 +70,6 @@ extra:
     - icon: fontawesome/brands/github
       link: https://github.com/hellobugger
 
-# 导航菜单（你以后可自行修改）
-nav:
-  - 首页: index.md
-  - MCU 与驱动:
-    - STM32 踩坑记录: mcu/stm32-notes.md
-    - 裸机外设驱动: mcu/peripheral-drivers.md
-  - RTOS:
-    - FreeRTOS 任务调度: rtos/freertos-scheduler.md
-    - 队列与信号量: rtos/queue-semaphore.md
-  - 硬件调试:
-    - 示波器使用技巧: hardware/scope-tips.md
-    - 电源纹波测试: hardware/power-ripple.md
+# 导航由 hooks.py 按 docs/ 目录结构自动生成（新增笔记零配置）
+# nav:
+#   - 首页: index.md
