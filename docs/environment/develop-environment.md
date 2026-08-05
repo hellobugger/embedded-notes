@@ -1,19 +1,19 @@
 # 开发环境搭建
 
-> 从零到能编译、下载、调试的各种开发环境搭建记录，按「环境」分节，持续补充。先写 Keil5 + CubeMX，后续补充 CubeIDE、VSCode + PlatformIO 等。
+> 从零到能编译、下载、调试的各种开发环境搭建记录，按「环境」分节。每个环境的**使用技巧**见独立的技巧文档（下表「使用技巧」列），本文只讲搭建。
 
 ## 一、环境总览
 
-| 环境                | 适用场景                                 | 状态   |
-| ------------------- | ---------------------------------------- | ------ |
-| Keil5 + STM32CubeMX | STM32 裸机/寄存器开发，老工程多          | ✅ 已写 |
-| Keil C51 / C251     | STC / 8051 单片机，与 MDK-ARM 共存       | ✅ 已写 |
-| VSCode + EIDE       | 用 VSCode 打开 Keil 工程，体验现代编辑器 | ✅ 已写 |
-| STM32CubeIDE        | STM32 一体化 IDE，免费无代码限制         | ✅ 已写 |
-| CLion + CubeMX      | 编辑器体验最佳，远程/跨平台开发          | ✅ 已写 |
-| VSCode + PlatformIO | **ESP32 / Arduino** / 多平台             | ✅ 已写 |
-| VSCode + ESP-IDF    | ESP32 官方框架，深度开发 ESP32           | ✅ 已写 |
-| RT-Thread Studio    | 国产 RTOS 生态，RT-Thread 开发           | ✅ 已写 |
+| 环境                | 适用场景                                 | 状态   | 使用技巧 |
+| ------------------- | ---------------------------------------- | ------ | -------- |
+| Keil5 + STM32CubeMX | STM32 裸机/寄存器开发，老工程多          | ✅ 已写 | [查看](keil5-cubemx-tips.md) |
+| Keil C51 / C251     | STC / 8051 单片机，与 MDK-ARM 共存       | ✅ 已写 | [查看](keil-c51c251-tips.md) |
+| VSCode + EIDE       | 用 VSCode 打开 Keil 工程，体验现代编辑器 | ✅ 已写 | [查看](eide-tips.md) |
+| STM32CubeIDE        | STM32 一体化 IDE，免费无代码限制         | ✅ 已写 | [查看](stm32cubeide-tips.md) |
+| CLion + CubeMX      | 编辑器体验最佳，远程/跨平台开发          | ✅ 已写 | [查看](clion-tips.md) |
+| VSCode + PlatformIO | **ESP32 / Arduino** / 多平台             | ✅ 已写 | [查看](platformio-tips.md) |
+| VSCode + ESP-IDF    | ESP32 官方框架，深度开发 ESP32           | ✅ 已写 | [查看](esp-idf-tips.md) |
+| RT-Thread Studio    | 国产 RTOS 生态，RT-Thread 开发           | ✅ 已写 | [查看](rtthread-studio-tips.md) |
 
 ---
 
@@ -428,11 +428,5 @@ RT-Thread 的特色是**在线软件包**——在 `RT-Thread Settings` 界面�
 - **依赖 CubeMX**：改引脚/时钟等外设，用 CubeMX 改完回到 Studio 同步（和 CLion 类似，见上文 CLion 一节）
 - **账号登录**：不登录有些功能/软件包下不了，注册是免费的
 - **中文路径**：工程路径含中文会编译异常，一律用英文路径
-
----
-
-## 十、其他环境（规划中）
-
-- 暂无
 
 ---
