@@ -7,6 +7,7 @@
 CATEGORIES 里的目录是「分类」；其余目录里的 .md 直接列在导航中。
 """
 from pathlib import Path
+import subprocess
 
 # 目录名 -> (显示名, FontAwesome 图标)
 CATEGORIES = [
@@ -16,6 +17,25 @@ CATEGORIES = [
 ]
 
 PLACEHOLDER = "<!-- category-cards -->"
+RECENT_PLACEHOLDER = "<!-- recent-updates -->"
+
+
+def _recent_updates(docs_dir: Path) -> str:
+    """按 git 提交时间生成最近更新列表（提交日期 + 提交信息）。"""
+    try:
+        out = subprocess.run(
+            ["git", "log", "--date=short", "--pretty=format:%ad %s", "--", str(docs_dir)],
+            capture_output=True, text=True, encoding="utf-8",
+        ).stdout
+    except (OSError, subprocess.SubprocessError):
+        return RECENT_PLACEHOLDER  # 非 git 环境，保留占位符
+    if not out:
+        return RECENT_PLACEHOLDER
+
+    lines = [f"- {line}" for line in out.splitlines() if line]
+    # 每个提交一行，按日期倒序取前 10 条
+    lines.sort(key=lambda x: x[2:x.find(" ", 2)], reverse=True)
+    return "\n".join(lines[:10]) + "\n"
 
 
 def _build_cards(docs_dir: Path) -> str:
@@ -41,9 +61,13 @@ def _build_cards(docs_dir: Path) -> str:
 
 
 def on_page_markdown(markdown: str, *, page, config, **kwargs):
-    if page.file.src_uri != "index.md" or PLACEHOLDER not in markdown:
+    if page.file.src_uri != "index.md":
         return markdown
-    return markdown.replace(PLACEHOLDER, _build_cards(Path(config["docs_dir"])))
+    if PLACEHOLDER in markdown:
+        markdown = markdown.replace(PLACEHOLDER, _build_cards(Path(config["docs_dir"])))
+    if RECENT_PLACEHOLDER in markdown:
+        markdown = markdown.replace(RECENT_PLACEHOLDER, _recent_updates(Path(config["docs_dir"])))
+    return markdown
 
 
 def _note_title(path: Path, name: str) -> str:
