@@ -170,10 +170,54 @@ float voltage = (float)adc_value / 4095.0f * 3.3f;
 /* 电池电压 = 采样电压 × (R1+R2)/R2，用浮点算完再回来转 */
 ```
 
+### 基准电压不准怎么办：用内部基准源 VREFINT 校准
+
+多数板子 `VREF+` 直接接 `VDDA`，而 `VDDA` 不会是干净的 3.3V——电源有容差、会温漂、电池还会放电。**这时按 3.3V 换算所有读数，就整体偏了**。芯片内部有一个稳定的基准源 **VREFINT**（F1/F4 约 1.2V），出厂时每颗都测过，并把「VREF+ = 3.3V 时读到的 VREFINT 值」烧进系统存储区：
+
+- F1（F103 系）：`VREFINT_CAL` 在 `0x1FFFF7BA`
+- F4（F407 系）：`VREFINT_CAL` 在 `0x1FFF7A2A`
+- 其他系列以参考手册「系统存储区 / 出厂校准数据」表为准
+
+ADC 是**比例式转换**，读数只跟「输入 / VREF+」的比例有关，所以测一次 VREFINT 就能反推真实的 VREF+：
+
+```text
+VREFINT_CAL   = 出厂时 VREF+ = 3.3V 下的 VREFINT 读数（定值，从 flash 读）
+VREFINT_meas  = 现在实际采到的 VREFINT 读数
+
+实际 VREF+  = 3.3V × VREFINT_CAL / VREFINT_meas
+任意通道电压 = value / 满量程 × 实际VREF+
+```
+
+```c
+/* 1. 初始化时把 VREFINT 配成一个通道（F4 用 ADC_CHANNEL_VREFINT）。
+      内部通道必须用最长采样时间（F1 最长档 ≈17.1µs，正好够），否则读数不稳 */
+sConfig.Channel      = ADC_CHANNEL_17;              /* F4: ADC_CHANNEL_VREFINT */
+sConfig.SamplingTime = ADC_SAMPLETIME_239CYCLES_5;  /* 对应系列最长档 */
+HAL_ADC_ConfigChannel(&hadc1, &sConfig);
+
+/* 2. 采一次 VREFINT，反推实际基准电压 */
+HAL_ADC_Start(&hadc1);
+HAL_ADC_PollForConversion(&hadc1, 10);
+uint32_t vrefint_meas = HAL_ADC_GetValue(&hadc1);
+uint32_t vrefint_cal  = *(uint16_t*)0x1FFFF7BA;    /* 出厂标定值；F4 用 0x1FFF7A2A */
+
+float vref_actual = 3.3f * vrefint_cal / vrefint_meas;   /* 实际 VREF+ */
+
+/* 3. 之后所有通道都用它换算 */
+float voltage = (float)adc_value / 4095.0f * vref_actual;
+```
+
+!!! tip "怎么用、什么时候用"
+    - 只采一次不稳，采几轮平均再算；VREFINT 自身也有温漂，但比拿 3.3V 硬算准得多。
+    - 适合「VREF+ 接 VDDA、精度要求一般但要求自校准」的场合：电池供电、电源不干净。
+    - 若你的 VREF+ 接了**独立精密基准源**，这套反推就不需要了，直接按基准值算。
+    - 顺手还能当「低压检测」用：算出的实际 VDDA 跌到阈值就知道该关机了。
+    - CubeMX 在 ADC 通道列表里能看到这个内部通道（F1 叫 Vrefint，F4 勾选 Vrefint channel），勾上生成代码即可，不用飞线。
+
 ## 七、精度与避坑备忘
 
 - **采样时间不够，读数偏低**：高阻源必用长采样时间，先测「最短档 vs 最长档」的差值判断。
-- **参考电压不干净，全盘皆输**：`VREF+` 上要加去耦电容，稳压源别省——ADC 的精度上限就是参考电压的精度。
+- **参考电压不干净，全盘皆输**：`VREF+` 上要加去耦电容，稳压源别省——ADC 的精度上限就是参考电压的精度。如果 VREF+ 接的是 VDDA 且电源有容差，用 **VREFINT 内部基准源反推实际基准电压** 校准，见第六节。
 - **引脚别悬空**：没用的模拟引脚悬空会读飘，接地或接固定电平，或者干脆配成数字。
 - **别让 ADC 时钟超上限**：F1 超 14 MHz、F4 超 36 MHz，精度直接崩，详见第二节。
 - **数字地和模拟地单点连接**：PCB 上 AGND/DGND 单点接，别让数字噪声灌进模拟参考。
