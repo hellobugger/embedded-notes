@@ -1,0 +1,2452 @@
+
+<!doctype html>
+<html lang="zh" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="嵌入式软件/硬件调试心得与工作备忘">
+      
+      
+        <meta name="author" content="聂文俊">
+      
+      
+        <link rel="canonical" href="https://hellobugger.github.io/embedded-notes/mcu/stm32-can/">
+      
+      
+        <link rel="prev" href="../stm32-adc/">
+      
+      
+        <link rel="next" href="../stm32-clock-tree/">
+      
+      
+        
+      
+      
+      <link rel="icon" href="../../assets/images/favicon.png">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.7">
+    
+    
+      
+        <title>CAN 总线：从通信机制到收发中断的一篇讲透 - 嵌入式工作笔记</title>
+      
+    
+    
+      <link rel="stylesheet" href="../../assets/stylesheets/main.ec1eaa64.min.css">
+      
+        
+        <link rel="stylesheet" href="../../assets/stylesheets/palette.ab4e12ef.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+      <link rel="stylesheet" href="../../stylesheets/extra.css?v=4">
+    
+    <script>__md_scope=new URL("../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    
+    
+      
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#can" class="md-skip">
+          跳转至
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+<header class="md-header" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="页眉">
+    <a href="../.." title="嵌入式工作笔记" class="md-header__button md-logo" aria-label="嵌入式工作笔记" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            嵌入式工作笔记
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              CAN 总线：从通信机制到收发中断的一篇讲透
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+        <form class="md-header__option" data-md-component="palette">
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="切换至深色模式"  type="radio" name="__palette" id="__palette_0">
+    
+      <label class="md-header__button md-icon" title="切换至深色模式" for="__palette_1" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a4 4 0 0 0-4 4 4 4 0 0 0 4 4 4 4 0 0 0 4-4 4 4 0 0 0-4-4m0 10a6 6 0 0 1-6-6 6 6 0 0 1 6-6 6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="" data-md-color-scheme="slate" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="切换至浅色模式"  type="radio" name="__palette" id="__palette_1">
+    
+      <label class="md-header__button md-icon" title="切换至浅色模式" for="__palette_0" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 18c-.89 0-1.74-.2-2.5-.55C11.56 16.5 13 14.42 13 12s-1.44-4.5-3.5-5.45C10.26 6.2 11.11 6 12 6a6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+</form>
+      
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="搜索" placeholder="搜索" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="查找">
+        
+        <button type="reset" class="md-search__icon md-icon" title="清空当前内容" aria-label="清空当前内容" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+        <div class="md-search__suggest" data-md-component="search-suggest"></div>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            正在初始化搜索引擎
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/hellobugger/embedded-notes" title="前往仓库" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M173.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6m-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3m44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9M252.8 8C114.1 8 8 113.3 8 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C436.2 457.8 504 362.9 504 252 504 113.3 391.5 8 252.8 8M105.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1m-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7m32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1m-11.4-14.7c-1.6 1-1.6 3.6 0 5.9s4.3 3.3 5.6 2.3c1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2"/></svg>
+  </div>
+  <div class="md-source__repository">
+    hellobugger/embedded-notes
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+  
+
+      
+        
+          
+            
+<nav class="md-tabs" aria-label="标签" data-md-component="tabs">
+  <div class="md-grid">
+    <ul class="md-tabs__list">
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../.." class="md-tabs__link">
+        
+  
+  
+    
+  
+  首页
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../environment/develop-environment/" class="md-tabs__link">
+          
+  
+  
+  开发环境
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../environment-tips/clion-tips/" class="md-tabs__link">
+          
+  
+  
+  开发环境技巧
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../hardware/esp32-reset/" class="md-tabs__link">
+          
+  
+  
+  硬件调试
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+    
+  
+  
+    
+    
+      <li class="md-tabs__item md-tabs__item--active">
+        <a href="../peripheral-drivers/" class="md-tabs__link">
+          
+  
+  
+  MCU 与驱动
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../rtos/freertos-scheduler/" class="md-tabs__link">
+          
+  
+  
+  RTOS
+
+        </a>
+      </li>
+    
+  
+
+      
+    </ul>
+  </div>
+</nav>
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+  
+
+
+  
+
+<nav class="md-nav md-nav--primary md-nav--lifted md-nav--integrated" aria-label="导航栏" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="../.." title="嵌入式工作笔记" class="md-nav__button md-logo" aria-label="嵌入式工作笔记" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    嵌入式工作笔记
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/hellobugger/embedded-notes" title="前往仓库" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M173.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6m-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3m44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9M252.8 8C114.1 8 8 113.3 8 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C436.2 457.8 504 362.9 504 252 504 113.3 391.5 8 252.8 8M105.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1m-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7m32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1m-11.4-14.7c-1.6 1-1.6 3.6 0 5.9s4.3 3.3 5.6 2.3c1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2"/></svg>
+  </div>
+  <div class="md-source__repository">
+    hellobugger/embedded-notes
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../.." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    首页
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2" >
+        
+          
+          <label class="md-nav__link" for="__nav_2" id="__nav_2_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    开发环境
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_2">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    开发环境
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../environment/develop-environment/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    开发环境搭建
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" >
+        
+          
+          <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    开发环境技巧
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_3">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    开发环境技巧
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../environment-tips/clion-tips/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    CLion + CubeMX 使用技巧
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../environment-tips/eide-tips/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    VSCode + EIDE 使用技巧
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../environment-tips/esp-idf-tips/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    VSCode + ESP-IDF 使用技巧
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../environment-tips/keil-c51c251-tips/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Keil C51 / C251 使用技巧
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../environment-tips/keil5-cubemx-tips/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Keil5 + CubeMX 使用技巧
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../environment-tips/platformio-tips/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    VSCode + PlatformIO 使用技巧
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../environment-tips/rtthread-studio-tips/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    RT-Thread Studio 使用技巧
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../environment-tips/stm32cubeide-tips/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    STM32CubeIDE 使用技巧
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4" >
+        
+          
+          <label class="md-nav__link" for="__nav_4" id="__nav_4_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    硬件调试
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    硬件调试
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../hardware/esp32-reset/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ESP32-S3 反复复位（Wi-Fi 连接时）
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../hardware/power-ripple/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    电源纹波测试
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../hardware/scope-tips/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    示波器使用技巧
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5" checked>
+        
+          
+          <label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    MCU 与驱动
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_5">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    MCU 与驱动
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../peripheral-drivers/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    裸机外设驱动
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../stm32-adc/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    STM32 ADC：从配置到 DMA 的一篇讲透
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    CAN 总线：从通信机制到收发中断的一篇讲透
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    CAN 总线：从通信机制到收发中断的一篇讲透
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="目录">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      目录
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#_1" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        一、通信机制：为什么一根线上能挂一堆人
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#_2" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        二、数据帧：消息长什么样
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="二、数据帧：消息长什么样">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#_3" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        标准帧结构（逐字段拆解）
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#bit-stuffing" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        位填充（Bit Stuffing）——不占字段的「隐形防错」
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#can_1" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        三、错误检测：CAN 凭什么敢说「几乎不会错」
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#_4" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        四、位定时与同步：接收方怎么「对表」采样
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="四、位定时与同步：接收方怎么「对表」采样">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#tq" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        一位被切成多少份：TQ
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_5" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        采样点为什么重要
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_6" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        同步机制：快慢钟对表的两把钥匙
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#cubemx-hal" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        五、配置说明：CubeMX + HAL
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="五、配置说明：CubeMX + HAL">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#51-cubemx" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        5.1 CubeMX 页面
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#52" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        5.2 滤波器（验收过滤）——接收方「挑食」的关键
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#53-hal" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        5.3 初始化与启动（HAL）
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#bus-off" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        六、Bus-Off 快慢恢复：大事故后的自救
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="六、Bus-Off 快慢恢复：大事故后的自救">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#_7" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        为什么有快慢两种恢复
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_8" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        工程上怎么选
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#bus-off_1" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        检测 Bus-Off 的寄存器
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#cpu" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        七、发送中断与接收中断：怎么让 CPU 不被数据拖死
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="七、发送中断与接收中断：怎么让 CPU 不被数据拖死">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#_9" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        接收中断流程
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_10" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        发送中断流程
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#vs" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        发送中断 vs 轮询，什么时候用哪个
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_11" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        错误与状态回调：把「总线的病」报给应用
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#_12" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        八、避坑备忘
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#_13" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        参考
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../stm32-clock-tree/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    STM32 时钟系统：五个时钟源
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../stm32-dac/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    STM32 DAC：从配置到 DMA 的一篇讲透
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../stm32-i2c/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    STM32 I2C：从两根线讲透软件 IIC / 硬件 I2C / DMA / SMBus
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../stm32-lib-comparison/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    标准库 / LL / HAL 对比
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../stm32-notes/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    STM32H7 调试笔记
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../stm32-rtc/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    STM32 RTC：从走时到一堆「隐藏功能」的一篇讲透
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../stm32-timer/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    STM32 定时器：从时基到一堆「隐藏功能」的一篇讲透
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../stm32-watchdog/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    独立看门狗 IWDG 与窗口看门狗 WWDG
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_6" >
+        
+          
+          <label class="md-nav__link" for="__nav_6" id="__nav_6_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    RTOS
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_6_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_6">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    RTOS
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../rtos/freertos-scheduler/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    FreeRTOS 任务调度
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../rtos/queue-semaphore/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    队列与信号量
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+  
+    <a href="https://github.com/hellobugger/embedded-notes/blob/main/docs/mcu/stm32-can.md" title="编辑此页" class="md-content__button md-icon" rel="edit">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M10 20H6V4h7v5h5v3.1l2-2V8l-6-6H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h4zm10.2-7c.1 0 .3.1.4.2l1.3 1.3c.2.2.2.6 0 .8l-1 1-2.1-2.1 1-1c.1-.1.2-.2.4-.2m0 3.9L14.1 23H12v-2.1l6.1-6.1z"/></svg>
+    </a>
+  
+  
+
+
+<h1 id="can">CAN 总线：从通信机制到收发中断的一篇讲透</h1>
+<blockquote>
+<p>一句话：<strong>CAN 是一根差分双绞线上的「多人会议室」</strong>——任何人想说话就抢总线，抢到了就广播，谁需要谁收；不许吵架（协议层自动仲裁）、说错话会被纠正（错误帧隔离）、甚至有人摔门离开会被请回来（Bus-Off 快慢恢复）。要讲清楚的其实是七件事——<strong>它凭什么在一根线上多人通信</strong>（通信机制）、<strong>消息长什么样</strong>（数据帧）、<strong>怎么保证不错</strong>（错误检测）、<strong>怎么对表</strong>（位定时与同步）、<strong>工程上怎么配</strong>（配置说明）、<strong>收发中断怎么用</strong>、以及<strong>出了大事故怎么自救</strong>（Bus-Off 快慢恢复）。本文以 STM32 bxCAN（F1/F4）为主，寄存器名与配置以 HAL 为准。</p>
+</blockquote>
+<h2 id="_1">一、通信机制：为什么一根线上能挂一堆人</h2>
+<p>CAN 是 <strong>多主 + 广播 + 仲裁</strong> 的总线，这三点决定了它的性格。</p>
+<p><strong>多主</strong>：总线上没有「主机」，任何节点都能主动发起发送，谁想发谁抢。</p>
+<p><strong>广播</strong>：节点发送的消息不指定「发给谁」，所有人都能听到。谁需要，靠<strong>验收过滤器</strong>（见配置节）留下自己关心的 ID，其余丢弃。</p>
+<p><strong>仲裁（防碰撞）</strong>：两个节点同时发时，靠 <strong>ID 小的优先</strong> 自动裁决，赢的继续发，输的自动退让并转为接收。这件事在<strong>位电平上硬件自动完成</strong>，应用层无感知——这是 CAN 和 RS-485（半双工一问一答）最大的区别：CAN 不需要主从轮询，天然适合 ECU 之间互相喊话。</p>
+<blockquote>
+<p>一句话理解仲裁：<strong>显性位（逻辑 0）永远压过隐性位（逻辑 1）</strong>。谁先输出 0，谁就赢了。所以 ID 越小优先级越高，0x000 永远是最牛的车。</p>
+</blockquote>
+<p><strong>两条线、两个电平</strong>：CAN_H / CAN_L 差分传输，有两种逻辑状态：</p>
+<table>
+<thead>
+<tr>
+<th>状态</th>
+<th>CAN_H</th>
+<th>CAN_L</th>
+<th>差压</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>显性 Dominant</strong></td>
+<td>约 3.5V</td>
+<td>约 1.5V</td>
+<td>≈2V</td>
+<td>逻辑 <strong>0</strong>，仲裁时赢</td>
+</tr>
+<tr>
+<td><strong>隐性 Recessive</strong></td>
+<td>约 2.5V</td>
+<td>约 2.5V</td>
+<td>≈0V</td>
+<td>逻辑 <strong>1</strong>，仲裁时输</td>
+</tr>
+</tbody>
+</table>
+<p><strong>每个节点都要接终端电阻（120Ω）</strong>，挂在总线两端各一个，用来匹配阻抗、抑制信号反射。缺终端电阻，高速率下波形畸变，通信时好时坏，这是 CAN 调试最经典的坑。</p>
+<h2 id="_2">二、数据帧：消息长什么样</h2>
+<p>CAN 的消息单元叫<strong>帧</strong>，常见三种：<strong>数据帧</strong>（带数据）、<strong>远程帧</strong>（只问不带数据，RTR=1）、<strong>错误帧</strong>（出错时冲掉总线）。日常 99% 用的是数据帧。数据帧分<strong>标准帧</strong>和<strong>扩展帧</strong>，区别只在一个 ID 字段：</p>
+<table>
+<thead>
+<tr>
+<th>帧类型</th>
+<th>标识符</th>
+<th>格式位</th>
+<th>数据</th>
+<th>一帧最多位</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>标准帧</strong></td>
+<td><strong>11 位</strong> ID（0x000~0x7FF）</td>
+<td>IDE=0</td>
+<td>0~8 字节</td>
+<td>约 108 位</td>
+</tr>
+<tr>
+<td><strong>扩展帧</strong></td>
+<td><strong>29 位</strong> ID（0x00000000~0x1FFFFFFF）</td>
+<td>IDE=1</td>
+<td>0~8 字节</td>
+<td>约 128 位</td>
+</tr>
+</tbody>
+</table>
+<h3 id="_3">标准帧结构（逐字段拆解）</h3>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a> 起始位  仲裁场(12位)        控制场(6位)             数据场(0~8B)   CRC场(16位)    ACK场     EOF
+<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a> ┌────┐ ┌────────────────┐ ┌────────────────────┐ ┌────────────┐ ┌─────────────┐ ┌────────┐ ┌────┐
+<a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a> │ SOF │ │ ID(11位) + RTR │ │ IDE + r0 + DLC(4位) │ │  Data...   │ │ CRC(15) + DEL │ │  ACK   │ │ 7个 │
+<a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a> └────┘ └────────────────┘ └────────────────────┘ └────────────┘ └─────────────┘ └────────┘ └────┘
+<a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a>  1bit      11bit + 1bit          1 + 1 + 4bit           0~64bit         15 + 1bit      1+1bit     1bit
+</code></pre></div>
+<table>
+<thead>
+<tr>
+<th>字段</th>
+<th>长度</th>
+<th>作用</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>SOF</strong></td>
+<td>1 位</td>
+<td>起始位，显性 0，标志帧开始</td>
+</tr>
+<tr>
+<td><strong>ID</strong></td>
+<td>11 / 29 位</td>
+<td>标识符，<strong>越小优先级越高</strong>；也是接收方过滤的依据</td>
+</tr>
+<tr>
+<td><strong>RTR</strong></td>
+<td>1 位</td>
+<td>远程帧标志：0=数据帧，1=远程帧</td>
+</tr>
+<tr>
+<td><strong>IDE</strong></td>
+<td>1 位</td>
+<td>扩展标志：0=标准帧，1=扩展帧</td>
+</tr>
+<tr>
+<td><strong>r0</strong></td>
+<td>1 位</td>
+<td>保留位</td>
+</tr>
+<tr>
+<td><strong>DLC</strong></td>
+<td>4 位</td>
+<td>数据长度，0~8（高 4 位为 r1 扩展位）</td>
+</tr>
+<tr>
+<td><strong>数据</strong></td>
+<td>0~8 字节</td>
+<td>载荷，最多 8 字节（CAN FD 可到 64 字节）</td>
+</tr>
+<tr>
+<td><strong>CRC</strong></td>
+<td>15 位 + 1 分隔位</td>
+<td>校验数据，出错接收方拒收并报错</td>
+</tr>
+<tr>
+<td><strong>ACK</strong></td>
+<td>2 位（ACK 槽 + 分隔位）</td>
+<td>发送方发隐性 1；<strong>只要有节点正确收到就把它拉成显性 0</strong>。发送方在 ACK 槽读到 0 = 有人收到了；读到 1 = 总线上没别人（只有一个节点，没对表对象）</td>
+</tr>
+<tr>
+<td><strong>EOF</strong></td>
+<td>7 位</td>
+<td>结束标志，7 个隐性位</td>
+</tr>
+</tbody>
+</table>
+<h3 id="bit-stuffing">位填充（Bit Stuffing）——不占字段的「隐形防错」</h3>
+<p>从 SOF 到 CRC 结束，<strong>连续出现 5 个相同位就自动插入 1 个相反位</strong>。作用有二：</p>
+<ul>
+<li><strong>提供沿沿</strong>：接收方靠电平跳变同步时钟，一连串长 0/长 1 会让接收方失去采样点，填充位保证总线最多 5 位就有一次跳变；</li>
+<li><strong>错误检测</strong>：接收方如果读到<strong>连续 6 个相同位</strong>，说明破坏了规则 → 立刻报错（<strong>位填充错误</strong>）。</li>
+</ul>
+<p>EOF 和后面的帧间空间不参与填充。这条规则也让一个有趣的工程结论成立：<strong>把 CAN 报文里填充 0xFF 或 0x00 的「空数据」容易触发位填充</strong>，网络空闲时段总线反而不安静——这是干扰排查时的一个冷门知识点。</p>
+<h2 id="can_1">三、错误检测：CAN 凭什么敢说「几乎不会错」</h2>
+<p>CAN 的错误检测是<strong>五层防护</strong>，这是它敢用在汽车刹车、动力系统上的底气：</p>
+<table>
+<thead>
+<tr>
+<th>检测层</th>
+<th>检测什么</th>
+<th>谁发现</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>位填充错误</strong></td>
+<td>连续 6 个相同位</td>
+<td>所有接收方</td>
+</tr>
+<tr>
+<td><strong>CRC 校验</strong></td>
+<td>数据完整性</td>
+<td>所有接收方</td>
+</tr>
+<tr>
+<td><strong>位错误</strong></td>
+<td>发送方发送和监听的电平不一致（被干扰/被抢线）</td>
+<td><strong>发送方自己</strong></td>
+</tr>
+<tr>
+<td><strong>应答错误</strong></td>
+<td>ACK 槽收不到隐性位的确认</td>
+<td><strong>发送方自己</strong>（总线上没别人）</td>
+</tr>
+<tr>
+<td><strong>格式错误</strong></td>
+<td>固定位（r0/r1、CRC 分隔位、EOF 等）不为预期值</td>
+<td>所有接收方</td>
+</tr>
+</tbody>
+</table>
+<p>任一层出错，节点就进入<strong>错误状态</strong>并发送<strong>错误帧</strong>（主动错误帧=6 个显性位，冲掉当前总线上的半个坏帧；被动错误帧=6 个隐性位，不干扰别人）。<strong>出错方会重发</strong>，前提是总线还抢得到。</p>
+<blockquote>
+<p>关键点：<strong>CAN 的可靠性不是「不犯错」，而是「错了一定被大家发现、且被错误帧标记」</strong>。5 层检测 + 错误帧广播，误帧率低到可以用于安全关键场合。</p>
+</blockquote>
+<p>节点按错误计数（TEC 发送计数 / REC 接收计数）分成三个状态，这就是 <strong>Bus-Off 恢复的话题</strong>了（见第六节）：</p>
+<table>
+<thead>
+<tr>
+<th>状态</th>
+<th>计数范围</th>
+<th>行为</th>
+<th style="text-align: center;">正常接收/发送</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>错误主动（Error-Active）</strong></td>
+<td>TEC/REC &lt; 128</td>
+<td>正常收发；出错时发<strong>主动错误帧</strong>（显性 6 位，能把别人的坏帧冲掉）</td>
+<td style="text-align: center;">✅</td>
+</tr>
+<tr>
+<td><strong>错误被动（Error-Passive）</strong></td>
+<td>128 ≤ 任一 &lt; 256</td>
+<td>还能收发，但出错只发<strong>被动错误帧</strong>（隐性 6 位），且发完必须等 8 个隐性位才可再发（被「限速」了）</td>
+<td style="text-align: center;">⚠️ 受限制</td>
+</tr>
+<tr>
+<td><strong>Bus-Off</strong></td>
+<td>TEC ≥ 256</td>
+<td><strong>完全退出总线</strong>，既不收也不发</td>
+<td style="text-align: center;">❌</td>
+</tr>
+</tbody>
+</table>
+<h2 id="_4">四、位定时与同步：接收方怎么「对表」采样</h2>
+<p>CAN 是异步总线——没有独立的时钟线，接收方要从<strong>总线的电平跳变里自己恢复时钟</strong>。这就是位定时与同步要解决的「对表」问题。波特率相同是<strong>不够的</strong>，节点间的时钟漂移（晶振误差）由同步机制吸收。</p>
+<h3 id="tq">一位被切成多少份：TQ</h3>
+<p>每一位（bit time）被细分成<strong>最小时间单元 TQ（Time Quantum）</strong>，<strong>波特率只由 TQ 数决定</strong>，每个 CAN 控制器的 TQ 划分不同，这就是为什么同一条总线上<strong>所有节点的波特率必须一致</strong>。F1/F4 的 bxCAN 中 TQ 由 APB1 时钟分频而来：</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>TQ = (BRP + 1) / APB1_CLK        // BRP 波特率预分频器
+<a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a>1 bit  = 1 × SYNC_SEG + BS1 + BS2  // 典型 8~25 个 TQ
+<a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a>波特率 = APB1_CLK / (BRP+1) / (1 + BS1 + BS2)
+</code></pre></div>
+<p><strong>每个位分为 4 段</strong>，三段组合成一个采样点：</p>
+<table>
+<thead>
+<tr>
+<th>段</th>
+<th>作用</th>
+<th>典型 TQ</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>SYNC_SEG</strong></td>
+<td>同步段，固定 1 TQ，沿必须落在这里</td>
+<td>1</td>
+</tr>
+<tr>
+<td><strong>BS1（传播段 + 相位段1）</strong></td>
+<td>吸收总线传播延迟 + 允许相位调整</td>
+<td>4~8</td>
+</tr>
+<tr>
+<td><strong>BS2（相位段2）</strong></td>
+<td>采样点之后的部分，允许相位调整</td>
+<td>2~6</td>
+</tr>
+</tbody>
+</table>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>        |&lt;-- 1 bit = N 个 TQ --&gt;|
+<a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a>   SYNC  |       BS1        | BS2
+<a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a>   ───┬──┼──────────────────┼──────┬──
+<a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a>      │←→│←──────────────→│←───→│
+<a id="__codelineno-2-5" name="__codelineno-2-5" href="#__codelineno-2-5"></a>        采样点（Sampling Point，典型 75%~80%）
+</code></pre></div>
+<h3 id="_5">采样点为什么重要</h3>
+<p><strong>采样点 = 一位里「读取总线电平」的时刻</strong>。放太早，总线上信号还没稳定（传播延迟、线缆反射）；放太晚，留给 BS2 的余量不够。<strong>所有节点采样点应尽量一致（75% 左右）</strong>，否则在长距离、高波特率下容易出现「这个节点读到了、那个节点没读到」的隐性不同步。这也是用 CAN 分析仪看波形时最常调的东西。</p>
+<h3 id="_6">同步机制：快慢钟对表的两把钥匙</h3>
+<ul>
+<li><strong>硬同步</strong>：每个帧<strong>起始 SOF 的下降沿</strong>强制触发，把总线沿对齐到 SYNC_SEG。每个帧都重新对表一次。</li>
+<li><strong>重同步</strong>：帧中途遇到位沿与采样点偏差超过 SJW，把当前位<strong>缩短或拉长</strong>，最多调整 <strong>SJW</strong> 个 TQ（同步跳转宽度）。SJW 决定每个位能「掰」多大角度去追。</li>
+</ul>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>重同步调整规则：沿落在 SYNC_SEG 之后 → 拉长 BS1（相位段1 延长，最多 SJW）
+<a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a>                沿落在 SYNC_SEG 之前 → 拉长 BS2（相位段2 延长，最多 SJW）
+</code></pre></div>
+<p>晶振误差容忍度上限（F1 内部时钟 jitter 会吃掉余量）：
+<div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a>Δf ≤ SJW / (2 × 10 × NBT)      // NBT = 1 bit 的 TQ 数，粗略估算
+</code></pre></div></p>
+<blockquote>
+<p>工程结论：<strong>BRP 让波特率分到合适的 TQ 数（8~25 TQ/bit），采样点设在 75% 附近，SJW 给 1~2</strong>，这是通用的稳定开局。F1/F4 的 bxCAN 采样点是通过 BS1、BS2 的「TQ 数量」间接定的（bxCAN 没有直接的采样点百分比寄存器），CubeMX 里直接给百分比，点开能看到对应的 BS1/BS2。</p>
+</blockquote>
+<h2 id="cubemx-hal">五、配置说明：CubeMX + HAL</h2>
+<p>CAN 的配置比 UART 多一层：<strong>除了波特率，还要配位时序、滤波器、中断、工作模式</strong>。下面以 F1/F4 的 bxCAN 为例。</p>
+<h3 id="51-cubemx">5.1 CubeMX 页面</h3>
+<p><code>Connectivity → CAN1</code>（F1 的 CAN 在 APB1 上，F4 的 CAN1/CAN2 也在 APB1），关键参数：</p>
+<table>
+<thead>
+<tr>
+<th>参数</th>
+<th>说明</th>
+<th>典型值</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Bit Timings Parameters → Prescaler</strong></td>
+<td>BRP 预分频，决定 TQ 时长</td>
+<td>按波特率算</td>
+</tr>
+<tr>
+<td><strong>Time Quanta in Bit Segment 1</strong></td>
+<td>BS1 的 TQ 数</td>
+<td>13（配合下面示例）</td>
+</tr>
+<tr>
+<td><strong>Time Quanta in Bit Segment 2</strong></td>
+<td>BS2 的 TQ 数</td>
+<td>2</td>
+</tr>
+<tr>
+<td><strong>ReSynchronization Jump Width</strong></td>
+<td>SJW 的 TQ 数</td>
+<td>1</td>
+</tr>
+<tr>
+<td><strong>Auto Bus-Off Management</strong></td>
+<td>使能后硬件自动做 Bus-Off 恢复</td>
+<td><strong>强烈建议勾选</strong>（见第六节）</td>
+</tr>
+<tr>
+<td><strong>Auto Retransmission</strong></td>
+<td>发送失败自动重发（硬件层面）</td>
+<td>默认勾选</td>
+</tr>
+<tr>
+<td><strong>Receive Fifo Locked Mode</strong></td>
+<td>FIFO 满时新报文丢弃（保旧）</td>
+<td>默认不勾</td>
+</tr>
+<tr>
+<td><strong>Transmit Fifo Priority</strong></td>
+<td>多个待发报文谁先发：按 ID / 按 FIFO 顺序</td>
+<td>按 ID</td>
+</tr>
+</tbody>
+</table>
+<p>勾选上方 <strong>NVIC Settings → CAN1 RX0 / RX1 / SCE 中断</strong>，生成代码才带收发中断回调。</p>
+<p><strong>一个能跑通的配置实例</strong>（F4，APB1=42MHz，波特率 500kbps）：
+<div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a>APB1=42MHz，BRP=6 → TQ = 7 / 42M ≈ 166.7ns
+<a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a>1 bit = 16 TQ → 波特率 = 42M / (6+1) / 16 = 500kbps ✅
+<a id="__codelineno-5-3" name="__codelineno-5-3" href="#__codelineno-5-3"></a>采样点 = (1 + 13) / 16 = 87.5%（BS1=13，BS2=2）  ← 略偏后，工程常用 80% 上下
+</code></pre></div>
+CubeMX 页面下方会实时显示 <strong>BiT Rate</strong> 和 <strong>Sample Point %</strong>，改 BRP/BS1/BS2 直接看，不用手算。</p>
+<h3 id="52">5.2 滤波器（验收过滤）——接收方「挑食」的关键</h3>
+<p>CAN 广播，每个报文所有人都收得到；<strong>滤波器的存在就是让节点只关心自己感兴趣的 ID，把 CPU 从无关中断里解放出来</strong>。F1/F4 有 <strong>14 个滤波器（F1 的 bxCAN）</strong>，可配置为两种模式，都在 <code>HAL_CAN_ConfigFilter()</code> 里设置：</p>
+<table>
+<thead>
+<tr>
+<th>模式</th>
+<th>含义</th>
+<th>适合场景</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>掩码模式（Mask）</strong></td>
+<td>指定几位必须精确匹配、其余位「不关心」（掩码为 1 = 必须匹配，0 = 任意）</td>
+<td>收一组连续/相关的 ID（如 0x100~0x10F）</td>
+</tr>
+<tr>
+<td><strong>列表模式（List）</strong></td>
+<td>指定 ID 全部精确匹配，不匹配就拒收</td>
+<td>只收少量固定 ID</td>
+</tr>
+</tbody>
+</table>
+<p>配置示例（掩码模式，收 0x123 一类）：
+<div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a><span class="n">CAN_FilterTypeDef</span><span class="w"> </span><span class="n">f</span><span class="p">;</span>
+<a id="__codelineno-6-2" name="__codelineno-6-2" href="#__codelineno-6-2"></a><span class="n">f</span><span class="p">.</span><span class="n">FilterIdHigh</span><span class="w">         </span><span class="o">=</span><span class="w"> </span><span class="mh">0x123</span><span class="w"> </span><span class="o">&lt;&lt;</span><span class="w"> </span><span class="mi">5</span><span class="p">;</span><span class="w">         </span><span class="cm">/* 标准帧 11 位 ID 放高段 */</span>
+<a id="__codelineno-6-3" name="__codelineno-6-3" href="#__codelineno-6-3"></a><span class="n">f</span><span class="p">.</span><span class="n">FilterIdLow</span><span class="w">          </span><span class="o">=</span><span class="w"> </span><span class="mh">0x0000</span><span class="p">;</span><span class="w">             </span><span class="cm">/* 扩展帧 ID / 低位过滤 */</span>
+<a id="__codelineno-6-4" name="__codelineno-6-4" href="#__codelineno-6-4"></a><span class="n">f</span><span class="p">.</span><span class="n">FilterMaskIdHigh</span><span class="w">     </span><span class="o">=</span><span class="w"> </span><span class="mh">0x7FF</span><span class="w"> </span><span class="o">&lt;&lt;</span><span class="w"> </span><span class="mi">5</span><span class="p">;</span><span class="w">         </span><span class="cm">/* 掩码：1 必须匹配 */</span>
+<a id="__codelineno-6-5" name="__codelineno-6-5" href="#__codelineno-6-5"></a><span class="n">f</span><span class="p">.</span><span class="n">FilterMaskIdLow</span><span class="w">      </span><span class="o">=</span><span class="w"> </span><span class="mh">0x0000</span><span class="p">;</span>
+<a id="__codelineno-6-6" name="__codelineno-6-6" href="#__codelineno-6-6"></a><span class="n">f</span><span class="p">.</span><span class="n">FilterFIFOAssignment</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">CAN_RX_FIFO0</span><span class="p">;</span><span class="w">        </span><span class="cm">/* 匹配的报文进 RX0 */</span>
+<a id="__codelineno-6-7" name="__codelineno-6-7" href="#__codelineno-6-7"></a><span class="n">f</span><span class="p">.</span><span class="n">FilterActivation</span><span class="w">     </span><span class="o">=</span><span class="w"> </span><span class="n">ENABLE</span><span class="p">;</span>
+<a id="__codelineno-6-8" name="__codelineno-6-8" href="#__codelineno-6-8"></a><span class="n">HAL_CAN_ConfigFilter</span><span class="p">(</span><span class="o">&amp;</span><span class="n">hcan</span><span class="p">,</span><span class="w"> </span><span class="o">&amp;</span><span class="n">f</span><span class="p">);</span>
+</code></pre></div></p>
+<h3 id="53-hal">5.3 初始化与启动（HAL）</h3>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a><span class="n">CAN_HandleTypeDef</span><span class="w"> </span><span class="n">hcan1</span><span class="p">;</span>
+<a id="__codelineno-7-2" name="__codelineno-7-2" href="#__codelineno-7-2"></a>
+<a id="__codelineno-7-3" name="__codelineno-7-3" href="#__codelineno-7-3"></a><span class="n">hcan1</span><span class="p">.</span><span class="n">Instance</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">CAN1</span><span class="p">;</span>
+<a id="__codelineno-7-4" name="__codelineno-7-4" href="#__codelineno-7-4"></a><span class="n">hcan1</span><span class="p">.</span><span class="n">Init</span><span class="p">.</span><span class="n">Prescaler</span><span class="w">        </span><span class="o">=</span><span class="w"> </span><span class="mi">6</span><span class="p">;</span><span class="w">    </span><span class="cm">/* APB1=42M ÷7 → TQ≈166.7ns */</span>
+<a id="__codelineno-7-5" name="__codelineno-7-5" href="#__codelineno-7-5"></a><span class="n">hcan1</span><span class="p">.</span><span class="n">Init</span><span class="p">.</span><span class="n">Mode</span><span class="w">             </span><span class="o">=</span><span class="w"> </span><span class="n">CAN_MODE_NORMAL</span><span class="p">;</span>
+<a id="__codelineno-7-6" name="__codelineno-7-6" href="#__codelineno-7-6"></a><span class="n">hcan1</span><span class="p">.</span><span class="n">Init</span><span class="p">.</span><span class="n">SyncJumpWidth</span><span class="w">    </span><span class="o">=</span><span class="w"> </span><span class="n">CAN_SJW_1TQ</span><span class="p">;</span>
+<a id="__codelineno-7-7" name="__codelineno-7-7" href="#__codelineno-7-7"></a><span class="n">hcan1</span><span class="p">.</span><span class="n">Init</span><span class="p">.</span><span class="n">TimeSeg1</span><span class="w">         </span><span class="o">=</span><span class="w"> </span><span class="n">CAN_BS1_13TQ</span><span class="p">;</span>
+<a id="__codelineno-7-8" name="__codelineno-7-8" href="#__codelineno-7-8"></a><span class="n">hcan1</span><span class="p">.</span><span class="n">Init</span><span class="p">.</span><span class="n">TimeSeg2</span><span class="w">         </span><span class="o">=</span><span class="w"> </span><span class="n">CAN_BS2_2TQ</span><span class="p">;</span>
+<a id="__codelineno-7-9" name="__codelineno-7-9" href="#__codelineno-7-9"></a><span class="n">hcan1</span><span class="p">.</span><span class="n">Init</span><span class="p">.</span><span class="n">TimeTriggeredMode</span><span class="w">    </span><span class="o">=</span><span class="w"> </span><span class="n">DISABLE</span><span class="p">;</span>
+<a id="__codelineno-7-10" name="__codelineno-7-10" href="#__codelineno-7-10"></a><span class="n">hcan1</span><span class="p">.</span><span class="n">Init</span><span class="p">.</span><span class="n">AutoBusOffManagement</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">ENABLE</span><span class="p">;</span><span class="w">   </span><span class="cm">/* Bus-Off 硬件自动恢复 */</span>
+<a id="__codelineno-7-11" name="__codelineno-7-11" href="#__codelineno-7-11"></a><span class="n">hcan1</span><span class="p">.</span><span class="n">Init</span><span class="p">.</span><span class="n">AutoWakeUp</span><span class="w">           </span><span class="o">=</span><span class="w"> </span><span class="n">DISABLE</span><span class="p">;</span>
+<a id="__codelineno-7-12" name="__codelineno-7-12" href="#__codelineno-7-12"></a><span class="n">hcan1</span><span class="p">.</span><span class="n">Init</span><span class="p">.</span><span class="n">AutoRetransmission</span><span class="w">   </span><span class="o">=</span><span class="w"> </span><span class="n">ENABLE</span><span class="p">;</span>
+<a id="__codelineno-7-13" name="__codelineno-7-13" href="#__codelineno-7-13"></a><span class="n">hcan1</span><span class="p">.</span><span class="n">Init</span><span class="p">.</span><span class="n">ReceiveFifoLocked</span><span class="w">    </span><span class="o">=</span><span class="w"> </span><span class="n">DISABLE</span><span class="p">;</span>
+<a id="__codelineno-7-14" name="__codelineno-7-14" href="#__codelineno-7-14"></a><span class="n">hcan1</span><span class="p">.</span><span class="n">Init</span><span class="p">.</span><span class="n">TransmitFifoPriority</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">DISABLE</span><span class="p">;</span><span class="w">  </span><span class="cm">/* 0=按 ID，1=按 FIFO 顺序 */</span>
+<a id="__codelineno-7-15" name="__codelineno-7-15" href="#__codelineno-7-15"></a><span class="n">HAL_CAN_Init</span><span class="p">(</span><span class="o">&amp;</span><span class="n">hcan1</span><span class="p">);</span>
+</code></pre></div>
+<p><strong>一个必须记住的启动顺序</strong>：<code>HAL_CAN_Init</code> → <code>HAL_CAN_ConfigFilter</code> → <strong><code>HAL_CAN_Start</code></strong>。漏掉最后一步 <code>HAL_CAN_Start</code>，<code>HAL_CAN_Transmit</code>/<code>HAL_CAN_Receive</code> 会一直返回超时错误（HAL_CAN_ERROR_...TIMEOUT），这是新手最常踩的坑。</p>
+<h2 id="bus-off">六、Bus-Off 快慢恢复：大事故后的自救</h2>
+<p>当发送错误计数 <strong>TEC 累积到 ≥ 256</strong>，节点进入 <strong>Bus-Off</strong>：<strong>彻底退出总线，既不发送也不接收</strong>。这是 CAN 自我保护的最后一道闸——总线上有个节点一直报错，不把它踢下去，错误帧会把整条总线拖垮。但踢下去之后怎么回来，是「快恢复」和「慢恢复」之争。</p>
+<h3 id="_7">为什么有快慢两种恢复</h3>
+<p>Bus-Off 恢复的本质是<strong>重新接入一条满负荷的总线，而这个节点自己对总线一无所知</strong>。关键差异在于<strong>它能否确定总线空闲</strong>：</p>
+<ul>
+<li><strong>慢恢复（协议强制）</strong>：按 CAN 协议，Bus-Off 的节点必须<strong>连续观测到 128 次 11 个隐性位</strong>（即 128 × 帧间空间）才允许重新接入，过程中只做「倾听」，不做任何仲裁。这是标准做法，<strong>任何 CAN 控制器都支持</strong>，安全但慢（尤其在高负载下，要等很久才数满 128 个空闲间隙）。</li>
+<li><strong>快恢复（bxCAN 的 Auto Bus-Off 模式）</strong>：bxCAN 在 <code>AutoBusOffManagement=ENABLE</code> 时，<strong>检测到总线空闲就立刻恢复发送</strong>，不等满 128 次，恢复更快，但对总线负载、电气环境的判断更激进——总线持续抖动时可能刚恢复又被踢下去。</li>
+</ul>
+<h3 id="_8">工程上怎么选</h3>
+<table>
+<thead>
+<tr>
+<th>场景</th>
+<th>建议</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>汽车级、安全关键总线（动力、车身）</td>
+<td><strong>慢恢复（协议强制）</strong>：规范第一，宁可慢、不冒险</td>
+</tr>
+<tr>
+<td>工业现场、调试期、负载不高的总线</td>
+<td><strong>快恢复（Auto Bus-Off）</strong>：恢复快，调试友好</td>
+</tr>
+<tr>
+<td>总线被干扰源持续破坏</td>
+<td>快恢复反而会造成「踢了又回、回了又踢」的反复抖动，此时慢恢复更能保护总线</td>
+</tr>
+</tbody>
+</table>
+<blockquote>
+<p>实测观察：F4 的 bxCAN 勾选 Auto Bus-Off 后，Bus-Off 到恢复往往在毫秒级；不勾选则遵循协议 128 个隐性位，恢复时间与总线负载强相关。<strong>恢复后建议清一次应用层状态</strong>——比如节点重启通信状态机，或让上层协议补发离线期间丢失的报文。</p>
+</blockquote>
+<h3 id="bus-off_1">检测 Bus-Off 的寄存器</h3>
+<p>F1/F4 在 <code>CAN_ESR</code>（错误状态寄存器）：
+<div class="highlight"><pre><span></span><code><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a><span class="n">CAN1</span><span class="o">-&gt;</span><span class="n">ESR</span><span class="w">  </span><span class="o">&amp;</span><span class="w"> </span><span class="n">CAN_ESR_BOFF</span><span class="p">;</span><span class="w">   </span><span class="cm">/* 1 = 处于 Bus-Off */</span>
+<a id="__codelineno-8-2" name="__codelineno-8-2" href="#__codelineno-8-2"></a><span class="n">CAN1</span><span class="o">-&gt;</span><span class="n">ESR</span><span class="w">  </span><span class="o">&amp;</span><span class="w"> </span><span class="n">CAN_ESR_EPVF</span><span class="p">;</span><span class="w">   </span><span class="cm">/* 1 = 错误被动 */</span>
+<a id="__codelineno-8-3" name="__codelineno-8-3" href="#__codelineno-8-3"></a><span class="n">CAN1</span><span class="o">-&gt;</span><span class="n">ESR</span><span class="w">  </span><span class="o">&amp;</span><span class="w"> </span><span class="n">CAN_ESR_EWGF</span><span class="p">;</span><span class="w">   </span><span class="cm">/* 1 = 错误警告（REC/TEC ≥ 96） */</span>
+<a id="__codelineno-8-4" name="__codelineno-8-4" href="#__codelineno-8-4"></a><span class="n">CAN1</span><span class="o">-&gt;</span><span class="n">ESR</span><span class="w">  </span><span class="o">&amp;</span><span class="w"> </span><span class="n">CAN_ESR_TEC</span><span class="p">;</span><span class="w">    </span><span class="cm">/* 发送错误计数（只读，可在此读状态） */</span>
+</code></pre></div>
+HAL 侧则通过 <strong>SCE（状态改变）中断</strong>统一上报，见下节的 <code>HAL_CAN_ErrorCallback</code>。</p>
+<h2 id="cpu">七、发送中断与接收中断：怎么让 CPU 不被数据拖死</h2>
+<p>CAN 收发的量往往不小，<strong>轮询收发会把 CPU 耗在等 FIFO 上</strong>。中断化才是工程常态。F1/F4 的 bxCAN 有 <strong>3 个中断源</strong>（NVIC 里对应 3 个勾选框）：</p>
+<table>
+<thead>
+<tr>
+<th>中断</th>
+<th>触发时机</th>
+<th>对应 HAL 回调</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>CAN1 RX0</strong></td>
+<td>FIFO0 收到报文（每帧一次）</td>
+<td><code>HAL_CAN_RxFifo0MsgPendingCallback</code></td>
+</tr>
+<tr>
+<td><strong>CAN1 RX1</strong></td>
+<td>FIFO1 收到报文</td>
+<td><code>HAL_CAN_RxFifo1MsgPendingCallback</code></td>
+</tr>
+<tr>
+<td><strong>CAN1 SCE</strong>（状态/错误中断）</td>
+<td>错误状态变化、Bus-Off、唤醒等</td>
+<td><code>HAL_CAN_ErrorCallback</code></td>
+</tr>
+</tbody>
+</table>
+<p><strong>接收中断没有独立的「发送完成」中断位</strong>——发送完成也走 SCE（状态改变）中断，HAL 里由 <code>HAL_CAN_TxMailbox0CompleteCallback</code> 等回调区分。</p>
+<h3 id="_9">接收中断流程</h3>
+<p>FIFO 满了会自动存到硬件 FIFO（每 FIFO 3 个邮箱）。接收侧 HAL 的机制是「<strong>中断通知 → 中断里取走</strong>」：</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a><span class="cm">/* 接收中断回调：收到一帧，立刻从硬件 FIFO 取到本地缓冲 */</span>
+<a id="__codelineno-9-2" name="__codelineno-9-2" href="#__codelineno-9-2"></a><span class="kt">void</span><span class="w"> </span><span class="nf">HAL_CAN_RxFifo0MsgPendingCallback</span><span class="p">(</span><span class="n">CAN_HandleTypeDef</span><span class="w"> </span><span class="o">*</span><span class="n">hcan</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-9-3" name="__codelineno-9-3" href="#__codelineno-9-3"></a><span class="w">    </span><span class="k">static</span><span class="w"> </span><span class="n">CAN_RxHeaderTypeDef</span><span class="w"> </span><span class="n">rxHeader</span><span class="p">;</span>
+<a id="__codelineno-9-4" name="__codelineno-9-4" href="#__codelineno-9-4"></a><span class="w">    </span><span class="k">static</span><span class="w"> </span><span class="kt">uint8_t</span><span class="w"> </span><span class="n">rxData</span><span class="p">[</span><span class="mi">8</span><span class="p">];</span>
+<a id="__codelineno-9-5" name="__codelineno-9-5" href="#__codelineno-9-5"></a><span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">hcan</span><span class="o">-&gt;</span><span class="n">Instance</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="n">CAN1</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-9-6" name="__codelineno-9-6" href="#__codelineno-9-6"></a><span class="w">        </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">HAL_CAN_GetRxMessage</span><span class="p">(</span><span class="n">hcan</span><span class="p">,</span><span class="w"> </span><span class="n">CAN_RX_FIFO0</span><span class="p">,</span><span class="w"> </span><span class="o">&amp;</span><span class="n">rxHeader</span><span class="p">,</span><span class="w"> </span><span class="n">rxData</span><span class="p">)</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="n">HAL_OK</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-9-7" name="__codelineno-9-7" href="#__codelineno-9-7"></a><span class="w">            </span><span class="cm">/* 取走成功：这里可以解析 ID、搬进应用队列，或置标志给主循环 */</span>
+<a id="__codelineno-9-8" name="__codelineno-9-8" href="#__codelineno-9-8"></a><span class="w">            </span><span class="cm">/* 注意：不要在中断里做耗时解析，搬完就走 */</span>
+<a id="__codelineno-9-9" name="__codelineno-9-9" href="#__codelineno-9-9"></a><span class="w">        </span><span class="p">}</span>
+<a id="__codelineno-9-10" name="__codelineno-9-10" href="#__codelineno-9-10"></a><span class="w">    </span><span class="p">}</span>
+<a id="__codelineno-9-11" name="__codelineno-9-11" href="#__codelineno-9-11"></a><span class="p">}</span>
+</code></pre></div>
+<p><strong>中断里的黄金法则</strong>：CAN 回调里<strong>只做「取出 + 搬运 + 置标志」</strong>，把数据丢给主循环或 RTOS 队列再处理。因为 FIFO 只有 3 个邮箱，回调里耗太久，新报文到达时 FIFO 溢出（<code>HAL_CAN_ERROR_FOV0</code> 溢出错误）——<strong>丢帧不是 CAN 的错，是中断没及时取走</strong>。</p>
+<h3 id="_10">发送中断流程</h3>
+<p>发送侧分两步：<strong>请求发送 → 等待完成回调</strong>。HAL 用 3 个发送邮箱（Mailbox）并行管理，每封邮件独立回调：</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-10-1" name="__codelineno-10-1" href="#__codelineno-10-1"></a><span class="cm">/* 1. 发送请求（中断模式下发出后立即返回，不阻塞） */</span>
+<a id="__codelineno-10-2" name="__codelineno-10-2" href="#__codelineno-10-2"></a><span class="kt">uint8_t</span><span class="w"> </span><span class="n">txData</span><span class="p">[</span><span class="mi">8</span><span class="p">]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">,</span><span class="mi">3</span><span class="p">,</span><span class="mi">4</span><span class="p">,</span><span class="mi">5</span><span class="p">,</span><span class="mi">6</span><span class="p">,</span><span class="mi">7</span><span class="p">,</span><span class="mi">8</span><span class="p">};</span>
+<a id="__codelineno-10-3" name="__codelineno-10-3" href="#__codelineno-10-3"></a><span class="n">CAN_TxHeaderTypeDef</span><span class="w"> </span><span class="n">txHeader</span><span class="p">;</span>
+<a id="__codelineno-10-4" name="__codelineno-10-4" href="#__codelineno-10-4"></a><span class="n">txHeader</span><span class="p">.</span><span class="n">DLC</span><span class="w">      </span><span class="o">=</span><span class="w"> </span><span class="mi">8</span><span class="p">;</span><span class="w">                     </span><span class="cm">/* 数据长度 */</span>
+<a id="__codelineno-10-5" name="__codelineno-10-5" href="#__codelineno-10-5"></a><span class="n">txHeader</span><span class="p">.</span><span class="n">IDE</span><span class="w">      </span><span class="o">=</span><span class="w"> </span><span class="n">CAN_ID_STD</span><span class="p">;</span><span class="w">            </span><span class="cm">/* 标准帧 */</span>
+<a id="__codelineno-10-6" name="__codelineno-10-6" href="#__codelineno-10-6"></a><span class="n">txHeader</span><span class="p">.</span><span class="n">RTR</span><span class="w">      </span><span class="o">=</span><span class="w"> </span><span class="n">CAN_RTR_DATA</span><span class="p">;</span><span class="w">          </span><span class="cm">/* 数据帧 */</span>
+<a id="__codelineno-10-7" name="__codelineno-10-7" href="#__codelineno-10-7"></a><span class="n">txHeader</span><span class="p">.</span><span class="n">StdId</span><span class="w">    </span><span class="o">=</span><span class="w"> </span><span class="mh">0x123</span><span class="p">;</span>
+<a id="__codelineno-10-8" name="__codelineno-10-8" href="#__codelineno-10-8"></a><span class="n">txHeader</span><span class="p">.</span><span class="n">TransmitGlobalTime</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">DISABLE</span><span class="p">;</span>
+<a id="__codelineno-10-9" name="__codelineno-10-9" href="#__codelineno-10-9"></a>
+<a id="__codelineno-10-10" name="__codelineno-10-10" href="#__codelineno-10-10"></a><span class="kt">uint32_t</span><span class="w"> </span><span class="n">mailbox</span><span class="p">;</span>
+<a id="__codelineno-10-11" name="__codelineno-10-11" href="#__codelineno-10-11"></a><span class="n">HAL_CAN_AddTxMessage</span><span class="p">(</span><span class="o">&amp;</span><span class="n">hcan1</span><span class="p">,</span><span class="w"> </span><span class="o">&amp;</span><span class="n">txHeader</span><span class="p">,</span><span class="w"> </span><span class="n">txData</span><span class="p">,</span><span class="w"> </span><span class="o">&amp;</span><span class="n">mailbox</span><span class="p">);</span>
+<a id="__codelineno-10-12" name="__codelineno-10-12" href="#__codelineno-10-12"></a>
+<a id="__codelineno-10-13" name="__codelineno-10-13" href="#__codelineno-10-13"></a><span class="cm">/* 2. 发送完成回调：这帧真发出去了（或被硬件重发后成功） */</span>
+<a id="__codelineno-10-14" name="__codelineno-10-14" href="#__codelineno-10-14"></a><span class="kt">void</span><span class="w"> </span><span class="nf">HAL_CAN_TxMailbox0CompleteCallback</span><span class="p">(</span><span class="n">CAN_HandleTypeDef</span><span class="w"> </span><span class="o">*</span><span class="n">hcan</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-10-15" name="__codelineno-10-15" href="#__codelineno-10-15"></a><span class="w">    </span><span class="cm">/* 0 号邮箱完成：可以在这里释放对应报文资源 / 记录已发送 */</span>
+<a id="__codelineno-10-16" name="__codelineno-10-16" href="#__codelineno-10-16"></a><span class="p">}</span>
+</code></pre></div>
+<h3 id="vs">发送中断 vs 轮询，什么时候用哪个</h3>
+<table>
+<thead>
+<tr>
+<th>方式</th>
+<th>特点</th>
+<th>场景</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>HAL_CAN_Transmit</code>（轮询）</td>
+<td>阻塞，等待发出或超时</td>
+<td>初始化自检、低频发送</td>
+</tr>
+<tr>
+<td><code>HAL_CAN_Transmit_IT</code>（中断）</td>
+<td>立即返回，完成后回调</td>
+<td><strong>日常发送，推荐</strong></td>
+</tr>
+<tr>
+<td><code>HAL_CAN_Transmit_DMA</code></td>
+<td>数据走 DMA，进一步减 CPU 负担</td>
+<td>大包数据、高频周期性发送</td>
+</tr>
+</tbody>
+</table>
+<blockquote>
+<p>高频周期发送的工程惯例：主循环或 RTOS 任务里调用 <code>HAL_CAN_AddTxMessage</code> 填邮箱（邮箱空时立刻成功返回），发送完成在回调里收尾——<strong>不要</strong>在发送完成回调里再发下一帧（回调里做发送在 HAL 的某些时序下会重入异常）。</p>
+</blockquote>
+<h3 id="_11">错误与状态回调：把「总线的病」报给应用</h3>
+<p><code>HAL_CAN_ErrorCallback</code> 接收所有状态类变化，是排查 CAN 异常的入口：</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-11-1" name="__codelineno-11-1" href="#__codelineno-11-1"></a><span class="kt">void</span><span class="w"> </span><span class="nf">HAL_CAN_ErrorCallback</span><span class="p">(</span><span class="n">CAN_HandleTypeDef</span><span class="w"> </span><span class="o">*</span><span class="n">hcan</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-11-2" name="__codelineno-11-2" href="#__codelineno-11-2"></a><span class="w">    </span><span class="kt">uint32_t</span><span class="w"> </span><span class="n">err</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">HAL_CAN_GetError</span><span class="p">(</span><span class="n">hcan</span><span class="p">);</span>
+<a id="__codelineno-11-3" name="__codelineno-11-3" href="#__codelineno-11-3"></a><span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">err</span><span class="w"> </span><span class="o">&amp;</span><span class="w"> </span><span class="n">HAL_CAN_ERROR_ACK</span><span class="p">)</span><span class="w">        </span><span class="cm">/* ACK 错误：总线上没别的节点响应 */</span>
+<a id="__codelineno-11-4" name="__codelineno-11-4" href="#__codelineno-11-4"></a><span class="w">        </span><span class="p">;</span><span class="w"> </span><span class="cm">/* 检查是否只有本节点在线上、终端电阻是否匹配 */</span>
+<a id="__codelineno-11-5" name="__codelineno-11-5" href="#__codelineno-11-5"></a><span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">err</span><span class="w"> </span><span class="o">&amp;</span><span class="w"> </span><span class="n">HAL_CAN_ERROR_CRC</span><span class="p">)</span><span class="w">        </span><span class="cm">/* CRC 错误 */</span>
+<a id="__codelineno-11-6" name="__codelineno-11-6" href="#__codelineno-11-6"></a><span class="w">        </span><span class="p">;</span>
+<a id="__codelineno-11-7" name="__codelineno-11-7" href="#__codelineno-11-7"></a><span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">err</span><span class="w"> </span><span class="o">&amp;</span><span class="w"> </span><span class="n">HAL_CAN_ERROR_FOV0</span><span class="p">)</span><span class="w">       </span><span class="cm">/* FIFO0 溢出：接收太慢，回调里处理太久 */</span>
+<a id="__codelineno-11-8" name="__codelineno-11-8" href="#__codelineno-11-8"></a><span class="w">        </span><span class="p">;</span>
+<a id="__codelineno-11-9" name="__codelineno-11-9" href="#__codelineno-11-9"></a><span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">err</span><span class="w"> </span><span class="o">&amp;</span><span class="w"> </span><span class="n">HAL_CAN_ERROR_BOFF</span><span class="p">)</span><span class="w">       </span><span class="cm">/* Bus-Off：触发过 Bus-Off */</span>
+<a id="__codelineno-11-10" name="__codelineno-11-10" href="#__codelineno-11-10"></a><span class="w">        </span><span class="p">;</span><span class="w"> </span><span class="cm">/* 恢复前应用层做状态重置 */</span>
+<a id="__codelineno-11-11" name="__codelineno-11-11" href="#__codelineno-11-11"></a><span class="p">}</span>
+</code></pre></div>
+<p><strong>最常见的两个 HAL 错误</strong>，直接对应前面讲的内容：
+- <strong><code>HAL_CAN_ERROR_ACK</code>（ACK 超时）</strong> → 总线上只有自己，或对端没在听。测试时只要接 USB-CAN 分析仪就能消除，确认「有人收到」。
+- <strong><code>HAL_CAN_ERROR_FOV0</code>（FIFO0 溢出）</strong> → 接收回调处理太慢，把 3 个邮箱挤爆了。</p>
+<h2 id="_12">八、避坑备忘</h2>
+<ul>
+<li><strong>波特率算错一整条</strong>：改 APB1 时钟后，BRP/BS1/BS2 一定要重新核对——<strong>TQ 是跟着 APB1 走的</strong>。CubeMX 页面右下角直接显示最终波特率。</li>
+<li><strong>漏调滤波器的模式</strong>：掩码模式 <code>FilterMaskIdHigh=0</code> 会把<strong>所有</strong>报文都放进来（全不关心），看起来「收得到」但 CPU 被无关中断打满——要么配好掩码，要么用列表模式。</li>
+<li><strong>终端电阻不是「多接无害」</strong>：标准是两端各 120Ω，接多了会拉低总线阻抗、缩短有效长度；一个都不接，波形反射严重。调试箱接一个 USB-CAN 分析仪时它常自带 120Ω，注意别和板端重复。</li>
+<li><strong>Bus-Off 后「卡死」的假象</strong>：没有使能 Auto Bus-Off 时，节点可能在 TEC=256 后长时间处于 Bus-Off，应用以为「死了」，其实是<strong>在数 128 个隐性位等总线空闲</strong>。</li>
+<li><strong>中断里千万别做重活</strong>：接收回调里做 CRC 校验、进协议栈、打印日志，都是把 FIFO 挤出溢出的行为。取走数据、置标志、交给主循环/队列，完事。</li>
+<li><strong>ST 的 F1/F4 有且只有 2 个 CAN</strong>：CAN1 是主，CAN2 的过滤器共用 CAN1（CAN2 的滤波器配置要挂在 CAN1 的滤波器组上，且 CAN2 的启动依赖 CAN1 的时钟）。用到 CAN2 时，务必先配好 CAN1。</li>
+</ul>
+<h2 id="_13">参考</h2>
+<ul>
+<li>位时序与同步的理论基础见 <a href="../stm32-clock-tree/">stm32-clock-tree.md</a>（APB1 时钟来源）</li>
+<li>相关外设与裸机寄存器风格见 <a href="../peripheral-drivers/">peripheral-drivers.md</a></li>
+<li>寄存器级细节：对应参考手册 CAN/bxCAN 章节</li>
+<li>深入协议：ISO 11898-1、Bosch CAN 规范 2.0</li>
+</ul>
+
+
+
+
+
+
+
+  
+    
+  
+  
+    
+  
+
+
+  <aside class="md-source-file">
+    
+      
+  <span class="md-source-file__fact">
+    <span class="md-icon" title="最后更新">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M21 13.1c-.1 0-.3.1-.4.2l-1 1 2.1 2.1 1-1c.2-.2.2-.6 0-.8l-1.3-1.3c-.1-.1-.2-.2-.4-.2m-1.9 1.8-6.1 6V23h2.1l6.1-6.1zM12.5 7v5.2l4 2.4-1 1L11 13V7zM11 21.9c-5.1-.5-9-4.8-9-9.9C2 6.5 6.5 2 12 2c5.3 0 9.6 4.1 10 9.3-.3-.1-.6-.2-1-.2s-.7.1-1 .2C19.6 7.2 16.2 4 12 4c-4.4 0-8 3.6-8 8 0 4.1 3.1 7.5 7.1 7.9l-.1.2z"/></svg>
+    </span>
+    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="2026年8月7日 14:30:03 UTC">2026年8月7日</span>
+  </span>
+
+    
+    
+      
+  <span class="md-source-file__fact">
+    <span class="md-icon" title="创建日期">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M14.47 15.08 11 13V7h1.5v5.25l3.08 1.83c-.41.28-.79.62-1.11 1m-1.39 4.84c-.36.05-.71.08-1.08.08-4.42 0-8-3.58-8-8s3.58-8 8-8 8 3.58 8 8c0 .37-.03.72-.08 1.08.69.1 1.33.32 1.92.64.1-.56.16-1.13.16-1.72 0-5.5-4.5-10-10-10S2 6.5 2 12s4.47 10 10 10c.59 0 1.16-.06 1.72-.16-.32-.59-.54-1.23-.64-1.92M18 15v3h-3v2h3v3h2v-3h3v-2h-3v-3z"/></svg>
+    </span>
+    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="2026年8月7日 14:30:03 UTC">2026年8月7日</span>
+  </span>
+
+    
+    
+    
+  </aside>
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8z"/></svg>
+  回到页面顶部
+</button>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+  
+</div>
+      
+        
+<div class="md-social">
+  
+    
+    
+    
+    
+      
+      
+    
+    <a href="https://github.com/hellobugger" target="_blank" rel="noopener" title="github.com" class="md-social__link">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M173.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6m-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3m44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9M252.8 8C114.1 8 8 113.3 8 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C436.2 457.8 504 362.9 504 252 504 113.3 391.5 8 252.8 8M105.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1m-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7m32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1m-11.4-14.7c-1.6 1-1.6 3.6 0 5.9s4.3 3.3 5.6 2.3c1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2"/></svg>
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "../..", "features": ["navigation.tabs", "navigation.sections", "navigation.top", "toc.integrate", "search.highlight", "search.suggest", "content.code.copy", "content.code.annotate", "content.action.edit"], "search": "../../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "\u5df2\u590d\u5236", "clipboard.copy": "\u590d\u5236", "search.result.more.one": "\u5728\u8be5\u9875\u4e0a\u8fd8\u6709 1 \u4e2a\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.more.other": "\u5728\u8be5\u9875\u4e0a\u8fd8\u6709 # \u4e2a\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.none": "\u6ca1\u6709\u627e\u5230\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.one": "\u627e\u5230 1 \u4e2a\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.other": "# \u4e2a\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.placeholder": "\u952e\u5165\u4ee5\u5f00\u59cb\u641c\u7d22", "search.result.term.missing": "\u7f3a\u5c11", "select.version": "\u9009\u62e9\u5f53\u524d\u7248\u672c"}, "version": null}</script>
+    
+    
+      <script src="../../assets/javascripts/bundle.d7400e89.min.js"></script>
+      
+        <script src="../../javascripts/extra.js?v=7"></script>
+      
+    
+  </body>
+</html>

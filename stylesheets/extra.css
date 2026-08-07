@@ -1,0 +1,222 @@
+/* 首页 Hero 横幅样式：完全透明，文字色跟随背景明暗自动切换 */
+.mdx-hero {
+  position: relative;
+  z-index: 1;
+  overflow: hidden;
+  background: transparent;
+  padding: 2.5rem 0 3rem;
+  margin: 0;
+}
+
+.mdx-hero__inner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 2rem;
+  flex-wrap: wrap;
+}
+
+.mdx-hero__content {
+  flex: 1 1 20rem;
+}
+
+.mdx-hero h1 {
+  color: var(--fx-hero-fg, var(--md-default-fg-color));
+  font-size: 2.4rem;
+  font-weight: 700;
+  margin: 0 0 0.6rem;
+}
+
+.mdx-hero p {
+  color: var(--fx-hero-fg, var(--md-default-fg-color));
+  font-size: 1.1rem;
+  margin: 0 0 1.6rem;
+  opacity: 0.92;
+}
+
+.mdx-hero__actions {
+  display: flex;
+  gap: 0.8rem;
+  flex-wrap: wrap;
+}
+
+/* 透明背景下：描边按钮跟随 hero 文字明暗，主按钮用主题色实底 */
+.mdx-hero .md-button {
+  color: var(--fx-hero-fg, var(--md-default-fg-color));
+  border-color: var(--fx-hero-fg, var(--md-default-fg-color));
+}
+
+.mdx-hero .md-button--primary {
+  color: #fff;
+  border-color: var(--md-primary-fg-color);
+  background: var(--md-primary-fg-color);
+}
+
+.mdx-hero .md-button--primary:hover {
+  background: var(--md-primary-fg-color);
+  filter: brightness(1.1);
+}
+
+.mdx-hero .md-button .twemoji {
+  vertical-align: -0.2em;
+  margin-right: 0.3em;
+}
+
+.mdx-hero__stats {
+  display: flex;
+  gap: 1.5rem;
+  flex: 1 1 auto;
+  justify-content: center;
+}
+
+.mdx-hero__stat {
+  text-align: center;
+  min-width: 4.5rem;
+}
+
+.mdx-hero__stat strong {
+  display: block;
+  font-size: 2rem;
+  line-height: 1.1;
+  color: var(--fx-hero-fg, var(--md-default-fg-color));
+}
+
+.mdx-hero__stat span {
+  font-size: 0.8rem;
+  color: var(--fx-hero-fg, var(--md-default-fg-color));
+  opacity: 0.85;
+}
+
+/* 首页主体内容去掉侧边栏留白，让内容居中 */
+.mdx-hero + .md-main .md-sidebar {
+  display: none;
+}
+
+/* 首页 grid cards 间距 */
+.md-grid.grid {
+  margin-top: 1rem;
+}
+
+/* 卡片悬停动效 */
+.grid.cards > ul > li {
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.grid.cards > ul > li:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 10px 20px rgba(0, 0, 0, 0.15);
+}
+
+/* 按钮悬停动效 */
+.md-typeset .md-button {
+  transition: transform 0.15s ease, box-shadow 0.15s ease, background-color 0.15s ease;
+}
+
+.md-typeset .md-button:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.25);
+}
+
+/* ---------- 鼠标特效设置面板 ---------- */
+.fx-gear {
+  position: fixed;
+  right: 1rem;
+  bottom: 1rem;
+  z-index: 10000;
+  width: 40px;
+  height: 40px;
+  border: none;
+  border-radius: 50%;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  background: var(--md-primary-fg-color);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+  opacity: 0.55;
+  transition: opacity 0.2s, transform 0.2s;
+}
+.fx-gear:hover { opacity: 1; transform: rotate(45deg); }
+
+.fx-panel {
+  position: fixed;
+  right: 1rem;
+  bottom: 3.5rem;
+  z-index: 10001;
+  width: 200px;
+  padding: 0.8rem 1rem;
+  border-radius: 10px;
+  background: var(--md-default-bg-color);
+  color: var(--md-default-fg-color);
+  border: 1px solid var(--md-default-fg-color--light);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.2);
+  font-size: 0.85rem;
+}
+.fx-panel[hidden] { display: none; }
+
+.fx-panel__title {
+  font-weight: 700;
+  margin-bottom: 0.6rem;
+  padding-bottom: 0.4rem;
+  border-bottom: 1px solid var(--md-default-fg-color--light);
+}
+
+.fx-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.6rem;
+  margin: 0.5rem 0;
+}
+.fx-row select {
+  font-size: 0.8rem;
+  padding: 0.1rem 0.3rem;
+  border-radius: 4px;
+}
+.fx-row input[type='range'] { width: 90px; }
+.fx-row input[type='checkbox'] { width: auto; }
+
+/* ---------- 背景图 ---------- */
+body.fx-bg {
+  background-image: var(--fx-bg-url);
+  background-size: cover;
+  background-position: center;
+  background-attachment: fixed;
+}
+/* 半透明遮罩：保证文字可读，透明度由 JS 控制 */
+body.fx-bg::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background-color: var(--md-default-bg-color);
+  opacity: var(--fx-bg-overlay-alpha, 0.7);
+  z-index: 0;
+  pointer-events: none;
+}
+body.fx-bg .md-header,
+body.fx-bg .md-tabs,
+body.fx-bg .md-footer,
+body.fx-bg .md-main,
+body.fx-bg .md-container {
+  position: relative;
+  z-index: 1;
+}
+
+.fx-divider {
+  height: 1px;
+  background: var(--md-default-fg-color--light);
+  margin: 0.7rem 0;
+}
+
+.fx-url {
+  width: 100%;
+  box-sizing: border-box;
+  font-size: 0.78rem;
+  padding: 0.3rem 0.4rem;
+  margin: 0.3rem 0 0.5rem;
+  border-radius: 4px;
+  border: 1px solid var(--md-default-fg-color--light);
+  background: var(--md-code-bg-color);
+  color: var(--md-default-fg-color);
+}

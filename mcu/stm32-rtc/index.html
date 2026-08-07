@@ -1,0 +1,2293 @@
+
+<!doctype html>
+<html lang="zh" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="嵌入式软件/硬件调试心得与工作备忘">
+      
+      
+        <meta name="author" content="聂文俊">
+      
+      
+        <link rel="canonical" href="https://hellobugger.github.io/embedded-notes/mcu/stm32-rtc/">
+      
+      
+        <link rel="prev" href="../stm32-notes/">
+      
+      
+        <link rel="next" href="../stm32-timer/">
+      
+      
+        
+      
+      
+      <link rel="icon" href="../../assets/images/favicon.png">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.7">
+    
+    
+      
+        <title>STM32 RTC：从走时到一堆「隐藏功能」的一篇讲透 - 嵌入式工作笔记</title>
+      
+    
+    
+      <link rel="stylesheet" href="../../assets/stylesheets/main.ec1eaa64.min.css">
+      
+        
+        <link rel="stylesheet" href="../../assets/stylesheets/palette.ab4e12ef.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+      <link rel="stylesheet" href="../../stylesheets/extra.css?v=4">
+    
+    <script>__md_scope=new URL("../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    
+    
+      
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#stm32-rtc" class="md-skip">
+          跳转至
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+<header class="md-header" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="页眉">
+    <a href="../.." title="嵌入式工作笔记" class="md-header__button md-logo" aria-label="嵌入式工作笔记" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            嵌入式工作笔记
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              STM32 RTC：从走时到一堆「隐藏功能」的一篇讲透
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+        <form class="md-header__option" data-md-component="palette">
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="切换至深色模式"  type="radio" name="__palette" id="__palette_0">
+    
+      <label class="md-header__button md-icon" title="切换至深色模式" for="__palette_1" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a4 4 0 0 0-4 4 4 4 0 0 0 4 4 4 4 0 0 0 4-4 4 4 0 0 0-4-4m0 10a6 6 0 0 1-6-6 6 6 0 0 1 6-6 6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="" data-md-color-scheme="slate" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="切换至浅色模式"  type="radio" name="__palette" id="__palette_1">
+    
+      <label class="md-header__button md-icon" title="切换至浅色模式" for="__palette_0" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 18c-.89 0-1.74-.2-2.5-.55C11.56 16.5 13 14.42 13 12s-1.44-4.5-3.5-5.45C10.26 6.2 11.11 6 12 6a6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+</form>
+      
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="搜索" placeholder="搜索" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="查找">
+        
+        <button type="reset" class="md-search__icon md-icon" title="清空当前内容" aria-label="清空当前内容" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+        <div class="md-search__suggest" data-md-component="search-suggest"></div>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            正在初始化搜索引擎
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/hellobugger/embedded-notes" title="前往仓库" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M173.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6m-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3m44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9M252.8 8C114.1 8 8 113.3 8 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C436.2 457.8 504 362.9 504 252 504 113.3 391.5 8 252.8 8M105.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1m-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7m32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1m-11.4-14.7c-1.6 1-1.6 3.6 0 5.9s4.3 3.3 5.6 2.3c1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2"/></svg>
+  </div>
+  <div class="md-source__repository">
+    hellobugger/embedded-notes
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+  
+
+      
+        
+          
+            
+<nav class="md-tabs" aria-label="标签" data-md-component="tabs">
+  <div class="md-grid">
+    <ul class="md-tabs__list">
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../.." class="md-tabs__link">
+        
+  
+  
+    
+  
+  首页
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../environment/develop-environment/" class="md-tabs__link">
+          
+  
+  
+  开发环境
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../environment-tips/clion-tips/" class="md-tabs__link">
+          
+  
+  
+  开发环境技巧
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../hardware/esp32-reset/" class="md-tabs__link">
+          
+  
+  
+  硬件调试
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+    
+  
+  
+    
+    
+      <li class="md-tabs__item md-tabs__item--active">
+        <a href="../peripheral-drivers/" class="md-tabs__link">
+          
+  
+  
+  MCU 与驱动
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../rtos/freertos-scheduler/" class="md-tabs__link">
+          
+  
+  
+  RTOS
+
+        </a>
+      </li>
+    
+  
+
+      
+    </ul>
+  </div>
+</nav>
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+  
+
+
+  
+
+<nav class="md-nav md-nav--primary md-nav--lifted md-nav--integrated" aria-label="导航栏" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="../.." title="嵌入式工作笔记" class="md-nav__button md-logo" aria-label="嵌入式工作笔记" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    嵌入式工作笔记
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/hellobugger/embedded-notes" title="前往仓库" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M173.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6m-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3m44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9M252.8 8C114.1 8 8 113.3 8 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C436.2 457.8 504 362.9 504 252 504 113.3 391.5 8 252.8 8M105.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1m-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7m32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1m-11.4-14.7c-1.6 1-1.6 3.6 0 5.9s4.3 3.3 5.6 2.3c1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2"/></svg>
+  </div>
+  <div class="md-source__repository">
+    hellobugger/embedded-notes
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../.." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    首页
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2" >
+        
+          
+          <label class="md-nav__link" for="__nav_2" id="__nav_2_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    开发环境
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_2">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    开发环境
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../environment/develop-environment/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    开发环境搭建
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" >
+        
+          
+          <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    开发环境技巧
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_3">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    开发环境技巧
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../environment-tips/clion-tips/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    CLion + CubeMX 使用技巧
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../environment-tips/eide-tips/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    VSCode + EIDE 使用技巧
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../environment-tips/esp-idf-tips/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    VSCode + ESP-IDF 使用技巧
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../environment-tips/keil-c51c251-tips/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Keil C51 / C251 使用技巧
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../environment-tips/keil5-cubemx-tips/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Keil5 + CubeMX 使用技巧
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../environment-tips/platformio-tips/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    VSCode + PlatformIO 使用技巧
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../environment-tips/rtthread-studio-tips/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    RT-Thread Studio 使用技巧
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../environment-tips/stm32cubeide-tips/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    STM32CubeIDE 使用技巧
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4" >
+        
+          
+          <label class="md-nav__link" for="__nav_4" id="__nav_4_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    硬件调试
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    硬件调试
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../hardware/esp32-reset/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ESP32-S3 反复复位（Wi-Fi 连接时）
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../hardware/power-ripple/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    电源纹波测试
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../hardware/scope-tips/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    示波器使用技巧
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5" checked>
+        
+          
+          <label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    MCU 与驱动
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_5">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    MCU 与驱动
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../peripheral-drivers/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    裸机外设驱动
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../stm32-adc/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    STM32 ADC：从配置到 DMA 的一篇讲透
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../stm32-can/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    CAN 总线：从通信机制到收发中断的一篇讲透
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../stm32-clock-tree/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    STM32 时钟系统：五个时钟源
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../stm32-dac/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    STM32 DAC：从配置到 DMA 的一篇讲透
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../stm32-i2c/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    STM32 I2C：从两根线讲透软件 IIC / 硬件 I2C / DMA / SMBus
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../stm32-lib-comparison/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    标准库 / LL / HAL 对比
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../stm32-notes/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    STM32H7 调试笔记
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    STM32 RTC：从走时到一堆「隐藏功能」的一篇讲透
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    STM32 RTC：从走时到一堆「隐藏功能」的一篇讲透
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="目录">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      目录
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#rtc" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        一、RTC 是什么、长什么样
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#vs-f1-rtc-f4-rtc" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        二、一代 vs 二代：F1 计数器式 RTC 与 F4 日历式 RTC
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#_1" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        三、时钟源与备份域（先选好时钟，后面才走得准）
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#cubemx-hal" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        四、配置说明（CubeMX + HAL 最小步骤）
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="四、配置说明（CubeMX + HAL 最小步骤）">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#f4" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        F4：日历式，直接读写年月日
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#f1" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        F1：计数器式，只有时分秒
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#f1f4" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        首次初始化判断（F1/F4 都适用，最容易翻车的一步）
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#_2" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        五、闹钟：日常提醒与低功耗唤醒
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="五、闹钟：日常提醒与低功耗唤醒">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#f4-ab" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        F4：两路闹钟 A/B，掩码是精华
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#f1_1" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        F1：一个绝对时刻，响一次
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#f4-wut" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        六、（F4 隐藏功能）自动唤醒定时器 WUT
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#f4-tamper" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        七、（F4 隐藏功能）时间戳与 Tamper 入侵检测
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="七、（F4 隐藏功能）时间戳与 Tamper 入侵检测">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#_3" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        时间戳：记录"那一刻"是哪一秒
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#tamper" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Tamper：撬机即清数据（安全功能）
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#f4-smooth" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        八、（F4 隐藏功能）校准：Smooth 数字校准 + 参考时钟检测
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="八、（F4 隐藏功能）校准：Smooth 数字校准 + 参考时钟检测">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#smooth" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Smooth 数字校准
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#refin" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        参考时钟检测（REFIN）
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#f1_2" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        F1 怎么办
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#f4-ssr" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        九、（F4 隐藏功能）亚秒 SSR 与影子寄存器
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="九、（F4 隐藏功能）亚秒 SSR 与影子寄存器">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#ssr-1" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        亚秒 SSR：比 1 秒更细的时间
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_4" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        影子寄存器：为什么读时间可能读到"错值"
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#vbat-bkp" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        十、掉电保持：VBAT 电路与备份寄存器 BKP
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="十、掉电保持：VBAT 电路与备份寄存器 BKP">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#vbat" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        VBAT 怎么接
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#bkp" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        BKP 备份寄存器：掉电不丢的"储物柜"
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_5" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        复位不丢，但掉电不一定不丢
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#_6" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        十一、常见坑汇总
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#_7" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        参考
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../stm32-timer/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    STM32 定时器：从时基到一堆「隐藏功能」的一篇讲透
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../stm32-watchdog/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    独立看门狗 IWDG 与窗口看门狗 WWDG
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_6" >
+        
+          
+          <label class="md-nav__link" for="__nav_6" id="__nav_6_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    RTOS
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_6_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_6">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    RTOS
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../rtos/freertos-scheduler/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    FreeRTOS 任务调度
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../rtos/queue-semaphore/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    队列与信号量
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+  
+    <a href="https://github.com/hellobugger/embedded-notes/blob/main/docs/mcu/stm32-rtc.md" title="编辑此页" class="md-content__button md-icon" rel="edit">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M10 20H6V4h7v5h5v3.1l2-2V8l-6-6H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h4zm10.2-7c.1 0 .3.1.4.2l1.3 1.3c.2.2.2.6 0 .8l-1 1-2.1-2.1 1-1c.1-.1.2-.2.4-.2m0 3.9L14.1 23H12v-2.1l6.1-6.1z"/></svg>
+    </a>
+  
+  
+
+
+<h1 id="stm32-rtc">STM32 RTC：从走时到一堆「隐藏功能」的一篇讲透</h1>
+<blockquote>
+<p>一句话：<strong>RTC（Real-Time Clock）是芯片里那只断电也能走的表</strong>——靠独立电池域供电 + 外部 32.768kHz 晶振，掉电、复位、进低功耗都不影响它计数。要讲清楚的其实也是三件事——<strong>它靠什么时钟走（LSE/LSI/HSE÷128）</strong>、<strong>怎么把时间写进去读出来（F1 计数器式 vs F4 日历式，两代差异巨大）</strong>、<strong>除了走时它还能干什么（闹钟、定时唤醒、时间戳、入侵检测、校准）</strong>。本文以 F1/F4 的 RTC 为主，寄存器名与配置以 HAL 为准，时钟源背景见 <a href="../stm32-clock-tree/">stm32-clock-tree.md</a>。</p>
+</blockquote>
+<h2 id="rtc">一、RTC 是什么、长什么样</h2>
+<p>RTC 的本质是<strong>一个带独立电源的计数器/日历</strong>。它挂在备份域（Backup Domain）里，和主电源 VDD 分开：</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>VBAT（纽扣电池/电容） ──┐
+<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>                        ├─→ 备份域（LSE 晶振 + RTC + 备份寄存器 BKP）
+<a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>VDD（主电源）        ──┘
+</code></pre></div>
+<ul>
+<li>VDD 在，就用 VDD 供电；VDD 掉电、复位、进 STANDBY，自动切到 VBAT，RTC 继续走</li>
+<li><strong>NRST 复位、软件复位都碰不到备份域</strong>，RTC 时间不丢</li>
+<li>三个时钟源可选：<strong>LSE（外部 32.768kHz 晶振，首选）、LSI（内部 RC ~32kHz）、HSE÷128</strong></li>
+</ul>
+<p>F1 与 F4 的 RTC 是<strong>两代完全不同的设计</strong>，别拿 F1 的用法套 F4，这是全文最重要的前提。</p>
+<h2 id="vs-f1-rtc-f4-rtc">二、一代 vs 二代：F1 计数器式 RTC 与 F4 日历式 RTC</h2>
+<table>
+<thead>
+<tr>
+<th></th>
+<th>F1（F103）</th>
+<th>F4（F407）</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>本质</td>
+<td><strong>32 位秒计数器</strong>（RTC_CNT）+ 预分频器</td>
+<td><strong>日历寄存器</strong>（年/月/日/时/分/秒/星期，BCD 存储）</td>
+</tr>
+<tr>
+<td>日期</td>
+<td><strong>没有日期寄存器</strong>，日期自己算/自己存</td>
+<td>寄存器直接存年月日星期</td>
+</tr>
+<tr>
+<td>预分频</td>
+<td>1 个（RTC_PRL，配 32767 → 1Hz）</td>
+<td>两个（PREDIV_A 异步 + PREDIV_S 同步，还能读亚秒 SSR）</td>
+</tr>
+<tr>
+<td>闹钟</td>
+<td>1 个，比较完整秒计数（RTC_ALR）</td>
+<td>2 个（闹钟 A/B），每字段可加掩码</td>
+</tr>
+<tr>
+<td>自动唤醒定时器 WUT</td>
+<td><strong>没有</strong></td>
+<td>有（独立低功耗唤醒）</td>
+</tr>
+<tr>
+<td>时间戳 / 亚秒</td>
+<td>没有（只有 RTC_DIV 余数）</td>
+<td>有（时间戳 + 24 位亚秒）</td>
+</tr>
+<tr>
+<td>入侵检测 Tamper</td>
+<td>有（TAMPER 引脚清 BKP）</td>
+<td>有（TAMP1/TAMP2，清 BKP + 时间戳）</td>
+</tr>
+<tr>
+<td>数字校准</td>
+<td><strong>没有</strong>，只能软件校</td>
+<td>有 Smooth 数字校准（±~487 ppm）+ 参考时钟检测</td>
+</tr>
+<tr>
+<td>备份寄存器</td>
+<td>BKP：42 个 16 位</td>
+<td>RTC_BKP0R~19R：20 个 32 位</td>
+</tr>
+<tr>
+<td>影子寄存器</td>
+<td>没有</td>
+<td>有（读时间可能读到进位中的值，BYPSHAD 可关）</td>
+</tr>
+<tr>
+<td>HAL 差异</td>
+<td>HAL_RTC 只处理时/分/秒</td>
+<td>HAL_RTC 完整处理日历</td>
+</tr>
+</tbody>
+</table>
+<div class="admonition warning">
+<p class="admonition-title">F1 闹钟是一次性的，F4 才是"每天循环"</p>
+<p>F1 的闹钟是比较 <code>RTC_CNT == RTC_ALR</code> 这个<strong>绝对秒时刻</strong>，响一次就完，下次要自己重新写 ALR。F4 的闹钟带掩码，可以精确到"每天/每周几的几点几分"重复触发。抄代码前先分清是哪一代。</p>
+</div>
+<h2 id="_1">三、时钟源与备份域（先选好时钟，后面才走得准）</h2>
+<p>RTC 的精度上限 = 时钟源的精度。三个源，三个性格：</p>
+<table>
+<thead>
+<tr>
+<th>时钟源</th>
+<th>频率</th>
+<th>精度</th>
+<th>掉电（VBAT）后</th>
+<th>功耗</th>
+<th>适用</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>LSE</strong></td>
+<td>32.768kHz</td>
+<td>高（晶振，±20ppm 级）</td>
+<td><strong>继续走</strong></td>
+<td>极低</td>
+<td>绝大多数场景，首选</td>
+</tr>
+<tr>
+<td><strong>LSI</strong></td>
+<td>~32kHz</td>
+<td>低（内部 RC，±几十 % 量级）</td>
+<td><strong>停走！</strong></td>
+<td>低</td>
+<td>省晶振/省引脚，且<strong>不在乎断电</strong></td>
+</tr>
+<tr>
+<td><strong>HSE÷128</strong></td>
+<td>8MHz÷128=62.5kHz</td>
+<td>高</td>
+<td><strong>停走！</strong>（HSE 随主电源关）</td>
+<td>高</td>
+<td>想用系统时钟精度又不想加晶振</td>
+</tr>
+</tbody>
+</table>
+<div class="admonition warning">
+<p class="admonition-title">LSI / HSE÷128 掉电就走不动</p>
+<p>这两个源挂在主电源域，VDD 一掉 RTC 就停。只有 <strong>LSE 在备份域</strong>，靠 VBAT 掉电后还能走。想"断电后时间还在"，必须 LSE；用 LSI 的 RTC 断电后重新对时即可。</p>
+</div>
+<p>关键配置点（F4，CubeMX 在时钟树里把 <code>RTC Clock Source</code> 选 <code>LSE</code>）：</p>
+<ul>
+<li>使能 LSE 后要<strong>等 <code>LSERDY</code> 置位</strong>再操作 RTC——外部晶振起振要几百 ms 到 1s，别一使能就初始化</li>
+<li>CubeMX 的 <code>Activate Clock Source</code> + 在 <code>RTC</code> 页勾 <code>Activate</code> 即可，HAL 的 <code>HAL_RTC_MspInit</code> 会生成 <code>RCC_OscConfig</code> 配 LSE</li>
+<li>备份域寄存器有<strong>写保护</strong>：先 <code>HAL_PWR_EnableBkUpAccess()</code>（置 PWR_CR.DBP），RTC 寄存器才能写——CubeMX 生成的代码已经带了</li>
+</ul>
+<p>F4 的预分频为什么是两个：<code>PREDIV_A</code>（异步 7 位）+ <code>PREDIV_S</code>（同步 15 位）把 LSE 降到 1Hz 秒脉冲，同时留出亚秒读数（见第九节）。典型 LSE 32.768kHz 配 <code>PREDIV_A=127, PREDIV_S=255</code>：</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>32768 / (128 × 256) = 1 Hz    ← 秒脉冲
+</code></pre></div>
+<h2 id="cubemx-hal">四、配置说明（CubeMX + HAL 最小步骤）</h2>
+<h3 id="f4">F4：日历式，直接读写年月日</h3>
+<p>CubeMX：<code>RTC</code> → 勾 <code>Activate</code>，<code>Parameters</code> 页设 <code>Hour Format</code>、<code>AsynchPrediv=127</code>、<code>SynchPrediv=255</code>，<code>Day/Date/Time</code> 填初始时间 → 生成。</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="cm">/* ===== 写时间（CubeMX 只在首次启动时执行一次，见下文&quot;初始化判断&quot;） ===== */</span>
+<a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a><span class="n">RTC_TimeTypeDef</span><span class="w"> </span><span class="n">sTime</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{</span><span class="mi">0</span><span class="p">};</span>
+<a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a><span class="n">sTime</span><span class="p">.</span><span class="n">Hours</span><span class="w">      </span><span class="o">=</span><span class="w"> </span><span class="mi">10</span><span class="p">;</span>
+<a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a><span class="n">sTime</span><span class="p">.</span><span class="n">Minutes</span><span class="w">    </span><span class="o">=</span><span class="w"> </span><span class="mi">30</span><span class="p">;</span>
+<a id="__codelineno-2-5" name="__codelineno-2-5" href="#__codelineno-2-5"></a><span class="n">sTime</span><span class="p">.</span><span class="n">Seconds</span><span class="w">    </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span>
+<a id="__codelineno-2-6" name="__codelineno-2-6" href="#__codelineno-2-6"></a><span class="n">sTime</span><span class="p">.</span><span class="n">DayLightSaving</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">RTC_DAYLIGHTSAVING_NONE</span><span class="p">;</span>
+<a id="__codelineno-2-7" name="__codelineno-2-7" href="#__codelineno-2-7"></a><span class="n">sTime</span><span class="p">.</span><span class="n">StoreOperation</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">RTC_STOREOPERATION_RESET</span><span class="p">;</span>
+<a id="__codelineno-2-8" name="__codelineno-2-8" href="#__codelineno-2-8"></a><span class="n">HAL_RTC_SetTime</span><span class="p">(</span><span class="o">&amp;</span><span class="n">hrtc</span><span class="p">,</span><span class="w"> </span><span class="o">&amp;</span><span class="n">sTime</span><span class="p">,</span><span class="w"> </span><span class="n">RTC_FORMAT_BIN</span><span class="p">);</span>
+<a id="__codelineno-2-9" name="__codelineno-2-9" href="#__codelineno-2-9"></a>
+<a id="__codelineno-2-10" name="__codelineno-2-10" href="#__codelineno-2-10"></a><span class="n">RTC_DateTypeDef</span><span class="w"> </span><span class="n">sDate</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{</span><span class="mi">0</span><span class="p">};</span>
+<a id="__codelineno-2-11" name="__codelineno-2-11" href="#__codelineno-2-11"></a><span class="n">sDate</span><span class="p">.</span><span class="n">Year</span><span class="w">      </span><span class="o">=</span><span class="w"> </span><span class="mi">25</span><span class="p">;</span><span class="w">            </span><span class="cm">/* 存的是&quot;2000 偏移&quot;，25 = 2025 年 */</span>
+<a id="__codelineno-2-12" name="__codelineno-2-12" href="#__codelineno-2-12"></a><span class="n">sDate</span><span class="p">.</span><span class="n">Month</span><span class="w">     </span><span class="o">=</span><span class="w"> </span><span class="n">RTC_MONTH_AUGUST</span><span class="p">;</span>
+<a id="__codelineno-2-13" name="__codelineno-2-13" href="#__codelineno-2-13"></a><span class="n">sDate</span><span class="p">.</span><span class="n">Date</span><span class="w">      </span><span class="o">=</span><span class="w"> </span><span class="mi">6</span><span class="p">;</span>
+<a id="__codelineno-2-14" name="__codelineno-2-14" href="#__codelineno-2-14"></a><span class="n">sDate</span><span class="p">.</span><span class="n">WeekDay</span><span class="w">   </span><span class="o">=</span><span class="w"> </span><span class="n">RTC_WEEKDAY_THURSDAY</span><span class="p">;</span>
+<a id="__codelineno-2-15" name="__codelineno-2-15" href="#__codelineno-2-15"></a><span class="n">HAL_RTC_SetDate</span><span class="p">(</span><span class="o">&amp;</span><span class="n">hrtc</span><span class="p">,</span><span class="w"> </span><span class="o">&amp;</span><span class="n">sDate</span><span class="p">,</span><span class="w"> </span><span class="n">RTC_FORMAT_BIN</span><span class="p">);</span>
+</code></pre></div>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="cm">/* ===== 读时间（注意顺序：先 GetTime 再 GetDate） ===== */</span>
+<a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a><span class="n">RTC_TimeTypeDef</span><span class="w"> </span><span class="n">sTime</span><span class="p">;</span>
+<a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a><span class="n">RTC_DateTypeDef</span><span class="w"> </span><span class="n">sDate</span><span class="p">;</span>
+<a id="__codelineno-3-4" name="__codelineno-3-4" href="#__codelineno-3-4"></a><span class="n">HAL_RTC_GetTime</span><span class="p">(</span><span class="o">&amp;</span><span class="n">hrtc</span><span class="p">,</span><span class="w"> </span><span class="o">&amp;</span><span class="n">sTime</span><span class="p">,</span><span class="w"> </span><span class="n">RTC_FORMAT_BIN</span><span class="p">);</span>
+<a id="__codelineno-3-5" name="__codelineno-3-5" href="#__codelineno-3-5"></a><span class="n">HAL_RTC_GetDate</span><span class="p">(</span><span class="o">&amp;</span><span class="n">hrtc</span><span class="p">,</span><span class="w"> </span><span class="o">&amp;</span><span class="n">sDate</span><span class="p">,</span><span class="w"> </span><span class="n">RTC_FORMAT_BIN</span><span class="p">);</span>
+<a id="__codelineno-3-6" name="__codelineno-3-6" href="#__codelineno-3-6"></a><span class="n">printf</span><span class="p">(</span><span class="s">&quot;%04d-%02d-%02d %02d:%02d:%02d</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">,</span>
+<a id="__codelineno-3-7" name="__codelineno-3-7" href="#__codelineno-3-7"></a><span class="w">       </span><span class="mi">2000</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="n">sDate</span><span class="p">.</span><span class="n">Year</span><span class="p">,</span><span class="w"> </span><span class="n">sDate</span><span class="p">.</span><span class="n">Month</span><span class="p">,</span><span class="w"> </span><span class="n">sDate</span><span class="p">.</span><span class="n">Date</span><span class="p">,</span>
+<a id="__codelineno-3-8" name="__codelineno-3-8" href="#__codelineno-3-8"></a><span class="w">       </span><span class="n">sTime</span><span class="p">.</span><span class="n">Hours</span><span class="p">,</span><span class="w"> </span><span class="n">sTime</span><span class="p">.</span><span class="n">Minutes</span><span class="p">,</span><span class="w"> </span><span class="n">sTime</span><span class="p">.</span><span class="n">Seconds</span><span class="p">);</span>
+</code></pre></div>
+<p>要点：</p>
+<ul>
+<li><code>RTC_FORMAT_BIN</code> 让 HAL 帮你做 BCD↔二进制换算，别自己在应用层折腾 BCD</li>
+<li><strong>Year 是 2000 偏移</strong>，打印时记得 +2000</li>
+<li><strong>读时间顺序固定：先 time 后 date</strong>——HAL 内部靠这个顺序保证两个寄存器读到同一个"瞬间"，反了可能读到跨秒的错值</li>
+</ul>
+<h3 id="f1">F1：计数器式，只有时分秒</h3>
+<p>CubeMX 在 <code>RTC</code> 页配置后，HAL 把时/分/秒换算成秒计数写进 <code>RTC_CNT</code>，接口和 F4 表面一样，但<strong>没有日期</strong>：</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a><span class="n">RTC_TimeTypeDef</span><span class="w"> </span><span class="n">sTime</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{</span><span class="mi">0</span><span class="p">};</span>
+<a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a><span class="n">sTime</span><span class="p">.</span><span class="n">Hours</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">10</span><span class="p">;</span><span class="w"> </span><span class="n">sTime</span><span class="p">.</span><span class="n">Minutes</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">30</span><span class="p">;</span><span class="w"> </span><span class="n">sTime</span><span class="p">.</span><span class="n">Seconds</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span>
+<a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a><span class="n">HAL_RTC_SetTime</span><span class="p">(</span><span class="o">&amp;</span><span class="n">hrtc</span><span class="p">,</span><span class="w"> </span><span class="o">&amp;</span><span class="n">sTime</span><span class="p">,</span><span class="w"> </span><span class="n">RTC_FORMAT_BIN</span><span class="p">);</span>
+<a id="__codelineno-4-4" name="__codelineno-4-4" href="#__codelineno-4-4"></a>
+<a id="__codelineno-4-5" name="__codelineno-4-5" href="#__codelineno-4-5"></a><span class="n">HAL_RTC_GetTime</span><span class="p">(</span><span class="o">&amp;</span><span class="n">hrtc</span><span class="p">,</span><span class="w"> </span><span class="o">&amp;</span><span class="n">sTime</span><span class="p">,</span><span class="w"> </span><span class="n">RTC_FORMAT_BIN</span><span class="p">);</span><span class="w">   </span><span class="cm">/* 读回时/分/秒 */</span>
+</code></pre></div>
+<p>F1 要带日期，两条路：读 <code>RTC_CNT</code> 自己算（1970 年起始秒），或存进 <strong>BKP 备份寄存器</strong>（见第十节）。HAL 层没有对应的日期接口，别硬找。</p>
+<h3 id="f1f4">首次初始化判断（F1/F4 都适用，最容易翻车的一步）</h3>
+<p>RTC 掉电后<strong>仍在走、且不会被任何复位清掉</strong>。如果每次上电都执行"写初始时间"，等于把时间重置回出厂——这是 RTC 应用最高频的 bug。正确姿势：用一个备份寄存器当"已初始化"标志：</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a><span class="cm">/* 读 BKP 标志：不是魔数 → 说明第一次上电，才写时间 */</span>
+<a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">HAL_RTCEx_BKUPRead</span><span class="p">(</span><span class="o">&amp;</span><span class="n">hrtc</span><span class="p">,</span><span class="w"> </span><span class="n">RTC_BKP_DR0</span><span class="p">)</span><span class="w"> </span><span class="o">!=</span><span class="w"> </span><span class="mh">0x32F2</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-5-3" name="__codelineno-5-3" href="#__codelineno-5-3"></a><span class="w">    </span><span class="n">HAL_RTC_SetTime</span><span class="p">(</span><span class="o">&amp;</span><span class="n">hrtc</span><span class="p">,</span><span class="w"> </span><span class="o">&amp;</span><span class="n">sTime</span><span class="p">,</span><span class="w"> </span><span class="n">RTC_FORMAT_BIN</span><span class="p">);</span>
+<a id="__codelineno-5-4" name="__codelineno-5-4" href="#__codelineno-5-4"></a><span class="w">    </span><span class="n">HAL_RTC_SetDate</span><span class="p">(</span><span class="o">&amp;</span><span class="n">hrtc</span><span class="p">,</span><span class="w"> </span><span class="o">&amp;</span><span class="n">sDate</span><span class="p">,</span><span class="w"> </span><span class="n">RTC_FORMAT_BIN</span><span class="p">);</span>
+<a id="__codelineno-5-5" name="__codelineno-5-5" href="#__codelineno-5-5"></a><span class="w">    </span><span class="n">HAL_RTCEx_BKUPWrite</span><span class="p">(</span><span class="o">&amp;</span><span class="n">hrtc</span><span class="p">,</span><span class="w"> </span><span class="n">RTC_BKP_DR0</span><span class="p">,</span><span class="w"> </span><span class="mh">0x32F2</span><span class="p">);</span><span class="w">   </span><span class="cm">/* F1 用 HAL_RTCEx_BKUPWrite 同理 */</span>
+<a id="__codelineno-5-6" name="__codelineno-5-6" href="#__codelineno-5-6"></a><span class="p">}</span>
+</code></pre></div>
+<ul>
+<li>0x32F2 只是约定俗成的魔数，换成你喜欢的 16 位值即可</li>
+<li>F1 的备份寄存器接口在 <code>stm32f1xx_hal_rtc_ex.c</code>，名字相同</li>
+</ul>
+<h2 id="_2">五、闹钟：日常提醒与低功耗唤醒</h2>
+<h3 id="f4-ab">F4：两路闹钟 A/B，掩码是精华</h3>
+<p>闹钟的核心是<strong>掩码（Mask）</strong>——哪几位要参与比较。掩码掉（忽略）某个字段，就能做成"每小时""每天""每周几"循环：</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a><span class="n">RTC_AlarmTypeDef</span><span class="w"> </span><span class="n">sAlarm</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{</span><span class="mi">0</span><span class="p">};</span>
+<a id="__codelineno-6-2" name="__codelineno-6-2" href="#__codelineno-6-2"></a>
+<a id="__codelineno-6-3" name="__codelineno-6-3" href="#__codelineno-6-3"></a><span class="cm">/* 每日 07:00:00 响：掩码掉日期/星期，只比时分秒 */</span>
+<a id="__codelineno-6-4" name="__codelineno-6-4" href="#__codelineno-6-4"></a><span class="n">sAlarm</span><span class="p">.</span><span class="n">AlarmTime</span><span class="p">.</span><span class="n">Hours</span><span class="w">   </span><span class="o">=</span><span class="w"> </span><span class="mi">7</span><span class="p">;</span>
+<a id="__codelineno-6-5" name="__codelineno-6-5" href="#__codelineno-6-5"></a><span class="n">sAlarm</span><span class="p">.</span><span class="n">AlarmTime</span><span class="p">.</span><span class="n">Minutes</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span>
+<a id="__codelineno-6-6" name="__codelineno-6-6" href="#__codelineno-6-6"></a><span class="n">sAlarm</span><span class="p">.</span><span class="n">AlarmTime</span><span class="p">.</span><span class="n">Seconds</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span>
+<a id="__codelineno-6-7" name="__codelineno-6-7" href="#__codelineno-6-7"></a><span class="n">sAlarm</span><span class="p">.</span><span class="n">AlarmDateWeekDaySel</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">RTC_ALARMDATEWEEKDAYSEL_DATE</span><span class="p">;</span><span class="w">   </span><span class="cm">/* 用日期还是星期 */</span>
+<a id="__codelineno-6-8" name="__codelineno-6-8" href="#__codelineno-6-8"></a><span class="n">sAlarm</span><span class="p">.</span><span class="n">AlarmDateWeekDay</span><span class="w">    </span><span class="o">=</span><span class="w"> </span><span class="mi">1</span><span class="p">;</span>
+<a id="__codelineno-6-9" name="__codelineno-6-9" href="#__codelineno-6-9"></a><span class="n">sAlarm</span><span class="p">.</span><span class="n">AlarmMask</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">RTC_ALARMMASK_DATEWEEKDAY</span><span class="p">;</span><span class="w">    </span><span class="cm">/* 忽略星期/日期 → 每天 7 点 */</span>
+<a id="__codelineno-6-10" name="__codelineno-6-10" href="#__codelineno-6-10"></a>
+<a id="__codelineno-6-11" name="__codelineno-6-11" href="#__codelineno-6-11"></a><span class="n">HAL_RTC_SetAlarm_IT</span><span class="p">(</span><span class="o">&amp;</span><span class="n">hrtc</span><span class="p">,</span><span class="w"> </span><span class="o">&amp;</span><span class="n">sAlarm</span><span class="p">,</span><span class="w"> </span><span class="n">RTC_FORMAT_BIN</span><span class="p">);</span>
+</code></pre></div>
+<table>
+<thead>
+<tr>
+<th>AlarmMask 取值</th>
+<th>比较什么</th>
+<th>触发节奏</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>RTC_ALARMMASK_NONE</code></td>
+<td>全字段</td>
+<td>精确到秒，一次性（或到那个日期那一次）</td>
+</tr>
+<tr>
+<td><code>RTC_ALARMMASK_DATEWEEKDAY</code></td>
+<td>只比时分秒</td>
+<td><strong>每天</strong>该时刻</td>
+</tr>
+<tr>
+<td><code>RTC_ALARMMASK_HOURS</code>（再掩掉分秒）</td>
+<td>只比小时</td>
+<td><strong>每小时</strong></td>
+</tr>
+<tr>
+<td><code>RTC_ALARMMASK_ALL</code></td>
+<td>什么都不比</td>
+<td>立即触发（调试用）</td>
+</tr>
+</tbody>
+</table>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a><span class="cm">/* 中断回调：闹钟 A 匹配 */</span>
+<a id="__codelineno-7-2" name="__codelineno-7-2" href="#__codelineno-7-2"></a><span class="kt">void</span><span class="w"> </span><span class="nf">HAL_RTC_AlarmAEventCallback</span><span class="p">(</span><span class="n">RTC_HandleTypeDef</span><span class="o">*</span><span class="w"> </span><span class="n">hrtc</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-7-3" name="__codelineno-7-3" href="#__codelineno-7-3"></a><span class="w">    </span><span class="cm">/* 做该做的事；想清标志 HAL_RTCEx_AlarmIRQHandler 已处理 */</span>
+<a id="__codelineno-7-4" name="__codelineno-7-4" href="#__codelineno-7-4"></a><span class="p">}</span>
+</code></pre></div>
+<ul>
+<li>中断处理走 <code>HAL_RTCEx_AlarmIRQHandler(&amp;hrtc)</code>，由它分发到上面的回调</li>
+<li>闹钟事件能<strong>唤醒 STOP / STANDBY 模式</strong>（F4 映射到 EXTI 线 25），这是低功耗下"定时醒来干活"的标配手段</li>
+<li>两路闹钟 A/B 独立配置，可一个做每日整点报时、一个做定时任务</li>
+</ul>
+<h3 id="f1_1">F1：一个绝对时刻，响一次</h3>
+<p>F1 闹钟比较 <code>RTC_CNT == RTC_ALR</code>。要每天 7 点响：算出明天 7 点对应的秒数写进 ALR，响完<strong>必须再写下一次</strong>，否则再也不响。想循环只能靠中断里自己续写，或者干脆用秒中断自己计数。</p>
+<h2 id="f4-wut">六、（F4 隐藏功能）自动唤醒定时器 WUT</h2>
+<p>WUT 是 RTC 里<strong>独立于闹钟</strong>的一只小闹表：它只做一件事——周期性地把系统从低功耗唤醒，不占闹钟 A/B，也不用软件续期。</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a><span class="cm">/* 每 30 秒唤醒一次，然后自动重装、继续数 */</span>
+<a id="__codelineno-8-2" name="__codelineno-8-2" href="#__codelineno-8-2"></a><span class="n">HAL_RTCEx_SetWakeUpTimer_IT</span><span class="p">(</span><span class="o">&amp;</span><span class="n">hrtc</span><span class="p">,</span><span class="w"> </span><span class="mi">30</span><span class="p">,</span><span class="w"> </span><span class="n">RTC_WAKEUPCLOCK_CK_SPRE_1HZ</span><span class="p">);</span>
+</code></pre></div>
+<ul>
+<li>时钟源 <code>RTC_WAKEUPCLOCK_CK_SPRE_1HZ</code> 下，第二个参数<strong>直接就是秒数</strong>；换成 <code>CK_SPRE_16HZ</code>/<code>CK_SPRE_8HZ</code>/<code>CK_SPRE_2HZ</code>/<code>CK_APRE</code> 可更精细</li>
+<li>唤醒周期公式：<code>(WUTR + 1) × 时钟周期</code>，WUT 是 16 位 → 1Hz 下最长约 <strong>18 小时 12 分</strong></li>
+<li>回调：<code>HAL_RTCEx_WakeUpTimerEventCallback</code>，中断处理走 <code>HAL_RTCEx_WakeUpTimerIRQHandler(&amp;hrtc)</code></li>
+<li><strong>和闹钟的区别</strong>：闹钟是"定点响"（某时刻），WUT 是"定周期响"（每 N 秒）。做固定节拍的轮询、传感器周期采样，WUT 更省事；要精确到某个时刻用闹钟</li>
+</ul>
+<h2 id="f4-tamper">七、（F4 隐藏功能）时间戳与 Tamper 入侵检测</h2>
+<h3 id="_3">时间戳：记录"那一刻"是哪一秒</h3>
+<p>把 RTC 当"事件发生时间"的记录仪——事件一来，RTC 把当前时刻快照进时间戳寄存器，CPU 事后慢慢读：</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a><span class="n">HAL_RTCEx_SetTimeStamp_IT</span><span class="p">(</span><span class="o">&amp;</span><span class="n">hrtc</span><span class="p">,</span><span class="w"> </span><span class="n">RTC_TIMESTAMPEDGE_RISING</span><span class="p">);</span><span class="w">   </span><span class="cm">/* 上升沿触发 */</span>
+<a id="__codelineno-9-2" name="__codelineno-9-2" href="#__codelineno-9-2"></a>
+<a id="__codelineno-9-3" name="__codelineno-9-3" href="#__codelineno-9-3"></a><span class="cm">/* 事件发生后读快照 */</span>
+<a id="__codelineno-9-4" name="__codelineno-9-4" href="#__codelineno-9-4"></a><span class="n">RTC_TimeStampTypeDef</span><span class="w"> </span><span class="n">sTS</span><span class="p">;</span>
+<a id="__codelineno-9-5" name="__codelineno-9-5" href="#__codelineno-9-5"></a><span class="n">HAL_RTCEx_GetTimeStamp</span><span class="p">(</span><span class="o">&amp;</span><span class="n">hrtc</span><span class="p">,</span><span class="w"> </span><span class="o">&amp;</span><span class="n">sTS</span><span class="p">,</span><span class="w"> </span><span class="n">RTC_FORMAT_BIN</span><span class="p">);</span>
+</code></pre></div>
+<ul>
+<li>中断处理走 <code>HAL_RTCEx_TamperTimeStampIRQHandler</code>，回调是 <code>HAL_RTCEx_TamperTimeStampEventCallback</code></li>
+<li>用途：掉电瞬间记录最后时刻、外部关键事件打点、防作弊的时间证据</li>
+</ul>
+<h3 id="tamper">Tamper：撬机即清数据（安全功能）</h3>
+<p>Tamper 是给"怕被人拆"的产品准备的：检测到入侵引脚电平变化 → <strong>立即清空备份域数据</strong>（BKP 寄存器 + 时间戳），防止拆机后改数据/篡改时间。</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-10-1" name="__codelineno-10-1" href="#__codelineno-10-1"></a><span class="n">RTC_TamperTypeDef</span><span class="w"> </span><span class="n">sTamp</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{</span><span class="mi">0</span><span class="p">};</span>
+<a id="__codelineno-10-2" name="__codelineno-10-2" href="#__codelineno-10-2"></a><span class="n">sTamp</span><span class="p">.</span><span class="n">Tamper</span><span class="w">  </span><span class="o">=</span><span class="w"> </span><span class="n">RTC_TAMPER_1</span><span class="p">;</span>
+<a id="__codelineno-10-3" name="__codelineno-10-3" href="#__codelineno-10-3"></a><span class="n">sTamp</span><span class="p">.</span><span class="n">Trigger</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">RTC_TAMPERTRIGGER_RISINGEDGE</span><span class="p">;</span><span class="w">   </span><span class="cm">/* 选边沿方向 */</span>
+<a id="__codelineno-10-4" name="__codelineno-10-4" href="#__codelineno-10-4"></a><span class="n">sTamp</span><span class="p">.</span><span class="n">Filter</span><span class="w">  </span><span class="o">=</span><span class="w"> </span><span class="n">RTC_TAMPERFILTER_DISABLE</span><span class="p">;</span><span class="w">       </span><span class="cm">/* 可加滤波防误触 */</span>
+<a id="__codelineno-10-5" name="__codelineno-10-5" href="#__codelineno-10-5"></a><span class="n">HAL_RTCEx_SetTamper_IT</span><span class="p">(</span><span class="o">&amp;</span><span class="n">hrtc</span><span class="p">,</span><span class="w"> </span><span class="o">&amp;</span><span class="n">sTamp</span><span class="p">);</span>
+</code></pre></div>
+<div class="admonition warning">
+<p class="admonition-title">Tamper 触发后数据被清，记得重初始化</p>
+<p>Tamper 一旦触发，备份域数据就没了——应用里要重新写 RTC 时间和初始化标志（回到第四节那套），并记一次"被入侵过"。引脚默认 <code>TAMP_IN</code>（F4 与 PC13 复用，注意别和 RTC 输出功能打架）。</p>
+</div>
+<p>F1 也有类似的 TAMPER 引脚，触发后清 BKP 寄存器，机制一样，寄存器在备份域章节（BKP_CR 的 TPE/TPAL）。</p>
+<h2 id="f4-smooth">八、（F4 隐藏功能）校准：Smooth 数字校准 + 参考时钟检测</h2>
+<p>任何晶振都会漂，RTC 走快/走慢是常态。F4 内置了两种校准手段，F1 只能软件校。</p>
+<h3 id="smooth">Smooth 数字校准</h3>
+<p>在硬件层面微调秒脉冲，精度到 <strong>0.95 ppm/步</strong>，不用换晶振。用法：先实测走时偏差（比如对时一周慢了多少秒），换算成 ppm，再写校准：</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-11-1" name="__codelineno-11-1" href="#__codelineno-11-1"></a><span class="cm">/* 假设实测 RTC 快了约 20 ppm → 用 CALM 减（每步约 0.95 ppm） */</span>
+<a id="__codelineno-11-2" name="__codelineno-11-2" href="#__codelineno-11-2"></a><span class="n">HAL_RTCEx_SetSmoothCalib</span><span class="p">(</span><span class="o">&amp;</span><span class="n">hrtc</span><span class="p">,</span>
+<a id="__codelineno-11-3" name="__codelineno-11-3" href="#__codelineno-11-3"></a><span class="w">                         </span><span class="n">RTC_SMOOTHCALIB_PLUSPULSES_RESET</span><span class="p">,</span><span class="w">   </span><span class="cm">/* CALP=0：不加脉冲 */</span>
+<a id="__codelineno-11-4" name="__codelineno-11-4" href="#__codelineno-11-4"></a><span class="w">                         </span><span class="mi">21</span><span class="p">,</span><span class="w">                                  </span><span class="cm">/* CALM=21 ≈ 20 ppm */</span>
+<a id="__codelineno-11-5" name="__codelineno-11-5" href="#__codelineno-11-5"></a><span class="w">                         </span><span class="n">RTC_SMOOTHCALIB_PERIOD_32SEC</span><span class="p">);</span><span class="w">      </span><span class="cm">/* 校准窗口 32s */</span>
+</code></pre></div>
+<ul>
+<li>校准窗口默认 32 秒（可选 8/16 秒），<code>CALM</code> 12 位减脉冲 + <code>CALP</code> 加脉冲，范围约 <strong>±487 ppm</strong></li>
+<li>粗算：<code>目标 ppm / 0.95 ≈ CALM 值</code>（减方向）</li>
+<li><strong>校准不是一次就完</strong>：晶振漂移随温度/老化变，周期性对时后重新校准才靠谱</li>
+</ul>
+<h3 id="refin">参考时钟检测（REFIN）</h3>
+<p>F4 多一个 <code>RTC_REFIN</code> 引脚：输入一路精确参考频率（50/60Hz 市电或精确方波），RTC 自动和 LSE 比较，偏差超限置 <code>REFCNTF</code> 标志——用来<strong>在线监控晶振是否老化/漂移</strong>，发现异常再触发校准或报警。要求 RTC 时钟源必须是 LSE，且参考频率要够稳。</p>
+<h3 id="f1_2">F1 怎么办</h3>
+<p>F1 没有数字校准。低成本做法：<strong>软件校准</strong>——每次对时记录偏差，累计误差超过阈值就整体修正时间；或对 LSE 负载电容做硬件微调。RTC 只走时、精度要求不高的场景，软件校完全够。</p>
+<h2 id="f4-ssr">九、（F4 隐藏功能）亚秒 SSR 与影子寄存器</h2>
+<h3 id="ssr-1">亚秒 SSR：比 1 秒更细的时间</h3>
+<p>F4 的同步预分频器 <code>PREDIV_S</code> 一路从 255 数到 0 才出一个秒脉冲，读数期间的值就是亚秒：</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-12-1" name="__codelineno-12-1" href="#__codelineno-12-1"></a><span class="kt">uint32_t</span><span class="w"> </span><span class="n">sub</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">HAL_RTCEx_GetSubSecond</span><span class="p">(</span><span class="o">&amp;</span><span class="n">hrtc</span><span class="p">);</span><span class="w">   </span><span class="cm">/* 0~255，越小离秒越近 */</span>
+<a id="__codelineno-12-2" name="__codelineno-12-2" href="#__codelineno-12-2"></a><span class="kt">float</span><span class="w"> </span><span class="n">ms</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">(</span><span class="kt">float</span><span class="p">)(</span><span class="mi">255</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="n">sub</span><span class="p">)</span><span class="w"> </span><span class="o">/</span><span class="w"> </span><span class="mf">256.0f</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="mf">1000.0f</span><span class="p">;</span><span class="w"> </span><span class="cm">/* 换算成毫秒 */</span>
+</code></pre></div>
+<p>分辨率 = <code>1 / (PREDIV_S + 1)</code> 秒，255 时约 <strong>3.9 ms</strong>。用途：精确打点、测两次事件的时间间隔、给日志加亚秒时间戳。</p>
+<h3 id="_4">影子寄存器：为什么读时间可能读到"错值"</h3>
+<p>F4 的 RTC 计数在备份域里自己跑，软件读 RTC_TR/DR 时读的是<strong>影子寄存器（shadow）</strong>——它把一次完整的进位先复制好再让软件读，避免读到"秒已+1 但分还没进位"的半截值。代价是<strong>影子更新晚一个 RTC 周期</strong>。极少数时序要求严格的场合设 <code>BYPSHAD=1</code> 直接读真实值，代价是可能读到进位中的错值——正常开发不要动它，HAL 的 GetTime 顺序已经帮你兜底了。</p>
+<h2 id="vbat-bkp">十、掉电保持：VBAT 电路与备份寄存器 BKP</h2>
+<h3 id="vbat">VBAT 怎么接</h3>
+<p>要"断电时间还在"，就得保证备份域一直有电：</p>
+<ul>
+<li><strong>长期</strong>：CR2032 纽扣电池，主电源断开时给 VBAT 供电，RTC+LSE 待机电流几 µA，一颗电池撑几年</li>
+<li><strong>短期</strong>：大电容（几 mF）搭到 VBAT，断电后撑几分钟到几十分钟，掉电抄表/记录最后状态够用</li>
+<li><strong>一直有电的系统</strong>：VBAT 直接并 VDD 即可，反正不掉电</li>
+</ul>
+<div class="admonition tip">
+<p class="admonition-title">电池电压要覆盖 RTC 工作范围</p>
+<p>纽扣电池电压和 RTC 工作电压范围要匹配（通常 1.8~3.6V），别选低于下限的电池，否则低温下 RTC 直接停摆。</p>
+</div>
+<h3 id="bkp">BKP 备份寄存器：掉电不丢的"储物柜"</h3>
+<ul>
+<li><strong>F4</strong>：<code>RTC_BKP0R~19R</code>，20 个 32 位寄存器，任何复位都清不掉，掉电也保持</li>
+<li><strong>F1</strong>：<code>BKP_DR1~42</code>，42 个 16 位寄存器</li>
+<li>用途：存 RTC 初始化标志（第四节）、存校准参数、存"上次掉电前的状态"，甚至<strong>拿它当 NVM 用</strong>（虽然擦写寿命有限，别当 Flash 用）</li>
+</ul>
+<h3 id="_5">复位不丢，但掉电不一定不丢</h3>
+<p>再强调一次：<strong>任何复位都清不掉 RTC 和 BKP，只有两件事会清它们</strong>——VBAT 断电（电池也耗尽/拆掉）和 Tamper 触发。这既是 RTC 的可靠性来源，也是"首次初始化判断"必须存在的原因。</p>
+<h2 id="_6">十一、常见坑汇总</h2>
+<ul>
+<li><strong>每次上电都写时间</strong> → 时间被重置回出厂。用 BKP 标志判断首次初始化（第四节）。</li>
+<li><strong>用 LSI 但指望断电后时间还在</strong> → LSI 挂主电源域，断电即停。要断电保持用 LSE（第三节）。</li>
+<li><strong>LSE 起振慢就往下配</strong> → 使能后不等 <code>LSERDY</code> 就初始化，配置写不进备份域。加几百 ms 等待。</li>
+<li><strong>F1 闹钟响一次就完</strong> → 想循环必须中断里续写 ALR（第五节）。</li>
+<li><strong>F4 读时间顺序反了</strong> → 先 GetTime 再 GetDate，反了可能读到跨秒错值（第四节）。</li>
+<li><strong>闹钟/唤醒没生效先查写保护</strong> → PWR DBP 没开，RTC 寄存器根本写不进去（第三节）。</li>
+<li><strong>低功耗唤醒没反应</strong> → 检查 EXTI 线（F4 闹钟/WUT 走 EXTI25，Tamper/时间戳走 EXTI26）在 NVIC 里使能了没。</li>
+<li><strong>Tamper 误触发把数据清了</strong> → 入侵检测默认可能跟着你按的边沿就触发，配 <code>Filter</code> 防抖 + 明确选触发沿（第七节）。</li>
+<li><strong>时钟走快/走慢不是"坏了"</strong> → 晶振漂移是常态，F4 用 Smooth 校准，F1 软件校（第八节）。</li>
+</ul>
+<h2 id="_7">参考</h2>
+<ul>
+<li>RTC 结构与寄存器细节：对应型号参考手册 <strong>RTC 章节</strong>（F1：RM0008；F4：RM0090）</li>
+<li>时钟源 LSE/LSI 背景：见 <a href="../stm32-clock-tree/">stm32-clock-tree.md</a></li>
+<li>低功耗唤醒与 EXTI 线：参考手册 <strong>EXTI / 电源控制章节</strong></li>
+<li>F1/F4 HAL 接口差异：ST 官方 <strong>STM32CubeF1 / STM32CubeF4</strong> 的 <code>stm32f1xx_hal_rtc.c</code> 与 <code>stm32f4xx_hal_rtc_ex.c</code></li>
+</ul>
+
+
+
+
+
+
+
+  
+    
+  
+  
+    
+  
+
+
+  <aside class="md-source-file">
+    
+      
+  <span class="md-source-file__fact">
+    <span class="md-icon" title="最后更新">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M21 13.1c-.1 0-.3.1-.4.2l-1 1 2.1 2.1 1-1c.2-.2.2-.6 0-.8l-1.3-1.3c-.1-.1-.2-.2-.4-.2m-1.9 1.8-6.1 6V23h2.1l6.1-6.1zM12.5 7v5.2l4 2.4-1 1L11 13V7zM11 21.9c-5.1-.5-9-4.8-9-9.9C2 6.5 6.5 2 12 2c5.3 0 9.6 4.1 10 9.3-.3-.1-.6-.2-1-.2s-.7.1-1 .2C19.6 7.2 16.2 4 12 4c-4.4 0-8 3.6-8 8 0 4.1 3.1 7.5 7.1 7.9l-.1.2z"/></svg>
+    </span>
+    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="2026年8月7日 14:30:03 UTC">2026年8月7日</span>
+  </span>
+
+    
+    
+      
+  <span class="md-source-file__fact">
+    <span class="md-icon" title="创建日期">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M14.47 15.08 11 13V7h1.5v5.25l3.08 1.83c-.41.28-.79.62-1.11 1m-1.39 4.84c-.36.05-.71.08-1.08.08-4.42 0-8-3.58-8-8s3.58-8 8-8 8 3.58 8 8c0 .37-.03.72-.08 1.08.69.1 1.33.32 1.92.64.1-.56.16-1.13.16-1.72 0-5.5-4.5-10-10-10S2 6.5 2 12s4.47 10 10 10c.59 0 1.16-.06 1.72-.16-.32-.59-.54-1.23-.64-1.92M18 15v3h-3v2h3v3h2v-3h3v-2h-3v-3z"/></svg>
+    </span>
+    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="2026年8月7日 14:30:03 UTC">2026年8月7日</span>
+  </span>
+
+    
+    
+    
+  </aside>
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8z"/></svg>
+  回到页面顶部
+</button>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+  
+</div>
+      
+        
+<div class="md-social">
+  
+    
+    
+    
+    
+      
+      
+    
+    <a href="https://github.com/hellobugger" target="_blank" rel="noopener" title="github.com" class="md-social__link">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M173.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6m-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3m44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9M252.8 8C114.1 8 8 113.3 8 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C436.2 457.8 504 362.9 504 252 504 113.3 391.5 8 252.8 8M105.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1m-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7m32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1m-11.4-14.7c-1.6 1-1.6 3.6 0 5.9s4.3 3.3 5.6 2.3c1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2"/></svg>
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "../..", "features": ["navigation.tabs", "navigation.sections", "navigation.top", "toc.integrate", "search.highlight", "search.suggest", "content.code.copy", "content.code.annotate", "content.action.edit"], "search": "../../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "\u5df2\u590d\u5236", "clipboard.copy": "\u590d\u5236", "search.result.more.one": "\u5728\u8be5\u9875\u4e0a\u8fd8\u6709 1 \u4e2a\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.more.other": "\u5728\u8be5\u9875\u4e0a\u8fd8\u6709 # \u4e2a\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.none": "\u6ca1\u6709\u627e\u5230\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.one": "\u627e\u5230 1 \u4e2a\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.other": "# \u4e2a\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.placeholder": "\u952e\u5165\u4ee5\u5f00\u59cb\u641c\u7d22", "search.result.term.missing": "\u7f3a\u5c11", "select.version": "\u9009\u62e9\u5f53\u524d\u7248\u672c"}, "version": null}</script>
+    
+    
+      <script src="../../assets/javascripts/bundle.d7400e89.min.js"></script>
+      
+        <script src="../../javascripts/extra.js?v=7"></script>
+      
+    
+  </body>
+</html>

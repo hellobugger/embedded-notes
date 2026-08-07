@@ -1,0 +1,2568 @@
+
+<!doctype html>
+<html lang="zh" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="嵌入式软件/硬件调试心得与工作备忘">
+      
+      
+        <meta name="author" content="聂文俊">
+      
+      
+        <link rel="canonical" href="https://hellobugger.github.io/embedded-notes/mcu/stm32-i2c/">
+      
+      
+        <link rel="prev" href="../stm32-dac/">
+      
+      
+        <link rel="next" href="../stm32-lib-comparison/">
+      
+      
+        
+      
+      
+      <link rel="icon" href="../../assets/images/favicon.png">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.7">
+    
+    
+      
+        <title>STM32 I2C：从两根线讲透软件 IIC / 硬件 I2C / DMA / SMBus - 嵌入式工作笔记</title>
+      
+    
+    
+      <link rel="stylesheet" href="../../assets/stylesheets/main.ec1eaa64.min.css">
+      
+        
+        <link rel="stylesheet" href="../../assets/stylesheets/palette.ab4e12ef.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+      <link rel="stylesheet" href="../../stylesheets/extra.css?v=4">
+    
+    <script>__md_scope=new URL("../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    
+    
+      
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#stm32-i2c-iic-i2c-dma-smbus" class="md-skip">
+          跳转至
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+<header class="md-header" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="页眉">
+    <a href="../.." title="嵌入式工作笔记" class="md-header__button md-logo" aria-label="嵌入式工作笔记" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            嵌入式工作笔记
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              STM32 I2C：从两根线讲透软件 IIC / 硬件 I2C / DMA / SMBus
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+        <form class="md-header__option" data-md-component="palette">
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="切换至深色模式"  type="radio" name="__palette" id="__palette_0">
+    
+      <label class="md-header__button md-icon" title="切换至深色模式" for="__palette_1" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a4 4 0 0 0-4 4 4 4 0 0 0 4 4 4 4 0 0 0 4-4 4 4 0 0 0-4-4m0 10a6 6 0 0 1-6-6 6 6 0 0 1 6-6 6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="" data-md-color-scheme="slate" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="切换至浅色模式"  type="radio" name="__palette" id="__palette_1">
+    
+      <label class="md-header__button md-icon" title="切换至浅色模式" for="__palette_0" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 18c-.89 0-1.74-.2-2.5-.55C11.56 16.5 13 14.42 13 12s-1.44-4.5-3.5-5.45C10.26 6.2 11.11 6 12 6a6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+</form>
+      
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="搜索" placeholder="搜索" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="查找">
+        
+        <button type="reset" class="md-search__icon md-icon" title="清空当前内容" aria-label="清空当前内容" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+        <div class="md-search__suggest" data-md-component="search-suggest"></div>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            正在初始化搜索引擎
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/hellobugger/embedded-notes" title="前往仓库" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M173.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6m-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3m44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9M252.8 8C114.1 8 8 113.3 8 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C436.2 457.8 504 362.9 504 252 504 113.3 391.5 8 252.8 8M105.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1m-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7m32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1m-11.4-14.7c-1.6 1-1.6 3.6 0 5.9s4.3 3.3 5.6 2.3c1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2"/></svg>
+  </div>
+  <div class="md-source__repository">
+    hellobugger/embedded-notes
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+  
+
+      
+        
+          
+            
+<nav class="md-tabs" aria-label="标签" data-md-component="tabs">
+  <div class="md-grid">
+    <ul class="md-tabs__list">
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../.." class="md-tabs__link">
+        
+  
+  
+    
+  
+  首页
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../environment/develop-environment/" class="md-tabs__link">
+          
+  
+  
+  开发环境
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../environment-tips/clion-tips/" class="md-tabs__link">
+          
+  
+  
+  开发环境技巧
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../hardware/esp32-reset/" class="md-tabs__link">
+          
+  
+  
+  硬件调试
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+    
+  
+  
+    
+    
+      <li class="md-tabs__item md-tabs__item--active">
+        <a href="../peripheral-drivers/" class="md-tabs__link">
+          
+  
+  
+  MCU 与驱动
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../rtos/freertos-scheduler/" class="md-tabs__link">
+          
+  
+  
+  RTOS
+
+        </a>
+      </li>
+    
+  
+
+      
+    </ul>
+  </div>
+</nav>
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+  
+
+
+  
+
+<nav class="md-nav md-nav--primary md-nav--lifted md-nav--integrated" aria-label="导航栏" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="../.." title="嵌入式工作笔记" class="md-nav__button md-logo" aria-label="嵌入式工作笔记" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    嵌入式工作笔记
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/hellobugger/embedded-notes" title="前往仓库" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M173.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6m-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3m44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9M252.8 8C114.1 8 8 113.3 8 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C436.2 457.8 504 362.9 504 252 504 113.3 391.5 8 252.8 8M105.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1m-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7m32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1m-11.4-14.7c-1.6 1-1.6 3.6 0 5.9s4.3 3.3 5.6 2.3c1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2"/></svg>
+  </div>
+  <div class="md-source__repository">
+    hellobugger/embedded-notes
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../.." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    首页
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2" >
+        
+          
+          <label class="md-nav__link" for="__nav_2" id="__nav_2_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    开发环境
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_2">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    开发环境
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../environment/develop-environment/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    开发环境搭建
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" >
+        
+          
+          <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    开发环境技巧
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_3">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    开发环境技巧
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../environment-tips/clion-tips/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    CLion + CubeMX 使用技巧
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../environment-tips/eide-tips/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    VSCode + EIDE 使用技巧
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../environment-tips/esp-idf-tips/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    VSCode + ESP-IDF 使用技巧
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../environment-tips/keil-c51c251-tips/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Keil C51 / C251 使用技巧
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../environment-tips/keil5-cubemx-tips/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Keil5 + CubeMX 使用技巧
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../environment-tips/platformio-tips/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    VSCode + PlatformIO 使用技巧
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../environment-tips/rtthread-studio-tips/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    RT-Thread Studio 使用技巧
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../environment-tips/stm32cubeide-tips/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    STM32CubeIDE 使用技巧
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4" >
+        
+          
+          <label class="md-nav__link" for="__nav_4" id="__nav_4_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    硬件调试
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    硬件调试
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../hardware/esp32-reset/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ESP32-S3 反复复位（Wi-Fi 连接时）
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../hardware/power-ripple/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    电源纹波测试
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../hardware/scope-tips/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    示波器使用技巧
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5" checked>
+        
+          
+          <label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    MCU 与驱动
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_5">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    MCU 与驱动
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../peripheral-drivers/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    裸机外设驱动
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../stm32-adc/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    STM32 ADC：从配置到 DMA 的一篇讲透
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../stm32-can/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    CAN 总线：从通信机制到收发中断的一篇讲透
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../stm32-clock-tree/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    STM32 时钟系统：五个时钟源
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../stm32-dac/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    STM32 DAC：从配置到 DMA 的一篇讲透
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    STM32 I2C：从两根线讲透软件 IIC / 硬件 I2C / DMA / SMBus
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    STM32 I2C：从两根线讲透软件 IIC / 硬件 I2C / DMA / SMBus
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="目录">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      目录
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#_1" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        一、通信机制：两根线怎么就把事办了
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="一、通信机制：两根线怎么就把事办了">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#11" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        1.1 开漏 + 上拉电阻：为什么两根线能多人共用
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#12" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        1.2 总线时序：先点名，再对话
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#13" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        1.3 速率与时钟
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#14-spi-uart" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        1.4 与 SPI / UART 的对比：什么时候选谁
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#iic-vs-i2c" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        二、软件 IIC vs 硬件 I2C：同一件事的两种做法
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="二、软件 IIC vs 硬件 I2C：同一件事的两种做法">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#21-iic-gpio" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2.1 软件 IIC：用 GPIO 模拟时序
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#22-i2c" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2.2 硬件 I2C：专用外设接管
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#23" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2.3 逐维度对比
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#24" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2.4 到底用哪个：一张决策表
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#i2c-cubemx-hal" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        三、硬件 I2C 配置说明：CubeMX + HAL
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="三、硬件 I2C 配置说明：CubeMX + HAL">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#31-cubemx-f4-f1" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3.1 CubeMX 页面（F4 为例，F1 类似）
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#32-hal" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3.2 HAL 初始化结构体逐字段
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#33-clock-stretching" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3.3 时钟拉伸（Clock Stretching）：从机让主机「等一下」
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#34-timeout-i2c" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3.4 超时（Timeout）：硬 I2C 最容易被忽略的一环
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#35-hal" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3.5 HAL 提供的三套接口
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#36-hal" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3.6 最容易翻车的一个坑：HAL 的忙等和锁死
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#dma" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        四、DMA：把搬字节的活交给硬件
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="四、DMA：把搬字节的活交给硬件">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#41-dma" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        4.1 为什么要 DMA
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#42-hal-dma" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        4.2 HAL 的 DMA 收发流程
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#43-cubemx-dma" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        4.3 CubeMX 里怎么开 DMA
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#44-dma" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        4.4 DMA 的坑与边界
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#smbus-i2c" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        五、SMBus：带「规矩」的 I2C
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="五、SMBus：带「规矩」的 I2C">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#51-smbus-i2c" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        5.1 SMBus 与 I2C 的关键区别
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#52-smbus" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        5.2 为什么 SMBus 要这些「规矩」
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#53-stm32-i2c-smbus" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        5.3 如何用 STM32 的硬件 I2C 跑 SMBus
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#_2" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        六、避坑备忘
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#_3" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        参考
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../stm32-lib-comparison/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    标准库 / LL / HAL 对比
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../stm32-notes/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    STM32H7 调试笔记
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../stm32-rtc/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    STM32 RTC：从走时到一堆「隐藏功能」的一篇讲透
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../stm32-timer/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    STM32 定时器：从时基到一堆「隐藏功能」的一篇讲透
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../stm32-watchdog/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    独立看门狗 IWDG 与窗口看门狗 WWDG
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_6" >
+        
+          
+          <label class="md-nav__link" for="__nav_6" id="__nav_6_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    RTOS
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_6_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_6">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    RTOS
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../rtos/freertos-scheduler/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    FreeRTOS 任务调度
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../rtos/queue-semaphore/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    队列与信号量
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+  
+    <a href="https://github.com/hellobugger/embedded-notes/blob/main/docs/mcu/stm32-i2c.md" title="编辑此页" class="md-content__button md-icon" rel="edit">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M10 20H6V4h7v5h5v3.1l2-2V8l-6-6H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h4zm10.2-7c.1 0 .3.1.4.2l1.3 1.3c.2.2.2.6 0 .8l-1 1-2.1-2.1 1-1c.1-.1.2-.2.4-.2m0 3.9L14.1 23H12v-2.1l6.1-6.1z"/></svg>
+    </a>
+  
+  
+
+
+<h1 id="stm32-i2c-iic-i2c-dma-smbus">STM32 I2C：从两根线讲透软件 IIC / 硬件 I2C / DMA / SMBus</h1>
+<blockquote>
+<p>一句话：<strong>I2C 是两根开漏线上的「单向喊话」</strong>——主设备一根时钟线（SCL）一根数据线（SDA），先喊地址点名（谁应答谁上场），再一个字节一个字节地交换数据，每传完一个字节听一声回应（ACK）。要讲清楚的其实是六件事——<strong>这两根线凭什么能传数据</strong>（通信机制与时序）、<strong>同一个接口为什么有「软件」和「硬件」两种做法</strong>（软 IIC vs 硬 I2C）、<strong>硬件 I2C 怎么配</strong>（配置说明）、<strong>怎么把 CPU 从搬字节里解放出来</strong>（DMA）、<strong>还有一条「带规则的 I2C」叫什么</strong>（SMBus）、以及<strong>工程上踩过的坑</strong>（避坑备忘）。本文以 F1/F4 的 HAL 为例，寄存器名与配置以 HAL 为准。</p>
+</blockquote>
+<h2 id="_1">一、通信机制：两根线怎么就把事办了</h2>
+<p>I2C 只有 <strong>两根线</strong>：<strong>SCL（时钟线）</strong> 和 <strong>SDA（数据线）</strong>。和 UART/SPI 不同，I2C 是 <strong>主从结构</strong>——一个主设备（通常就是 MCU）发起点名和数据，一个或多个从设备（传感器、EEPROM、RTC、显示屏驱动）响应。用一句话理解它的性格：</p>
+<blockquote>
+<p><strong>I2C 是一个「多人共用的电话线」，大家都不说话时拉着（空闲），谁要说话就把它拉下来（占用）。主设备喊名字（地址），被喊到的人应答，然后按主设备的节奏一个字节一个字节对话。</strong></p>
+</blockquote>
+<h3 id="11">1.1 开漏 + 上拉电阻：为什么两根线能多人共用</h3>
+<p>这是 I2C 最根本的物理设计，理解了它，后面所有「为什么」都顺了：</p>
+<ul>
+<li><strong>SCL/SDA 都是开漏（Open-Drain）输出</strong>：器件只能把线<strong>拉低（输出 0）</strong>，<strong>不能主动输出高</strong>。</li>
+<li>线上各挂一个<strong>上拉电阻</strong>（通常 4.7kΩ / 2.2kΩ / 10kΩ），不拉时靠电阻把线拉回<strong>高电平</strong>。</li>
+<li>所以 <strong>SDA 高 = 1，SDA 低 = 0</strong>，总线空闲时两根线都是高。</li>
+<li>好处：<strong>任意一个器件都可以拉低总线，天然支持多主（只要不打架）</strong>；坏处是速度被上拉电阻和总线电容限制（上拉越慢、线越长，上升沿越缓，速度越上不去），这也是 I2C 标准速率只有 100k/400k/1M 的原因。</li>
+</ul>
+<div class="admonition warning">
+<p class="admonition-title">开漏不是漏了</p>
+<p>开漏是「只能拉低、不能推高」的意思。新板子上 I2C 不工作，第一步先量 <strong>SCL/SDA 是否有上拉电阻</strong>——很多模块（尤其 OLED、RTC）板载有上拉，而你自己画的板子如果忘了，就只剩两根悬空的线，通信全无。</p>
+</div>
+<h3 id="12">1.2 总线时序：先点名，再对话</h3>
+<p>一次完整的 I2C 通信叫一次 <strong>传输（Transaction）</strong>，分三步：<strong>起始 → 逐字节收发 → 停止</strong>。时序按 SCL 的电平节奏来：</p>
+<table>
+<thead>
+<tr>
+<th>阶段</th>
+<th>时序</th>
+<th>含义</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>起始位 START</strong></td>
+<td>SCL 高时，<strong>SDA 从高拉低</strong></td>
+<td>宣告总线占用，所有从机开始「听」</td>
+</tr>
+<tr>
+<td><strong>地址 + 读写位</strong></td>
+<td>8 位：7 位地址 + 1 位 R/W（0=写，1=读）</td>
+<td>点名的对象 + 这次要读还是要写</td>
+</tr>
+<tr>
+<td><strong>应答 ACK / 非应答 NACK</strong></td>
+<td>第 9 个时钟：SDA 低=ACK，高=NACK</td>
+<td>被点名的从机拉低应答，否则 NACK</td>
+</tr>
+<tr>
+<td><strong>数据字节</strong></td>
+<td>每字节 8 位，<strong>高位在前</strong>，之后 1 位 ACK</td>
+<td>按主设备节奏逐字节传</td>
+</tr>
+<tr>
+<td><strong>停止位 STOP</strong></td>
+<td>SCL 高时，<strong>SDA 从低拉高</strong></td>
+<td>释放总线，传输结束</td>
+</tr>
+</tbody>
+</table>
+<p>一张最关键的图（<strong>数据只在 SCL 高时有效，SCL 低时才能变化</strong>）：</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>      ┌─┐   ┌─┐   ┌─┐   ┌─┐   ┌─┐         SCL
+<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>  ────┘ └───┘ └───┘ └───┘ └───┘ └────────
+<a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>   ┌───────┐   ┌───────┐   ┌───────┐
+<a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a>   │ D7(D6)│   │ D5(D4)│   │ D3(D2)│      SDA（高电平期间稳定，低电平期间可变）
+<a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a>   └───────┘   └───────┘   └───────┘
+<a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a>   ←数据有效窗口→  ←数据有效窗口→
+<a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a>        ▲   ▲         采样点：SCL 高电平中段
+</code></pre></div>
+<ul>
+<li><strong>数据位</strong>：SCL 高电平期间 SDA 必须<strong>保持稳定</strong>，SCL 低电平期间 SDA 才能改变——这是协议铁律。</li>
+<li><strong>采样点</strong>：接收方在 <strong>SCL 高电平的中段</strong>读 SDA。</li>
+<li><strong>地址</strong>：7 位地址 + R/W 位组成第一个字节。常见从设备地址如 EEPROM 24C02（0xA0 写 / 0xA1 读）、OLED 0x78、RTC DS3231 0xD0。</li>
+<li><strong>应答</strong>：每个字节传完，<strong>接收方</strong>在第 9 个时钟拉低 SDA 表示 ACK。写 EEPROM 时每写一字节都要等它 ACK；读数据最后可以不 ACK（NACK）告诉从机「读够了，别发了」。</li>
+</ul>
+<h3 id="13">1.3 速率与时钟</h3>
+<p>I2C 总线由 <strong>SCL 的时钟</strong>决定速率，标准分四档：</p>
+<table>
+<thead>
+<tr>
+<th>模式</th>
+<th>速率</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>标准模式（Standard）</td>
+<td>100 kbit/s</td>
+<td>老设备默认</td>
+</tr>
+<tr>
+<td>快速模式（Fast）</td>
+<td>400 kbit/s</td>
+<td><strong>日常最常用</strong></td>
+</tr>
+<tr>
+<td>快速模式+（Fast+）</td>
+<td>1 Mbit/s</td>
+<td>需要更小上拉电阻</td>
+</tr>
+<tr>
+<td>高速模式（Hs）</td>
+<td>3.4 Mbit/s</td>
+<td>少见，F1/F4 不支持</td>
+</tr>
+</tbody>
+</table>
+<p><strong>波特率公式</strong>（硬件 I2C 由外设时钟分频而来）：</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>SCL = PCLK / (CLK 分频系数)      // 不同 MCU 公式不同，F1/F4 见下节配置
+</code></pre></div>
+<p>工程上 <strong>400kHz（Fast 模式）</strong> 是绝大多数 I2C 传感器的默认要求，CubeMX 里选 <strong>Fast Mode</strong>，CubeMX 会自动算好分频。</p>
+<h3 id="14-spi-uart">1.4 与 SPI / UART 的对比：什么时候选谁</h3>
+<table>
+<thead>
+<tr>
+<th>维度</th>
+<th>I2C</th>
+<th>SPI</th>
+<th>UART</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>线数</td>
+<td><strong>2 根</strong>（SCL+SDA）</td>
+<td>4 根（SCLK+MOSI+MISO+CS）</td>
+<td>2 根（TX+RX）</td>
+</tr>
+<tr>
+<td>结构</td>
+<td><strong>主从，可多从</strong>（7 位地址最多 128 个从机）</td>
+<td>主从，一主多从（靠 CS 片选）</td>
+<td><strong>点对点</strong>，无地址</td>
+</tr>
+<tr>
+<td>速度</td>
+<td>100k~1M</td>
+<td><strong>数十 MHz</strong>（最快）</td>
+<td>取决于波特率（通常 ≤几 Mbps）</td>
+</tr>
+<tr>
+<td>全双工</td>
+<td>❌ 半双工（同一根线读和写分时）</td>
+<td>✅ 全双工</td>
+<td>✅ 全双工</td>
+</tr>
+<tr>
+<td>硬件握手</td>
+<td>✅ 有 ACK（可靠）</td>
+<td>❌ 无（发出去不管）</td>
+<td>❌ 无</td>
+</tr>
+<tr>
+<td>总线仲裁</td>
+<td>✅ 支持多主</td>
+<td>❌</td>
+<td>❌</td>
+</tr>
+<tr>
+<td>最省引脚</td>
+<td>✅</td>
+<td>❌</td>
+<td>✅</td>
+</tr>
+</tbody>
+</table>
+<p><strong>怎么选</strong>：接线紧张选 I2C；追求速度选 SPI；一对一的可靠串口选 UART。I2C 是<strong>传感器、EEPROM、RTC 的默认总线</strong>，SPI 是<strong>高速外设（Flash、ADC、LCD）的默认总线</strong>。</p>
+<h2 id="iic-vs-i2c">二、软件 IIC vs 硬件 I2C：同一件事的两种做法</h2>
+<p>这是 I2C 专题最核心的辨析。<strong>同一个外设，为什么有的工程师「用 GPIO 自己模拟」，有的用「芯片自带的 I2C 外设」？</strong> 区别不是功能不同，而是<strong>实现主体不同</strong>——软件 IIC 用 CPU 逐位翻转 GPIO，硬件 I2C 用芯片内部的专用外设自动管理时序。</p>
+<h3 id="21-iic-gpio">2.1 软件 IIC：用 GPIO 模拟时序</h3>
+<p>软件 IIC 是<strong>不依赖芯片自带的 I2C 外设，直接用两个普通 GPIO 口模拟出 SCL/SDA 的时序</strong>。一个最简单的位收发核心逻辑：</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="cm">/* 软件 IIC 的核心：一个 GPIO 翻转 + 延时，模拟 SCL/SDA */</span>
+<a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a><span class="cp">#define IIC_SCL_1()  HAL_GPIO_WritePin(SCL_GPIO_Port, SCL_Pin, GPIO_PIN_SET)</span>
+<a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a><span class="cp">#define IIC_SCL_0()  HAL_GPIO_WritePin(SCL_GPIO_Port, SCL_Pin, GPIO_PIN_RESET)</span>
+<a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a><span class="cp">#define IIC_SDA_1()  HAL_GPIO_WritePin(SDA_GPIO_Port, SDA_Pin, GPIO_PIN_SET)</span>
+<a id="__codelineno-2-5" name="__codelineno-2-5" href="#__codelineno-2-5"></a><span class="cp">#define IIC_SDA_0()  HAL_GPIO_WritePin(SDA_GPIO_Port, SDA_Pin, GPIO_PIN_RESET)</span>
+<a id="__codelineno-2-6" name="__codelineno-2-6" href="#__codelineno-2-6"></a><span class="cp">#define IIC_SDA_READ() HAL_GPIO_ReadPin(SDA_GPIO_Port, SDA_Pin)</span>
+<a id="__codelineno-2-7" name="__codelineno-2-7" href="#__codelineno-2-7"></a>
+<a id="__codelineno-2-8" name="__codelineno-2-8" href="#__codelineno-2-8"></a><span class="k">static</span><span class="w"> </span><span class="kt">void</span><span class="w"> </span><span class="nf">IIC_Delay</span><span class="p">(</span><span class="kt">void</span><span class="p">)</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="k">for</span><span class="w"> </span><span class="p">(</span><span class="k">volatile</span><span class="w"> </span><span class="kt">int</span><span class="w"> </span><span class="n">i</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span><span class="w"> </span><span class="n">i</span><span class="w"> </span><span class="o">&lt;</span><span class="w"> </span><span class="mi">40</span><span class="p">;</span><span class="w"> </span><span class="n">i</span><span class="o">++</span><span class="p">)</span><span class="w"> </span><span class="p">;</span><span class="w"> </span><span class="p">}</span><span class="w">  </span><span class="cm">/* 空转延时 */</span>
+<a id="__codelineno-2-9" name="__codelineno-2-9" href="#__codelineno-2-9"></a>
+<a id="__codelineno-2-10" name="__codelineno-2-10" href="#__codelineno-2-10"></a><span class="cm">/* 发送 1 个字节：MSB 在前，SCL 高时 SDA 稳定 */</span>
+<a id="__codelineno-2-11" name="__codelineno-2-11" href="#__codelineno-2-11"></a><span class="k">static</span><span class="w"> </span><span class="kt">void</span><span class="w"> </span><span class="nf">IIC_SendByte</span><span class="p">(</span><span class="kt">uint8_t</span><span class="w"> </span><span class="n">byte</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-2-12" name="__codelineno-2-12" href="#__codelineno-2-12"></a><span class="w">    </span><span class="k">for</span><span class="w"> </span><span class="p">(</span><span class="kt">int</span><span class="w"> </span><span class="n">i</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span><span class="w"> </span><span class="n">i</span><span class="w"> </span><span class="o">&lt;</span><span class="w"> </span><span class="mi">8</span><span class="p">;</span><span class="w"> </span><span class="n">i</span><span class="o">++</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-2-13" name="__codelineno-2-13" href="#__codelineno-2-13"></a><span class="w">        </span><span class="p">(</span><span class="n">byte</span><span class="w"> </span><span class="o">&amp;</span><span class="w"> </span><span class="mh">0x80</span><span class="p">)</span><span class="w"> </span><span class="o">?</span><span class="w"> </span><span class="n">IIC_SDA_1</span><span class="p">()</span><span class="w"> </span><span class="o">:</span><span class="w"> </span><span class="n">IIC_SDA_0</span><span class="p">();</span>
+<a id="__codelineno-2-14" name="__codelineno-2-14" href="#__codelineno-2-14"></a><span class="w">        </span><span class="n">byte</span><span class="w"> </span><span class="o">&lt;&lt;=</span><span class="w"> </span><span class="mi">1</span><span class="p">;</span>
+<a id="__codelineno-2-15" name="__codelineno-2-15" href="#__codelineno-2-15"></a><span class="w">        </span><span class="n">IIC_Delay</span><span class="p">();</span>
+<a id="__codelineno-2-16" name="__codelineno-2-16" href="#__codelineno-2-16"></a><span class="w">        </span><span class="n">IIC_SCL_1</span><span class="p">();</span><span class="w"> </span><span class="n">IIC_Delay</span><span class="p">();</span><span class="w">   </span><span class="cm">/* SCL 拉高：数据被采样 */</span>
+<a id="__codelineno-2-17" name="__codelineno-2-17" href="#__codelineno-2-17"></a><span class="w">        </span><span class="n">IIC_SCL_0</span><span class="p">();</span><span class="w"> </span><span class="n">IIC_Delay</span><span class="p">();</span>
+<a id="__codelineno-2-18" name="__codelineno-2-18" href="#__codelineno-2-18"></a><span class="w">    </span><span class="p">}</span>
+<a id="__codelineno-2-19" name="__codelineno-2-19" href="#__codelineno-2-19"></a><span class="p">}</span>
+</code></pre></div>
+<p>它的<strong>本质</strong>是：把协议里的每一拍（起始位、每 8 位、ACK）都拆成「拉 GPIO + 延时」的指令序列，由 <strong>CPU 一条条执行</strong>。延时函数决定速率，通常靠空循环（delay loop）实现，<strong>不精确、但能跑</strong>。</p>
+<h3 id="22-i2c">2.2 硬件 I2C：专用外设接管</h3>
+<p>硬件 I2C 用的是芯片内部<strong>专门的 I2C 外设</strong>（F1 的 I2C1/2，F4 的 I2C1/2/3），它内置状态机，自动处理起始/停止/地址/ACK/数据位，CPU 只需要「写一个寄存器让外设发一字节，然后等它完成中断/标志位」。</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="cm">/* 硬件 I2C：CPU 只填缓冲和长度，外设自动做时序 */</span>
+<a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a><span class="n">HAL_I2C_Master_Transmit</span><span class="p">(</span><span class="o">&amp;</span><span class="n">hi2c1</span><span class="p">,</span><span class="w"> </span><span class="mh">0xA0</span><span class="p">,</span><span class="w"> </span><span class="n">txData</span><span class="p">,</span><span class="w"> </span><span class="n">len</span><span class="p">,</span><span class="w"> </span><span class="n">HAL_MAX_DELAY</span><span class="p">);</span>
+</code></pre></div>
+<p>它的<strong>本质</strong>是：时序由<strong>硬件状态机</strong>负责，<strong>CPU 不参与逐位翻转</strong>。CPU 关心的只是「开始、完成、出错」，用的是芯片厂商已经调好、带容错的成熟实现。</p>
+<h3 id="23">2.3 逐维度对比</h3>
+<table>
+<thead>
+<tr>
+<th>对比维度</th>
+<th>软件 IIC</th>
+<th>硬件 I2C</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>实现主体</strong></td>
+<td>CPU 逐位翻转 GPIO，靠空循环延时</td>
+<td>芯片自带 I2C 外设（状态机），硬件自动时序</td>
+</tr>
+<tr>
+<td><strong>引脚需求</strong></td>
+<td>任意 2 个 GPIO，无特殊要求</td>
+<td>必须接在 I2C 专用引脚（如 F1 的 PB6/PB7）</td>
+</tr>
+<tr>
+<td><strong>时序精度</strong></td>
+<td>取决于延时循环，<strong>受中断/编译优化影响，有抖动</strong></td>
+<td>硬件时钟精确，<strong>稳定</strong></td>
+</tr>
+<tr>
+<td><strong>波特率</strong></td>
+<td>由延时决定，不精确（约几十~几百 kHz）</td>
+<td>精确可配置（100k/400k/1M）</td>
+</tr>
+<tr>
+<td><strong>CPU 占用</strong></td>
+<td><strong>高</strong>，每个位都要 CPU 忙等延时</td>
+<td>低，字节级可交给中断/DMA（见第四节）</td>
+</tr>
+<tr>
+<td><strong>可靠性</strong></td>
+<td>无硬件错误检测，出错难定位</td>
+<td>有硬件错误标志（超时/仲裁/总线错误），HAL 能查错误码</td>
+</tr>
+<tr>
+<td><strong>支持多主/仲裁</strong></td>
+<td>❌ 不支持</td>
+<td>✅ 支持（硬件仲裁）</td>
+</tr>
+<tr>
+<td><strong>速率上限</strong></td>
+<td>受 GPIO 翻转速度 + 中断影响，通常难上 1M</td>
+<td>最高 1M（Fast+，F4 部分支持）</td>
+</tr>
+<tr>
+<td><strong>对中断敏感</strong></td>
+<td><strong>严重</strong>，中断打断会破坏时序</td>
+<td>弱，时序由硬件保证</td>
+</tr>
+<tr>
+<td><strong>可移植性</strong></td>
+<td>跨芯片强（任何 GPIO 都能模拟）</td>
+<td>强（HAL 封装统一，但引脚要换）</td>
+</tr>
+<tr>
+<td><strong>代码量 / 依赖</strong></td>
+<td>自写 ~100 行，零依赖</td>
+<td>依赖 HAL 库，初始化结构体较多</td>
+</tr>
+<tr>
+<td><strong>调试难度</strong></td>
+<td>自己挖的坑自己埋，可读性差</td>
+<td>有标准错误码，但初始化配置复杂</td>
+</tr>
+</tbody>
+</table>
+<h3 id="24">2.4 到底用哪个：一张决策表</h3>
+<table>
+<thead>
+<tr>
+<th>场景</th>
+<th>推荐</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>传感器 / EEPROM / RTC 常规读写，追求稳定可靠</td>
+<td><strong>硬件 I2C</strong>（默认首选）</td>
+</tr>
+<tr>
+<td>新板子刚回来、先快速点亮一个模块验证硬件</td>
+<td><strong>软件 IIC</strong>（几分钟就能跑，不依赖 CubeMX 配置，方便排硬件）</td>
+</tr>
+<tr>
+<td>引脚被占用，只能用两个不支持的 GPIO 口</td>
+<td><strong>软件 IIC</strong></td>
+</tr>
+<tr>
+<td>跑 RTOS，需要规避硬件 I2C 在中断里忙等的坑</td>
+<td>两者都行，但优先<strong>硬件 I2C + 中断/DMA</strong></td>
+</tr>
+<tr>
+<td>对时序敏感（如高速传感器、音频）</td>
+<td><strong>硬件 I2C</strong></td>
+</tr>
+<tr>
+<td>跨平台移植（代码要在多型号 MCU 复用）</td>
+<td><strong>软件 IIC</strong>（或封装好的一层抽象）</td>
+</tr>
+</tbody>
+</table>
+<div class="admonition tip">
+<p class="admonition-title">工程惯例：能用硬件就用硬件</p>
+<p>硬件 I2C 的坑（忙等、锁死、配置复杂）大多发生在<strong>不了解它</strong>时。把 HAL 的超时参数配好、用中断/DMA 代替阻塞调用后，硬件 I2C 是比软件 IIC 更省心、更可靠的选择。软件 IIC 适合<strong>调试早期</strong>和<strong>引脚受限</strong>的场合，作为「兜底方案」存在。</p>
+</div>
+<h2 id="i2c-cubemx-hal">三、硬件 I2C 配置说明：CubeMX + HAL</h2>
+<h3 id="31-cubemx-f4-f1">3.1 CubeMX 页面（F4 为例，F1 类似）</h3>
+<p><code>Connectivity → I2C1</code>，关键参数：</p>
+<table>
+<thead>
+<tr>
+<th>参数</th>
+<th>说明</th>
+<th>典型值</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Mode</strong></td>
+<td>I2C / I2C 多主 / SMBus 主机 / SMBus 从机</td>
+<td><strong>I2C</strong></td>
+</tr>
+<tr>
+<td><strong>Speed Mode</strong></td>
+<td>Standard（100k） / Fast（400k） / Fast+（1M）</td>
+<td><strong>Fast</strong>（400k，最通用）</td>
+</tr>
+<tr>
+<td><strong>I2C Speed</strong></td>
+<td>具体波特率，选 Fast 后自动算</td>
+<td>400000</td>
+</tr>
+<tr>
+<td><strong>Rising Time</strong></td>
+<td>上升沿时间（ns），跟总线上拉电阻、电容相关</td>
+<td>自动算好，一般不动</td>
+</tr>
+<tr>
+<td><strong>Falling Time</strong></td>
+<td>下降沿时间（ns）</td>
+<td>自动算好</td>
+</tr>
+<tr>
+<td><strong>Analog Filter</strong> / <strong>Digital Noise Filter</strong></td>
+<td>滤除毛刺，抑制干扰</td>
+<td>默认开启，保留</td>
+</tr>
+<tr>
+<td><strong>Address Mode</strong></td>
+<td>7 位 / 10 位地址</td>
+<td><strong>7 位</strong>（默认，绝大多数从设备）</td>
+</tr>
+<tr>
+<td><strong>Own Address</strong></td>
+<td>本机从机地址（做从机时用）</td>
+<td>主模式一般不管</td>
+</tr>
+</tbody>
+</table>
+<p>勾选上方 <strong>NVIC Settings → I2C1 event / error interrupt</strong>，生成代码才能用中断/DMA 收发。</p>
+<h3 id="32-hal">3.2 HAL 初始化结构体逐字段</h3>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a><span class="n">I2C_HandleTypeDef</span><span class="w"> </span><span class="n">hi2c1</span><span class="p">;</span>
+<a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a>
+<a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a><span class="n">hi2c1</span><span class="p">.</span><span class="n">Instance</span><span class="w">             </span><span class="o">=</span><span class="w"> </span><span class="n">I2C1</span><span class="p">;</span>
+<a id="__codelineno-4-4" name="__codelineno-4-4" href="#__codelineno-4-4"></a><span class="n">hi2c1</span><span class="p">.</span><span class="n">Init</span><span class="p">.</span><span class="n">ClockSpeed</span><span class="w">      </span><span class="o">=</span><span class="w"> </span><span class="mi">400000</span><span class="p">;</span><span class="w">          </span><span class="cm">/* 目标波特率：400k = Fast 模式 */</span>
+<a id="__codelineno-4-5" name="__codelineno-4-5" href="#__codelineno-4-5"></a><span class="n">hi2c1</span><span class="p">.</span><span class="n">Init</span><span class="p">.</span><span class="n">DutyCycle</span><span class="w">       </span><span class="o">=</span><span class="w"> </span><span class="n">I2C_DUTYCYCLE_2</span><span class="p">;</span><span class="w"> </span><span class="cm">/* 占空比：2=50%，16/9 是给 1M 用的 */</span>
+<a id="__codelineno-4-6" name="__codelineno-4-6" href="#__codelineno-4-6"></a><span class="n">hi2c1</span><span class="p">.</span><span class="n">Init</span><span class="p">.</span><span class="n">OwnAddress1</span><span class="w">     </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span><span class="w">               </span><span class="cm">/* 本机从机地址（主模式用不到） */</span>
+<a id="__codelineno-4-7" name="__codelineno-4-7" href="#__codelineno-4-7"></a><span class="n">hi2c1</span><span class="p">.</span><span class="n">Init</span><span class="p">.</span><span class="n">AddressingMode</span><span class="w">  </span><span class="o">=</span><span class="w"> </span><span class="n">I2C_ADDRESSINGMODE_7BIT</span><span class="p">;</span><span class="w">  </span><span class="cm">/* 7 位地址 */</span>
+<a id="__codelineno-4-8" name="__codelineno-4-8" href="#__codelineno-4-8"></a><span class="n">hi2c1</span><span class="p">.</span><span class="n">Init</span><span class="p">.</span><span class="n">DualAddressMode</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">I2C_DUALADDRESS_DISABLE</span><span class="p">;</span>
+<a id="__codelineno-4-9" name="__codelineno-4-9" href="#__codelineno-4-9"></a><span class="n">hi2c1</span><span class="p">.</span><span class="n">Init</span><span class="p">.</span><span class="n">GeneralCallMode</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">I2C_GENERALCALL_DISABLE</span><span class="p">;</span><span class="w">  </span><span class="cm">/* 广播呼叫 */</span>
+<a id="__codelineno-4-10" name="__codelineno-4-10" href="#__codelineno-4-10"></a><span class="n">hi2c1</span><span class="p">.</span><span class="n">Init</span><span class="p">.</span><span class="n">NoStretchMode</span><span class="w">   </span><span class="o">=</span><span class="w"> </span><span class="n">I2C_NOSTRETCH_DISABLE</span><span class="p">;</span><span class="w">    </span><span class="cm">/* 时钟拉伸，见下 */</span>
+<a id="__codelineno-4-11" name="__codelineno-4-11" href="#__codelineno-4-11"></a><span class="n">HAL_I2C_Init</span><span class="p">(</span><span class="o">&amp;</span><span class="n">hi2c1</span><span class="p">);</span>
+</code></pre></div>
+<h3 id="33-clock-stretching">3.3 时钟拉伸（Clock Stretching）：从机让主机「等一下」</h3>
+<p>I2C 里有个「从机拖时间」的机制：从机处理不过来时，可以把 <strong>SCL 拉低不放</strong>，主设备读到 SCL 一直低就知道「对方忙，等等」。这就是<strong>时钟拉伸</strong>。</p>
+<ul>
+<li><strong>从机慢、主设备快</strong>时容易触发（比如 EEPROM 写周期、OLED 刷新）。</li>
+<li><code>NoStretchMode</code> 置为 <strong>DISABLE</strong>（允许拉伸）是最常见的配置，让从机有机会拖时间。</li>
+<li>阻塞式（轮询）主模式天然「等得起」，因为 CPU 就在忙等；<strong>中断/DMA 模式靠超时检测来兜底</strong>——主机一直等不到 SCL 释放，最终报超时错误（<code>HAL_I2C_ERROR_TIMEOUT</code>）。所以<strong>配置超时参数是硬件 I2C 的必修课</strong>，见下。</li>
+</ul>
+<h3 id="34-timeout-i2c">3.4 超时（Timeout）：硬 I2C 最容易被忽略的一环</h3>
+<p>硬件 I2C 的阻塞函数都有超时参数：</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a><span class="n">HAL_I2C_Master_Transmit</span><span class="p">(</span><span class="o">&amp;</span><span class="n">hi2c1</span><span class="p">,</span><span class="w"> </span><span class="n">addr</span><span class="p">,</span><span class="w"> </span><span class="n">data</span><span class="p">,</span><span class="w"> </span><span class="n">len</span><span class="p">,</span><span class="w"> </span><span class="n">HAL_MAX_DELAY</span><span class="p">);</span>
+<a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a><span class="cm">/*                                                         └─────┬─────┘</span>
+<a id="__codelineno-5-3" name="__codelineno-5-3" href="#__codelineno-5-3"></a><span class="cm">                                                        超时 ms：超过即返回错误</span>
+<a id="__codelineno-5-4" name="__codelineno-5-4" href="#__codelineno-5-4"></a><span class="cm">                                                        HAL_MAX_DELAY = 阻塞永远等（不建议） */</span>
+</code></pre></div>
+<ul>
+<li>阻塞模式里传 <strong><code>HAL_MAX_DELAY</code></strong> 意味着「永远等」，如果总线卡死（从机没接、SDA 被拉死），<strong>CPU 会一直卡在函数里</strong>，这在生产代码里是灾难。</li>
+<li>正确做法是给一个<strong>合理超时</strong>（如 100ms），超时后函数返回错误码，应用层可以重试或上报：
+<div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">HAL_I2C_Master_Transmit</span><span class="p">(</span><span class="o">&amp;</span><span class="n">hi2c1</span><span class="p">,</span><span class="w"> </span><span class="mh">0xA0</span><span class="p">,</span><span class="w"> </span><span class="n">buf</span><span class="p">,</span><span class="w"> </span><span class="mi">2</span><span class="p">,</span><span class="w"> </span><span class="mi">100</span><span class="p">)</span><span class="w"> </span><span class="o">!=</span><span class="w"> </span><span class="n">HAL_OK</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-6-2" name="__codelineno-6-2" href="#__codelineno-6-2"></a><span class="w">    </span><span class="cm">/* 超时或出错：检查线路、从机是否上电、地址是否对 */</span>
+<a id="__codelineno-6-3" name="__codelineno-6-3" href="#__codelineno-6-3"></a><span class="p">}</span>
+</code></pre></div></li>
+</ul>
+<h3 id="35-hal">3.5 HAL 提供的三套接口</h3>
+<p>HAL 的 I2C 函数分<strong>轮询 / 中断 / DMA</strong> 三档，这也是第四节 DMA 的入口：</p>
+<table>
+<thead>
+<tr>
+<th>方式</th>
+<th>函数</th>
+<th>特点</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>轮询</strong></td>
+<td><code>HAL_I2C_Master_Transmit / Receive</code></td>
+<td>阻塞忙等，简单但卡 CPU</td>
+</tr>
+<tr>
+<td><strong>中断</strong></td>
+<td><code>HAL_I2C_Master_Transmit_IT / Receive_IT</code></td>
+<td>立即返回，完成后回调 <code>HAL_I2C_MasterTxCpltCallback</code></td>
+</tr>
+<tr>
+<td><strong>DMA</strong></td>
+<td><code>HAL_I2C_Master_Transmit_DMA / Receive_DMA</code></td>
+<td>数据自动搬运，完成回调，<strong>最省 CPU</strong></td>
+</tr>
+</tbody>
+</table>
+<p><strong>从机侧</strong>还有一套：<code>HAL_I2C_Slave_Transmit / Receive</code>，设备做从机时用（比如被另一个主机点名读数据）。</p>
+<h3 id="36-hal">3.6 最容易翻车的一个坑：HAL 的忙等和锁死</h3>
+<p>硬件 I2C 的阻塞调用（轮询）在 HAL 里的实现是<strong>「轮询状态寄存器 + 延时重试」</strong>，它不是真的中断驱动。两个高频坑：</p>
+<ul>
+<li><strong><code>HAL_I2C_Master_Transmit</code> 轮询在中断回调里调用会死锁</strong>：阻塞函数内部会调用 <code>HAL_Delay</code> 并等状态，在中断上下文调用会卡死（<code>HAL_Delay</code> 依赖 SysTick 中断）。<strong>中断/DMA 回调里只置标志，收发放到主循环</strong>。</li>
+<li><strong><code>I2C_BUSY</code> 标志卡住</strong>：上次传输没正常结束（比如被中断打断、超时），状态寄存器里 BUSY 一直不释放，下次调用直接返回忙。<strong>清法</strong>：调用 <code>HAL_I2C_DeInit</code> + <code>HAL_I2C_Init</code> 复位外设，或写 <code>I2C1-&gt;CR1</code> 的 SWRST 位复位。</li>
+<li><strong>引脚复用（Alternate Function）没配对</strong>：GPIO 要选 I2C 的 AF（如 F4 的 AF4），且要开上拉。<strong>开漏 + AF + 上拉</strong>，三样缺一不可，这是硬件 I2C 不工作的头号原因。</li>
+</ul>
+<h2 id="dma">四、DMA：把搬字节的活交给硬件</h2>
+<h3 id="41-dma">4.1 为什么要 DMA</h3>
+<p>I2C 每传一个字节，CPU 都要「从内存搬一次」或「收一次」再到下一个字节。当数据量大、或者 CPU 要同时忙别的事（电机控制、RTOS 任务）时，这个「每字节搬一次」的开销就不能忍了。<strong>DMA（Direct Memory Access）</strong> 是一条独立的搬运通道：CPU 只需要告诉它「从哪搬到哪、搬多少」，剩下每字节的搬运全部由 DMA 控制器在后台完成，<strong>搬完才通知 CPU</strong>。</p>
+<blockquote>
+<p>一句话：<strong>轮询是 CPU 亲自搬货，中断是 CPU 被叫去搬货，DMA 是雇了个搬运工（DMA 控制器）自己搬，搬完才喊你收货。</strong></p>
+</blockquote>
+<h3 id="42-hal-dma">4.2 HAL 的 DMA 收发流程</h3>
+<p>DMA 模式下，CPU 的工作量降到一个「发起」+ 一个「收尾回调」：</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a><span class="cm">/* 发送：告诉 DMA 把 txData 搬出去，返回后 CPU 立刻继续干别的 */</span>
+<a id="__codelineno-7-2" name="__codelineno-7-2" href="#__codelineno-7-2"></a><span class="n">HAL_I2C_Master_Transmit_DMA</span><span class="p">(</span><span class="o">&amp;</span><span class="n">hi2c1</span><span class="p">,</span><span class="w"> </span><span class="mh">0xA0</span><span class="p">,</span><span class="w"> </span><span class="n">txData</span><span class="p">,</span><span class="w"> </span><span class="mi">32</span><span class="p">);</span>
+<a id="__codelineno-7-3" name="__codelineno-7-3" href="#__codelineno-7-3"></a>
+<a id="__codelineno-7-4" name="__codelineno-7-4" href="#__codelineno-7-4"></a><span class="cm">/* 搬完了，回调里收尾 */</span>
+<a id="__codelineno-7-5" name="__codelineno-7-5" href="#__codelineno-7-5"></a><span class="kt">void</span><span class="w"> </span><span class="nf">HAL_I2C_MasterTxCpltCallback</span><span class="p">(</span><span class="n">I2C_HandleTypeDef</span><span class="w"> </span><span class="o">*</span><span class="n">hi2c</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-7-6" name="__codelineno-7-6" href="#__codelineno-7-6"></a><span class="w">    </span><span class="cm">/* 数据已全部发出：可以释放缓冲、置标志、或接着发起下一段 */</span>
+<a id="__codelineno-7-7" name="__codelineno-7-7" href="#__codelineno-7-7"></a><span class="p">}</span>
+<a id="__codelineno-7-8" name="__codelineno-7-8" href="#__codelineno-7-8"></a>
+<a id="__codelineno-7-9" name="__codelineno-7-9" href="#__codelineno-7-9"></a><span class="cm">/* 接收：把收到的 32 字节由 DMA 直接放进 rxData */</span>
+<a id="__codelineno-7-10" name="__codelineno-7-10" href="#__codelineno-7-10"></a><span class="n">HAL_I2C_Master_Receive_DMA</span><span class="p">(</span><span class="o">&amp;</span><span class="n">hi2c1</span><span class="p">,</span><span class="w"> </span><span class="mh">0xA1</span><span class="p">,</span><span class="w"> </span><span class="n">rxData</span><span class="p">,</span><span class="w"> </span><span class="mi">32</span><span class="p">);</span>
+<a id="__codelineno-7-11" name="__codelineno-7-11" href="#__codelineno-7-11"></a><span class="kt">void</span><span class="w"> </span><span class="nf">HAL_I2C_MasterRxCpltCallback</span><span class="p">(</span><span class="n">I2C_HandleTypeDef</span><span class="w"> </span><span class="o">*</span><span class="n">hi2c</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-7-12" name="__codelineno-7-12" href="#__codelineno-7-12"></a><span class="w">    </span><span class="cm">/* rxData 里已经有 32 字节，直接使用 */</span>
+<a id="__codelineno-7-13" name="__codelineno-7-13" href="#__codelineno-7-13"></a><span class="p">}</span>
+</code></pre></div>
+<p><strong>地址自增</strong>：DMA 搬的时候，源/目的内存地址自动 +1（<code>MemoryDataWidth</code> 配置），CPU 不用管。<strong>搬完触发完成中断 → 回调</strong>，中间 CPU 完全不介入。</p>
+<h3 id="43-cubemx-dma">4.3 CubeMX 里怎么开 DMA</h3>
+<p>在 CubeMX 中 <strong>I2C 页面 → DMA Settings</strong> 添加两个通道：</p>
+<table>
+<thead>
+<tr>
+<th>通道</th>
+<th>方向</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>DMA1 通道 x（TX）</strong></td>
+<td>Memory to Peripheral</td>
+<td>发送：内存 → I2C</td>
+</tr>
+<tr>
+<td><strong>DMA1 通道 y（RX）</strong></td>
+<td>Peripheral to Memory</td>
+<td>接收：I2C → 内存</td>
+</tr>
+</tbody>
+</table>
+<ul>
+<li><strong>Mode 选 Normal</strong>（默认），<strong>Memory Increment 开（地址自增）</strong>，Data Width 按 1 字节设即可（I2C 是字节流，8 位即可）。</li>
+<li>两个通道要在 CubeMX 里配好并<strong>全局使能</strong>（NVIC 勾上 DMA 中断），生成代码后 <code>HAL_I2C_Master_Transmit_DMA</code> 才能工作。</li>
+</ul>
+<h3 id="44-dma">4.4 DMA 的坑与边界</h3>
+<ul>
+<li><strong>DMA 回调里不要再开 DMA</strong>：回调里调用下一个 <code>_DMA</code> 函数在 HAL 某些时序下会重入异常（和 CAN 一样的道理）。改在主循环/任务里发起下一段。</li>
+<li><strong>DMA 目标缓冲要常驻</strong>：DMA 是「异步搬」，你传入的 <code>txData</code>/<code>rxData</code> 必须是<strong>生命周期覆盖整个传输</strong>的变量（<code>static</code> 或全局或 RTOS 队列缓冲），不能是函数栈上的一次性局部变量——函数返回了 DMA 还在搬，读到的就是悬空内存。这是 DMA 调试最经典的崩溃原因。</li>
+<li><strong>每次传输结束要等完成回调再改缓冲</strong>：发送完但回调没来，<code>txData</code> 不能急着改写。</li>
+<li><strong>DMA 不是所有量都值得</strong>：只有几十字节以下的小数据，轮询/中断可能更快（省去 DMA 的配置开销）；<strong>大量数据（几 KB 的 EEPROM 页、显示屏帧缓冲）才明显受益</strong>。</li>
+</ul>
+<table>
+<thead>
+<tr>
+<th>方式</th>
+<th>CPU 占用</th>
+<th>实时性</th>
+<th>适合量级</th>
+<th>适合场景</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>轮询</td>
+<td>最高（全程忙等）</td>
+<td>最差（被占用期间干不了别的）</td>
+<td>小、低频</td>
+<td>初始化自检</td>
+</tr>
+<tr>
+<td>中断</td>
+<td>中（每字节被打断一次）</td>
+<td>好</td>
+<td>中</td>
+<td>日常收发</td>
+</tr>
+<tr>
+<td>DMA</td>
+<td><strong>最低</strong>（搬完才打断）</td>
+<td>好</td>
+<td><strong>大、高频</strong></td>
+<td>大块数据、RTOS 场景</td>
+</tr>
+</tbody>
+</table>
+<h2 id="smbus-i2c">五、SMBus：带「规矩」的 I2C</h2>
+<p>SMBus（System Management Bus，系统管理总线）<strong>长得像 I2C，但比 I2C 更「严格」</strong>。它是从 I2C 演化而来的，用在<strong>电池、电源管理、传感器、服务器主板</strong>等系统管理场景。理解 SMBus 的正确姿势是：<strong>SMBus 是 I2C 的一个「超集 + 约束集」</strong>——线、时序、主从模型都一样，但加了超时、分组协议、报警机制等规则。</p>
+<h3 id="51-smbus-i2c">5.1 SMBus 与 I2C 的关键区别</h3>
+<table>
+<thead>
+<tr>
+<th>维度</th>
+<th>I2C</th>
+<th>SMBus</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>标准</strong></td>
+<td>通用总线，随意用</td>
+<td>系统管理总线，<strong>有明确定义的协议</strong></td>
+</tr>
+<tr>
+<td><strong>最高速率</strong></td>
+<td>100k/400k/1M</td>
+<td><strong>100 kHz</strong>（固定，大部分设备是 100k）</td>
+</tr>
+<tr>
+<td><strong>最小速率 / 超时</strong></td>
+<td>无规定（可无限慢）</td>
+<td><strong>有超时</strong>：从机必须在 25ms 内响应，否则视为故障</td>
+</tr>
+<tr>
+<td><strong>地址</strong></td>
+<td>7 位，地址空间大</td>
+<td>7 位，但<strong>保留了特定保留地址</strong>（如广播、SMBus 主机地址）</td>
+</tr>
+<tr>
+<td><strong>时钟拉伸限制</strong></td>
+<td>从机可以无限拉伸 SCL</td>
+<td><strong>拉伸上限 25ms</strong>，防止从机拖死总线</td>
+</tr>
+<tr>
+<td><strong>分组/寻址</strong></td>
+<td>无（自己定协议）</td>
+<td><strong>定义好的命令协议</strong>（读/写命令寄存器，有标准命令集）</td>
+</tr>
+<tr>
+<td><strong>PEC 校验</strong></td>
+<td>❌ 无</td>
+<td>✅ <strong>可选 PEC（包错误校验）</strong>：多 1 字节 CRC 校验</td>
+</tr>
+<tr>
+<td><strong>报警</strong></td>
+<td>❌ 无</td>
+<td>✅ <strong>SMBALERT#</strong>：从机主动拉低报警线通知主机</td>
+</tr>
+<tr>
+<td><strong>ARP</strong></td>
+<td>❌ 无</td>
+<td>✅ <strong>地址解析协议</strong>：动态分配地址（多从机同一地址时用）</td>
+</tr>
+<tr>
+<td><strong>典型设备</strong></td>
+<td>传感器、EEPROM、OLED</td>
+<td><strong>电池（智能电池）、PMIC、温度传感器、风扇控制器</strong></td>
+</tr>
+</tbody>
+</table>
+<h3 id="52-smbus">5.2 为什么 SMBus 要这些「规矩」</h3>
+<ul>
+<li><strong>超时（25ms）</strong>：I2C 允许从机无限拖时间（时钟拉伸），这在系统管理总线上是危险的——一个卡死的从机能把整条总线拖死。SMBus 规定<strong>任何操作必须在 25ms 内完成</strong>，超时即报错，保证「坏设备不拖垮总线」。</li>
+<li><strong>PEC</strong>：系统管理总线上的数据（电池电量、电压）<strong>错一个字节可能出大事</strong>，PEC 加一个 CRC 字节让主机能校验完整性。</li>
+<li><strong>SMBALERT#</strong>：从机发现问题（如电池过热）时<strong>主动拉低报警线</strong>，主机一收到就过来查，不用轮询。</li>
+<li><strong>ARP</strong>：多个相同地址的设备（如两块同型号电池）通过 ARP 动态分配地址，避免地址冲突。</li>
+</ul>
+<h3 id="53-stm32-i2c-smbus">5.3 如何用 STM32 的硬件 I2C 跑 SMBus</h3>
+<p><strong>好消息</strong>：SMBus 和 I2C 在<strong>物理层完全兼容</strong>（同样的开漏、同样的两根线、同样的时序），所以 <strong>STM32 的 I2C 外设可以直接连 SMBus 从设备</strong>，只要：</p>
+<ol>
+<li><strong>速率配到 100kHz</strong>（SMBus 标准上限）；</li>
+<li><strong>时序满足 SMBus 的 tr/tf（上升/下降时间）要求</strong>——通常标准上拉即可；</li>
+<li>用 <strong>I2C 寄存器级访问</strong>或 HAL 的寄存器级函数，自己实现 SMBus 的命令协议（读命令寄存器等）；</li>
+<li><strong>SMBALERT# / ARP</strong> 是额外信号线，分别接普通 GPIO 即可（SMBALERT# 是 SMBus 设备的第 4 根线：SCL、SDA、SMBALERT#、地）。</li>
+</ol>
+<p><strong>CubeMX 里直接选 SMBus 模式</strong>（<code>Connectivity → I2Cx → Mode: SMBus master</code>）就能让 HAL 按 SMBus 时序初始化，但<strong>应用层协议（命令格式、PEC）仍要自己写</strong>——HAL 只保证物理时序，不实现 SMBus 协议栈。</p>
+<div class="admonition warning">
+<p class="admonition-title">SMBus 不是「I2C 换个名字」</p>
+<p>物理兼容不等于协议兼容。I2C 里你爱怎么发就怎么发；SMBus 要求<strong>先发命令寄存器地址、再发数据</strong>的固定格式，且要遵守超时。直接用裸 I2C 去读 SMBus 设备，地址、时序对了，但命令格式不对会读不到正确数据。</p>
+</div>
+<h2 id="_2">六、避坑备忘</h2>
+<ul>
+<li><strong>上拉电阻是生命线</strong>：I2C 板子没上拉 = 两根悬空线，第一件事就是量 SCL/SDA 空载是不是高电平（3.3V/5V）。模块通常自带上拉，自己画板必加上拉（4.7kΩ 是 400k 速率的常见值）。</li>
+<li><strong>地址要区分 7 位和 8 位</strong>：很多芯片手册写 8 位地址（含 R/W 位，如 EEPROM 0xA0），HAL 的 <code>HAL_I2C_Master_Transmit</code> 第一个参数要传<strong>7 位地址</strong>（如 0x50）。写错地址直接 NACK（函数返回错误）。<strong>7 位 × 2 = 8 位</strong>，对应关系要分清。</li>
+<li><strong>SCL/SDA 的 GPIO 配置</strong>：开漏输出 + AF 复用 + 上拉，三样缺一不可（F4 是 <code>GPIO_MODE_AF_OD</code> + <code>GPIO_PULLUP</code>）。忘了开漏，总线会「推高」打架。</li>
+<li><strong>硬件 I2C 阻塞调用别进中断</strong>：<code>HAL_I2C_Master_Transmit</code> 在中断里用会死锁（内部等 SysTick/HAL_Delay）。中断里用 <code>_IT</code> 或 <code>_DMA</code> 版本，或只置标志。</li>
+<li><strong>DMA 缓冲要常驻</strong>：局部变量被 DMA 异步搬运 = 悬空指针崩溃。用 static/全局/队列缓冲。</li>
+<li><strong>BUSY 标志卡死</strong>：传输被打断后外设 BUSY 不释放，再发就报忙。<code>HAL_I2C_DeInit</code> + <code>HAL_I2C_Init</code> 复位外设即可。</li>
+<li><strong>从机地址别配错位</strong>：做从机时 <code>OwnAddress</code> 是 7 位；主模式发起时地址也要 7 位，别把手册的 8 位直接抄进来。</li>
+<li><strong>SMBus 设备当 I2C 用要看时序</strong>：速率别超 100k，注意从机的 25ms 超时限制，慢速轮询别被 SMBus 从机踢掉。</li>
+</ul>
+<h2 id="_3">参考</h2>
+<ul>
+<li>相关外设与裸机寄存器风格见 <a href="../peripheral-drivers/">peripheral-drivers.md</a></li>
+<li>与 CAN 的通信机制对比见 <a href="../stm32-can/">stm32-can.md</a></li>
+<li>寄存器级细节：对应参考手册 I2C 章节</li>
+<li>深入协议：NXP UM10204（I2C 总线规范）、System Management Bus (SMBus) Specification</li>
+</ul>
+
+
+
+
+
+
+
+  
+    
+  
+  
+    
+  
+
+
+  <aside class="md-source-file">
+    
+      
+  <span class="md-source-file__fact">
+    <span class="md-icon" title="最后更新">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M21 13.1c-.1 0-.3.1-.4.2l-1 1 2.1 2.1 1-1c.2-.2.2-.6 0-.8l-1.3-1.3c-.1-.1-.2-.2-.4-.2m-1.9 1.8-6.1 6V23h2.1l6.1-6.1zM12.5 7v5.2l4 2.4-1 1L11 13V7zM11 21.9c-5.1-.5-9-4.8-9-9.9C2 6.5 6.5 2 12 2c5.3 0 9.6 4.1 10 9.3-.3-.1-.6-.2-1-.2s-.7.1-1 .2C19.6 7.2 16.2 4 12 4c-4.4 0-8 3.6-8 8 0 4.1 3.1 7.5 7.1 7.9l-.1.2z"/></svg>
+    </span>
+    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="2026年8月7日 14:30:03 UTC">2026年8月7日</span>
+  </span>
+
+    
+    
+      
+  <span class="md-source-file__fact">
+    <span class="md-icon" title="创建日期">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M14.47 15.08 11 13V7h1.5v5.25l3.08 1.83c-.41.28-.79.62-1.11 1m-1.39 4.84c-.36.05-.71.08-1.08.08-4.42 0-8-3.58-8-8s3.58-8 8-8 8 3.58 8 8c0 .37-.03.72-.08 1.08.69.1 1.33.32 1.92.64.1-.56.16-1.13.16-1.72 0-5.5-4.5-10-10-10S2 6.5 2 12s4.47 10 10 10c.59 0 1.16-.06 1.72-.16-.32-.59-.54-1.23-.64-1.92M18 15v3h-3v2h3v3h2v-3h3v-2h-3v-3z"/></svg>
+    </span>
+    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="2026年8月7日 14:30:03 UTC">2026年8月7日</span>
+  </span>
+
+    
+    
+    
+  </aside>
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8z"/></svg>
+  回到页面顶部
+</button>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+  
+</div>
+      
+        
+<div class="md-social">
+  
+    
+    
+    
+    
+      
+      
+    
+    <a href="https://github.com/hellobugger" target="_blank" rel="noopener" title="github.com" class="md-social__link">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M173.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6m-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3m44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9M252.8 8C114.1 8 8 113.3 8 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C436.2 457.8 504 362.9 504 252 504 113.3 391.5 8 252.8 8M105.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1m-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7m32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1m-11.4-14.7c-1.6 1-1.6 3.6 0 5.9s4.3 3.3 5.6 2.3c1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2"/></svg>
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "../..", "features": ["navigation.tabs", "navigation.sections", "navigation.top", "toc.integrate", "search.highlight", "search.suggest", "content.code.copy", "content.code.annotate", "content.action.edit"], "search": "../../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "\u5df2\u590d\u5236", "clipboard.copy": "\u590d\u5236", "search.result.more.one": "\u5728\u8be5\u9875\u4e0a\u8fd8\u6709 1 \u4e2a\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.more.other": "\u5728\u8be5\u9875\u4e0a\u8fd8\u6709 # \u4e2a\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.none": "\u6ca1\u6709\u627e\u5230\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.one": "\u627e\u5230 1 \u4e2a\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.other": "# \u4e2a\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.placeholder": "\u952e\u5165\u4ee5\u5f00\u59cb\u641c\u7d22", "search.result.term.missing": "\u7f3a\u5c11", "select.version": "\u9009\u62e9\u5f53\u524d\u7248\u672c"}, "version": null}</script>
+    
+    
+      <script src="../../assets/javascripts/bundle.d7400e89.min.js"></script>
+      
+        <script src="../../javascripts/extra.js?v=7"></script>
+      
+    
+  </body>
+</html>
