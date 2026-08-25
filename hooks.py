@@ -97,6 +97,13 @@ def _dir_nav(dirpath: Path) -> list:
 def _nav(docs_dir: Path) -> list:
     label_of = {name: title for name, title, _ in CATEGORIES}
     nav = [{"首页": "index.md"}]
+
+    root_notes = sorted(
+        (p for p in docs_dir.glob("*.md") if p.name != "index.md"),
+        key=lambda p: p.name,
+    )
+    nav.extend({_note_title(p, p.stem): p.name} for p in root_notes)
+
     for d in sorted(docs_dir.iterdir()):
         if not d.is_dir():
             continue
