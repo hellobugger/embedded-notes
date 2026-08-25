@@ -1,0 +1,3054 @@
+
+<!doctype html>
+<html lang="zh" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="嵌入式软件/硬件调试心得与工作备忘">
+      
+      
+        <meta name="author" content="聂文俊">
+      
+      
+        <link rel="canonical" href="https://hellobugger.github.io/embedded-notes/mcu/stm32-usart-uart/">
+      
+      
+        <link rel="prev" href="../stm32-timer/">
+      
+      
+        <link rel="next" href="../stm32-watchdog/">
+      
+      
+        
+      
+      
+      <link rel="icon" href="../../assets/images/favicon.png">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.7">
+    
+    
+      
+        <title>STM32 USART / UART：从异步串口讲透每一种模式 - 嵌入式工作笔记</title>
+      
+    
+    
+      <link rel="stylesheet" href="../../assets/stylesheets/main.ec1eaa64.min.css">
+      
+        
+        <link rel="stylesheet" href="../../assets/stylesheets/palette.ab4e12ef.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+      <link rel="stylesheet" href="../../stylesheets/extra.css?v=4">
+    
+    <script>__md_scope=new URL("../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    
+    
+      
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#stm32-usart-uart" class="md-skip">
+          跳转至
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+<header class="md-header" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="页眉">
+    <a href="../.." title="嵌入式工作笔记" class="md-header__button md-logo" aria-label="嵌入式工作笔记" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            嵌入式工作笔记
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              STM32 USART / UART：从异步串口讲透每一种模式
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+        <form class="md-header__option" data-md-component="palette">
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="切换至深色模式"  type="radio" name="__palette" id="__palette_0">
+    
+      <label class="md-header__button md-icon" title="切换至深色模式" for="__palette_1" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a4 4 0 0 0-4 4 4 4 0 0 0 4 4 4 4 0 0 0 4-4 4 4 0 0 0-4-4m0 10a6 6 0 0 1-6-6 6 6 0 0 1 6-6 6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="" data-md-color-scheme="slate" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="切换至浅色模式"  type="radio" name="__palette" id="__palette_1">
+    
+      <label class="md-header__button md-icon" title="切换至浅色模式" for="__palette_0" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 18c-.89 0-1.74-.2-2.5-.55C11.56 16.5 13 14.42 13 12s-1.44-4.5-3.5-5.45C10.26 6.2 11.11 6 12 6a6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+</form>
+      
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="搜索" placeholder="搜索" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="查找">
+        
+        <button type="reset" class="md-search__icon md-icon" title="清空当前内容" aria-label="清空当前内容" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+        <div class="md-search__suggest" data-md-component="search-suggest"></div>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            正在初始化搜索引擎
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/hellobugger/embedded-notes" title="前往仓库" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M173.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6m-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3m44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9M252.8 8C114.1 8 8 113.3 8 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C436.2 457.8 504 362.9 504 252 504 113.3 391.5 8 252.8 8M105.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1m-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7m32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1m-11.4-14.7c-1.6 1-1.6 3.6 0 5.9s4.3 3.3 5.6 2.3c1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2"/></svg>
+  </div>
+  <div class="md-source__repository">
+    hellobugger/embedded-notes
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+  
+
+      
+        
+          
+            
+<nav class="md-tabs" aria-label="标签" data-md-component="tabs">
+  <div class="md-grid">
+    <ul class="md-tabs__list">
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../.." class="md-tabs__link">
+        
+  
+  
+    
+  
+  首页
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../environment/develop-environment/" class="md-tabs__link">
+          
+  
+  
+  开发环境
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../environment-tips/clion-tips/" class="md-tabs__link">
+          
+  
+  
+  开发环境技巧
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../hardware/esp32-reset/" class="md-tabs__link">
+          
+  
+  
+  硬件调试
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+    
+  
+  
+    
+    
+      <li class="md-tabs__item md-tabs__item--active">
+        <a href="../stm32-adc/" class="md-tabs__link">
+          
+  
+  
+  MCU 与驱动
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../programming/embedded-c-macros-inline/" class="md-tabs__link">
+          
+  
+  
+  programming
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../rtos/freertos-scheduler/" class="md-tabs__link">
+          
+  
+  
+  RTOS
+
+        </a>
+      </li>
+    
+  
+
+      
+    </ul>
+  </div>
+</nav>
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+  
+
+
+  
+
+<nav class="md-nav md-nav--primary md-nav--lifted md-nav--integrated" aria-label="导航栏" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="../.." title="嵌入式工作笔记" class="md-nav__button md-logo" aria-label="嵌入式工作笔记" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    嵌入式工作笔记
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/hellobugger/embedded-notes" title="前往仓库" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M173.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6m-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3m44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9M252.8 8C114.1 8 8 113.3 8 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C436.2 457.8 504 362.9 504 252 504 113.3 391.5 8 252.8 8M105.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1m-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7m32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1m-11.4-14.7c-1.6 1-1.6 3.6 0 5.9s4.3 3.3 5.6 2.3c1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2"/></svg>
+  </div>
+  <div class="md-source__repository">
+    hellobugger/embedded-notes
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../.." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    首页
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2" >
+        
+          
+          <label class="md-nav__link" for="__nav_2" id="__nav_2_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    开发环境
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_2">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    开发环境
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../environment/develop-environment/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    开发环境搭建
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" >
+        
+          
+          <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    开发环境技巧
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_3">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    开发环境技巧
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../environment-tips/clion-tips/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    CLion + CubeMX 使用技巧
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../environment-tips/eide-tips/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    VSCode + EIDE 使用技巧
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../environment-tips/esp-idf-tips/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    VSCode + ESP-IDF 使用技巧
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../environment-tips/keil-c51c251-tips/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Keil C51 / C251 使用技巧
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../environment-tips/keil5-cubemx-tips/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Keil5 + CubeMX 使用技巧
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../environment-tips/platformio-tips/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    VSCode + PlatformIO 使用技巧
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../environment-tips/rtthread-studio-tips/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    RT-Thread Studio 使用技巧
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../environment-tips/stm32cubeide-tips/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    STM32CubeIDE 使用技巧
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4" >
+        
+          
+          <label class="md-nav__link" for="__nav_4" id="__nav_4_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    硬件调试
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    硬件调试
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../hardware/esp32-reset/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ESP32-S3 反复复位（Wi-Fi 连接时）
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../hardware/power-ripple/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    电源纹波测试
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../hardware/scope-tips/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    示波器使用技巧
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5" checked>
+        
+          
+          <label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    MCU 与驱动
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_5">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    MCU 与驱动
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../stm32-adc/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    STM32 ADC：从配置到 DMA 的一篇讲透
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../stm32-can/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    CAN 总线：从通信机制到收发中断的一篇讲透
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../stm32-canfd/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    CAN FD 进阶：FDCAN 控制器从协议到寄存器的一篇讲透
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../stm32-clock-tree/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    STM32 时钟系统：五个时钟源
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../stm32-crc/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    STM32 CRC 硬件校验：从多项式到 DMA/协议落地的一篇讲透
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../stm32-dac/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    STM32 DAC：从配置到 DMA 的一篇讲透
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../stm32-fsmc/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    STM32 FSMC：把外设当作内存来读写的并行总线
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../stm32-i2c/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    STM32 I2C：从两根线讲透软件 IIC / 硬件 I2C / DMA / SMBus
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../stm32-lib-comparison/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    标准库 / LL / HAL 对比
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../stm32-notes/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    STM32H7 调试笔记
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../stm32-rng/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    STM32 RNG 硬件随机数生成器：从熵源到安全使用的一篇讲透
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../stm32-rtc/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    STM32 RTC：从走时到一堆「隐藏功能」的一篇讲透
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../stm32-spi/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    STM32 SPI：从四根线讲透软件 SPI / 硬件 SPI / DMA / 各种模式
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../stm32-timer/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    STM32 定时器：从时基到一堆「隐藏功能」的一篇讲透
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    STM32 USART / UART：从异步串口讲透每一种模式
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    STM32 USART / UART：从异步串口讲透每一种模式
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="目录">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      目录
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#usartuart" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        一、USART、UART 和串口的关系
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="一、USART、UART 和串口的关系">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#11" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        1.1 三个概念不要混
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#12" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        1.2 最基本的异步连接
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#13-uartspii2c" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        1.3 UART、SPI、I2C 的选择
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#uart" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        二、异步 UART 的通信机制
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="二、异步 UART 的通信机制">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#21" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2.1 一个字符由哪些位组成
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#22" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2.2 波特率、采样和误差
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#23" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2.3 校验位模式
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#24-9" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2.4 数据宽度和 9 位模式
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#usartuart_1" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        三、USART/UART 的工作模式
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="三、USART/UART 的工作模式">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#31-uart" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3.1 异步全双工模式：普通 UART，默认首选
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#32" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3.2 仅发送模式
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#33" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3.3 仅接收模式
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#34-usart" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3.4 USART 同步模式
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#35" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3.5 单线半双工模式
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#36-lin" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3.6 LIN 模式
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#37-irda" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3.7 IrDA 模式
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#38-smartcard" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3.8 Smartcard 模式
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#39-rs-485-driver-enable" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3.9 RS-485 / Driver Enable 模式
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#310" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3.10 多处理器 / 地址标记模式
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#rtscts" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        四、硬件流控：RTS/CTS
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#cubemx-hal" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        五、CubeMX 与 HAL 配置
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="五、CubeMX 与 HAL 配置">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#51" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        5.1 常用初始化字段
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#52-gpio" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        5.2 GPIO 配置
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#53" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        5.3 波特率计算的工程理解
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#54-cubemx" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        5.4 CubeMX 配置清单
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#55" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        5.5 同步模式的配置与时序检查
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#56-lin" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        5.6 LIN 的最小主机发送流程
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#57-rs-485" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        5.7 RS-485 的最小发送时序
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#58-dma-idle" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        5.8 DMA + IDLE 的接收缓冲边界
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#dma" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        六、三种收发方式：轮询、中断、DMA
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="六、三种收发方式：轮询、中断、DMA">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#61" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        6.1 轮询
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#62" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        6.2 中断
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#63-dma" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        6.3 DMA
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#64" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        6.4 接收不定长数据：空闲线检测
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#_1" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        七、状态标志与错误处理
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#_2" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        八、常见故障排查
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#_3" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        九、如何选择模式
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#_4" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        参考
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../stm32-watchdog/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    独立看门狗 IWDG 与窗口看门狗 WWDG
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_6" >
+        
+          
+          <label class="md-nav__link" for="__nav_6" id="__nav_6_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    programming
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_6_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_6">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    programming
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../programming/embedded-c-macros-inline/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    嵌入式 C 语言：宏、内联函数与代码编写注意事项
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_7" >
+        
+          
+          <label class="md-nav__link" for="__nav_7" id="__nav_7_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    RTOS
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_7_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_7">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    RTOS
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../rtos/freertos-scheduler/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    FreeRTOS 任务调度
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../rtos/queue-semaphore/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    队列与信号量
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+  
+    <a href="https://github.com/hellobugger/embedded-notes/blob/main/docs/mcu/stm32-usart-uart.md" title="编辑此页" class="md-content__button md-icon" rel="edit">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M10 20H6V4h7v5h5v3.1l2-2V8l-6-6H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h4zm10.2-7c.1 0 .3.1.4.2l1.3 1.3c.2.2.2.6 0 .8l-1 1-2.1-2.1 1-1c.1-.1.2-.2.4-.2m0 3.9L14.1 23H12v-2.1l6.1-6.1z"/></svg>
+    </a>
+  
+  
+
+
+<h1 id="stm32-usart-uart">STM32 USART / UART：从异步串口讲透每一种模式</h1>
+<blockquote>
+<p>一句话：<strong>UART/USART 是一条按约定波特率传输字节的串行接口</strong>。UART 只有异步收发；USART 在此基础上增加同步时钟，以及单线半双工、LIN、IrDA、Smartcard、RS-485 驱动使能等扩展能力。本文以 STM32 F1/F4 的 HAL 为主，具体功能以芯片数据手册、参考手册和 CubeMX 可选项为准。</p>
+</blockquote>
+<h2 id="usartuart">一、USART、UART 和串口的关系</h2>
+<h3 id="11">1.1 三个概念不要混</h3>
+<table>
+<thead>
+<tr>
+<th>名称</th>
+<th>本质</th>
+<th>典型能力</th>
+<th>常见用途</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>UART</strong></td>
+<td>通用异步收发器</td>
+<td>异步 TX/RX，无时钟线</td>
+<td>日志、GPS、蓝牙、模块通信</td>
+</tr>
+<tr>
+<td><strong>USART</strong></td>
+<td>通用同步/异步收发器</td>
+<td>UART + 同步时钟及扩展模式</td>
+<td>MCU 互连、LIN、Smartcard、IrDA</td>
+</tr>
+<tr>
+<td><strong>串口</strong></td>
+<td>口语称呼</td>
+<td>通常泛指 UART/USART</td>
+<td>调试、设备控制</td>
+</tr>
+<tr>
+<td><strong>TTL/CMOS UART</strong></td>
+<td>电平接口</td>
+<td>3.3V/5V 单端逻辑</td>
+<td>MCU 与模块直连</td>
+</tr>
+<tr>
+<td><strong>RS-232</strong></td>
+<td>电气标准</td>
+<td>正负电压、单端</td>
+<td>老式 PC、仪器</td>
+</tr>
+<tr>
+<td><strong>RS-485</strong></td>
+<td>电气标准</td>
+<td>A/B 差分、多点总线</td>
+<td>工业现场、Modbus RTU</td>
+</tr>
+</tbody>
+</table>
+<p>USART 的 TX/RX 是 3.3V CMOS 电平，<strong>不能直接连接 RS-232 或 RS-485 总线</strong>。RS-232 要加 MAX3232，RS-485 要加 MAX3485、SP3485 等收发器。UART 是数字协议/控制器，RS-232 和 RS-485 是电气层。</p>
+<h3 id="12">1.2 最基本的异步连接</h3>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>MCU A                              MCU B
+<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>+--------+                         +--------+
+<a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>| TX ----|------------------------&gt;| RX     |
+<a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a>| RX &lt;---|-------------------------| TX     |
+<a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a>| GND ---|-------------------------| GND    |
+<a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a>+--------+                         +--------+
+</code></pre></div>
+<ul>
+<li>TX 接对方 RX，RX 接对方 TX。</li>
+<li>GND 必须共地，否则没有共同的电平参考。</li>
+<li>空闲状态通常为高电平，起始位为低电平。</li>
+<li>只发日志时可以只接 TX 和 GND；只收数据时可以只接 RX 和 GND。</li>
+</ul>
+<h3 id="13-uartspii2c">1.3 UART、SPI、I2C 的选择</h3>
+<table>
+<thead>
+<tr>
+<th>维度</th>
+<th>UART/USART 异步</th>
+<th>SPI</th>
+<th>I2C</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>线数</td>
+<td>2 根 TX/RX + GND</td>
+<td>通常 4 根</td>
+<td>2 根</td>
+</tr>
+<tr>
+<td>结构</td>
+<td>点对点，无地址</td>
+<td>主从，靠 CS</td>
+<td>主从，靠地址</td>
+</tr>
+<tr>
+<td>时钟</td>
+<td>无独立时钟，双方约定波特率</td>
+<td>主机提供 SCK</td>
+<td>主机提供 SCL</td>
+</tr>
+<tr>
+<td>双工</td>
+<td>全双工或半双工</td>
+<td>全双工</td>
+<td>半双工</td>
+</tr>
+<tr>
+<td>速度</td>
+<td>常见 9.6k~4Mbps</td>
+<td>可达几十 MHz</td>
+<td>常见 100k~1MHz</td>
+</tr>
+<tr>
+<td>适合</td>
+<td>模块、调试、板间点对点</td>
+<td>Flash、LCD、ADC</td>
+<td>传感器、EEPROM、RTC</td>
+</tr>
+</tbody>
+</table>
+<h2 id="uart">二、异步 UART 的通信机制</h2>
+<h3 id="21">2.1 一个字符由哪些位组成</h3>
+<p>UART 没有时钟线，接收方通过起始位找到一个字符的开始，然后按波特率在规定时间点采样：</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>空闲   起始位       数据位（通常 8 位，低位先发）       校验位    停止位
+<a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a>高  ────┐       ┌── D0 ─ D1 ─ D2 ─ ... ─ D7 ───┐       ┌────── 高
+<a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a>        └───────┘                               └───────┘
+<a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a>           低              每位一个 bit time
+</code></pre></div>
+<p>一个典型的 <code>8N1</code> 字符包含：</p>
+<ol>
+<li><strong>1 个起始位</strong>：固定为 0，通知接收器开始接收。</li>
+<li><strong>8 个数据位</strong>：通常低位先发（LSB first）。</li>
+<li><strong>无校验位</strong>：<code>N</code> 表示 None。</li>
+<li><strong>1 个停止位</strong>：固定为 1，表示字符结束并回到空闲。</li>
+</ol>
+<p>因此 8N1 不是每 8 个时钟传一个字节，而是每个字节至少占 <strong>10 个 bit time</strong>：1 起始 + 8 数据 + 1 停止。<code>115200 baud</code> 下，理论裸数据速率约为 <code>115200 / 10 = 11520 byte/s</code>。</p>
+<h3 id="22">2.2 波特率、采样和误差</h3>
+<p>双方必须配置相同的：</p>
+<ul>
+<li><strong>波特率</strong>：如 9600、115200、1M。</li>
+<li><strong>数据位数</strong>：7、8 或 9 位。</li>
+<li><strong>校验方式</strong>：无、偶校验、奇校验。</li>
+<li><strong>停止位数</strong>：0.5、1、1.5 或 2 位，具体受芯片限制。</li>
+<li><strong>数据位序</strong>：通常 LSB first。</li>
+</ul>
+<p>STM32 USART 通常使用过采样：</p>
+<ul>
+<li><strong>16 倍过采样</strong>：抗时钟误差能力较好，常规默认。</li>
+<li><strong>8 倍过采样</strong>：允许更高波特率，但采样窗口更窄，误差容忍度下降。</li>
+</ul>
+<p>异步通信不是“只要波特率数字一样就行”。时钟误差会在一个字符内累计，波特率越高、数据帧越长、时钟误差越大，越容易在停止位采样时出错。常见晶振和短线通常能满足普通 UART，但高波特率、长线、强干扰环境应实测波形。</p>
+<h3 id="23">2.3 校验位模式</h3>
+<p>校验位是对数据位中逻辑 1 的数量做简单校验：</p>
+<table>
+<thead>
+<tr>
+<th>模式</th>
+<th>规则</th>
+<th>用途</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>None</td>
+<td>不发送校验位</td>
+<td>默认，效率最高</td>
+</tr>
+<tr>
+<td>Even</td>
+<td>数据位 + 校验位中的 1 的总数为偶数</td>
+<td>常用，能发现部分单比特错误</td>
+</tr>
+<tr>
+<td>Odd</td>
+<td>数据位 + 校验位中的 1 的总数为奇数</td>
+<td>与特定设备匹配</td>
+</tr>
+</tbody>
+</table>
+<p>校验位只能发现部分错误，不能替代 CRC。启用校验后，应用层看到的数据位宽会受影响：部分 STM32 USART 配置中，<code>8 data bits + parity</code> 实际由 9 位帧实现，接收数据寄存器的有效数据位也要按手册确认。</p>
+<h3 id="24-9">2.4 数据宽度和 9 位模式</h3>
+<ul>
+<li><strong>8 位数据</strong>：最常见，适合文本、二进制协议和 AT 指令。</li>
+<li><strong>7 位数据</strong>：较少见，常与校验组合使用。</li>
+<li><strong>9 位数据</strong>：可用于多机通信、地址标记，或者直接传输 9 位控制信息。</li>
+</ul>
+<p>9 位模式不是“普通 8 位再加一位随便用”。发送和接收 API 的数据类型、DMA 宽度、校验位配置都可能需要调整。启用 9 位帧时，通常使用 <code>uint16_t</code> 缓冲区，并将 DMA 外设/内存宽度设为 Half Word；否则会发生数据截断或错位。</p>
+<h2 id="usartuart_1">三、USART/UART 的工作模式</h2>
+<p>“模式”在 STM32 文档中可能指角色、线路形式或协议扩展。下面分开说明，避免把几个概念混为一谈。</p>
+<h3 id="31-uart">3.1 异步全双工模式：普通 UART，默认首选</h3>
+<p>这是最常用的模式：TX 和 RX 两根独立数据线，双方没有时钟线，可以同时发送和接收。</p>
+<ul>
+<li><strong>连接</strong>：TX、RX、GND。</li>
+<li><strong>特点</strong>：全双工；收发互不阻塞；双方必须约定帧格式。</li>
+<li><strong>典型用途</strong>：调试日志、GPS、蓝牙、串口屏、两块 MCU 点对点通信。</li>
+<li><strong>CubeMX</strong>：<code>Asynchronous</code>。</li>
+<li><strong>HAL</strong>：<code>HAL_UART_Transmit()</code>、<code>HAL_UART_Receive()</code>，或对应 <code>_IT</code>/<code>_DMA</code> 版本。</li>
+</ul>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="n">UART_HandleTypeDef</span><span class="w"> </span><span class="n">huart1</span><span class="p">;</span>
+<a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a>
+<a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a><span class="n">huart1</span><span class="p">.</span><span class="n">Instance</span><span class="w">          </span><span class="o">=</span><span class="w"> </span><span class="n">USART1</span><span class="p">;</span>
+<a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a><span class="n">huart1</span><span class="p">.</span><span class="n">Init</span><span class="p">.</span><span class="n">BaudRate</span><span class="w">     </span><span class="o">=</span><span class="w"> </span><span class="mi">115200</span><span class="p">;</span>
+<a id="__codelineno-2-5" name="__codelineno-2-5" href="#__codelineno-2-5"></a><span class="n">huart1</span><span class="p">.</span><span class="n">Init</span><span class="p">.</span><span class="n">WordLength</span><span class="w">   </span><span class="o">=</span><span class="w"> </span><span class="n">UART_WORDLENGTH_8B</span><span class="p">;</span>
+<a id="__codelineno-2-6" name="__codelineno-2-6" href="#__codelineno-2-6"></a><span class="n">huart1</span><span class="p">.</span><span class="n">Init</span><span class="p">.</span><span class="n">StopBits</span><span class="w">     </span><span class="o">=</span><span class="w"> </span><span class="n">UART_STOPBITS_1</span><span class="p">;</span>
+<a id="__codelineno-2-7" name="__codelineno-2-7" href="#__codelineno-2-7"></a><span class="n">huart1</span><span class="p">.</span><span class="n">Init</span><span class="p">.</span><span class="n">Parity</span><span class="w">       </span><span class="o">=</span><span class="w"> </span><span class="n">UART_PARITY_NONE</span><span class="p">;</span>
+<a id="__codelineno-2-8" name="__codelineno-2-8" href="#__codelineno-2-8"></a><span class="n">huart1</span><span class="p">.</span><span class="n">Init</span><span class="p">.</span><span class="n">Mode</span><span class="w">         </span><span class="o">=</span><span class="w"> </span><span class="n">UART_MODE_TX_RX</span><span class="p">;</span>
+<a id="__codelineno-2-9" name="__codelineno-2-9" href="#__codelineno-2-9"></a><span class="n">huart1</span><span class="p">.</span><span class="n">Init</span><span class="p">.</span><span class="n">HwFlowCtl</span><span class="w">    </span><span class="o">=</span><span class="w"> </span><span class="n">UART_HWCONTROL_NONE</span><span class="p">;</span>
+<a id="__codelineno-2-10" name="__codelineno-2-10" href="#__codelineno-2-10"></a><span class="n">huart1</span><span class="p">.</span><span class="n">Init</span><span class="p">.</span><span class="n">OverSampling</span><span class="w">  </span><span class="o">=</span><span class="w"> </span><span class="n">UART_OVERSAMPLING_16</span><span class="p">;</span>
+<a id="__codelineno-2-11" name="__codelineno-2-11" href="#__codelineno-2-11"></a><span class="n">HAL_UART_Init</span><span class="p">(</span><span class="o">&amp;</span><span class="n">huart1</span><span class="p">);</span>
+</code></pre></div>
+<h3 id="32">3.2 仅发送模式</h3>
+<p>仅发送时只启用 TX，RX 可以不接或复用为普通 GPIO。</p>
+<ul>
+<li><strong>适合</strong>：启动日志、调试打印、单向控制器、串口打印机。</li>
+<li><strong>优点</strong>：节省一个引脚和接收中断。</li>
+<li><strong>注意</strong>：没有接收路径，不能期待对方应答。</li>
+</ul>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="kt">uint8_t</span><span class="w"> </span><span class="n">text</span><span class="p">[]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">"boot ok</span><span class="se">\r\n</span><span class="s">"</span><span class="p">;</span>
+<a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a><span class="n">HAL_UART_Transmit</span><span class="p">(</span><span class="o">&amp;</span><span class="n">huart1</span><span class="p">,</span><span class="w"> </span><span class="n">text</span><span class="p">,</span><span class="w"> </span><span class="k">sizeof</span><span class="p">(</span><span class="n">text</span><span class="p">)</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="mi">1</span><span class="p">,</span><span class="w"> </span><span class="mi">100</span><span class="p">);</span>
+</code></pre></div>
+<h3 id="33">3.3 仅接收模式</h3>
+<p>仅接收时只启用 RX，通常由外部设备主动发送数据。</p>
+<ul>
+<li><strong>适合</strong>：GPS 接收、单向传感器、外部日志采集。</li>
+<li><strong>注意</strong>：接收数据需要及时取走；没有环形缓冲时，连续数据很容易溢出。</li>
+</ul>
+<h3 id="34-usart">3.4 USART 同步模式</h3>
+<p>同步模式在异步 UART 的基础上增加 CK 时钟线。发送方提供时钟，接收方按时钟边沿采样，不需要双方依靠各自的时钟估算 bit time。</p>
+<ul>
+<li><strong>线</strong>：TX、RX、CK，通常仍需 GND。</li>
+<li><strong>角色</strong>：通常由 USART 主设备输出 CK，从设备接收 CK。</li>
+<li><strong>特点</strong>：时序更确定，适用于短距离同步串行设备。</li>
+<li><strong>限制</strong>：不是 SPI 的替代品；具体 CPOL、CPHA、CK 输出能力要看芯片型号。</li>
+<li><strong>CubeMX</strong>：选择 <code>Synchronous</code> 或启用同步时钟相关选项。</li>
+</ul>
+<p>同步模式常见配置项：</p>
+<table>
+<thead>
+<tr>
+<th>参数</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Clock polarity</td>
+<td>CK 空闲电平，低或高</td>
+</tr>
+<tr>
+<td>Clock phase</td>
+<td>数据在第一个还是第二个边沿采样</td>
+</tr>
+<tr>
+<td>Last bit clock pulse</td>
+<td>最后一个数据位之后是否继续输出时钟</td>
+</tr>
+<tr>
+<td>Clock output</td>
+<td>是否由本机输出 CK</td>
+</tr>
+</tbody>
+</table>
+<p>同步 USART 的帧仍然包含数据位和停止控制，不能直接假设它与 SPI 帧完全相同。连接前必须对照两端手册确认时钟极性、边沿、帧格式和空闲状态。</p>
+<h3 id="35">3.5 单线半双工模式</h3>
+<p>单线半双工把 TX 和 RX 合并到一根数据线上，同一时刻只能有一个方向驱动。</p>
+<ul>
+<li><strong>接线</strong>：一根数据线 + GND。</li>
+<li><strong>发送时</strong>：本机驱动线路。</li>
+<li><strong>接收时</strong>：本机释放 TX 驱动并切换为接收。</li>
+<li><strong>特点</strong>：省一根线，但不能同时收发。</li>
+<li><strong>适合</strong>：引脚紧张的板间通信、总线式简单协议。</li>
+</ul>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a><span class="cm">/* 发送阶段 */</span>
+<a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a><span class="n">HAL_HalfDuplex_EnableTransmitter</span><span class="p">(</span><span class="o">&amp;</span><span class="n">huart1</span><span class="p">);</span>
+<a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a><span class="n">HAL_UART_Transmit</span><span class="p">(</span><span class="o">&amp;</span><span class="n">huart1</span><span class="p">,</span><span class="w"> </span><span class="n">tx</span><span class="p">,</span><span class="w"> </span><span class="n">tx_len</span><span class="p">,</span><span class="w"> </span><span class="mi">100</span><span class="p">);</span>
+<a id="__codelineno-4-4" name="__codelineno-4-4" href="#__codelineno-4-4"></a>
+<a id="__codelineno-4-5" name="__codelineno-4-5" href="#__codelineno-4-5"></a><span class="cm">/* 接收阶段：确保对端已释放总线后再切换 */</span>
+<a id="__codelineno-4-6" name="__codelineno-4-6" href="#__codelineno-4-6"></a><span class="n">HAL_HalfDuplex_EnableReceiver</span><span class="p">(</span><span class="o">&amp;</span><span class="n">huart1</span><span class="p">);</span>
+<a id="__codelineno-4-7" name="__codelineno-4-7" href="#__codelineno-4-7"></a><span class="n">HAL_UART_Receive</span><span class="p">(</span><span class="o">&amp;</span><span class="n">huart1</span><span class="p">,</span><span class="w"> </span><span class="n">rx</span><span class="p">,</span><span class="w"> </span><span class="n">rx_len</span><span class="p">,</span><span class="w"> </span><span class="mi">100</span><span class="p">);</span>
+</code></pre></div>
+<p>单线半双工必须处理好<strong>方向切换和总线占用</strong>：发送方还在驱动时，接收方不能同时驱动，否则会产生电气冲突。普通 UART 设备的 TX/RX 两线模式不能直接当单线设备使用，双方都要支持对应模式。</p>
+<h3 id="36-lin">3.6 LIN 模式</h3>
+<p>LIN（Local Interconnect Network）是面向汽车车身电子的低成本单主多从总线。它使用 UART 类异步帧，但增加了同步间隔、同步字段和标识符校验。</p>
+<p>典型 LIN 帧：</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a>Break | Sync(0x55) | Protected Identifier | Data(0~8 bytes) | Checksum
+</code></pre></div>
+<p>各字段作用：</p>
+<ul>
+<li><strong>Break</strong>：主机拉出一个明显长于普通字符的低电平，通知所有节点新帧开始。</li>
+<li><strong>Sync</strong>：固定 <code>0x55</code>，从机用它测量主机实际波特率。</li>
+<li><strong>PID</strong>：6 位标识符 + 2 位奇偶校验，决定帧类型和目标数据。</li>
+<li><strong>Data</strong>：0~8 字节，具体由 LIN 调度表决定。</li>
+<li><strong>Checksum</strong>：经典校验或增强校验，用于发现传输错误。</li>
+</ul>
+<p>USART 的 LIN 支持通常可以自动产生 Break、检测 Break，并帮助完成同步字段处理，但<strong>不会替应用层实现完整 LIN 调度器</strong>。主机仍要管理帧调度、PID、响应超时和数据解析。</p>
+<ul>
+<li><strong>适合</strong>：汽车座椅、车窗、空调面板等低速控制网络。</li>
+<li><strong>优点</strong>：线少、成本低、从机无需高精度晶振。</li>
+<li><strong>限制</strong>：单主、低速、实时性和带宽有限。</li>
+<li><strong>硬件</strong>：MCU USART 通常还需要 LIN 收发器，不能直接把总线线缆接到普通 TX/RX。</li>
+</ul>
+<h3 id="37-irda">3.7 IrDA 模式</h3>
+<p>IrDA 是红外串行通信。USART 的 IrDA 模式会对 UART 数据进行红外脉冲编码/解码，并通过外部红外收发器连接光学链路。</p>
+<ul>
+<li><strong>发送</strong>：UART 数据经 IrDA 编码后驱动红外 LED。</li>
+<li><strong>接收</strong>：红外接收器输出脉冲，再由 USART 解码。</li>
+<li><strong>特点</strong>：非接触、短距离、视距通信。</li>
+<li><strong>参数</strong>：通常涉及低功耗模式、脉冲宽度和 IrDA 低速/高速设置。</li>
+<li><strong>注意</strong>：IrDA 模式不是“把 TX 接到红外 LED”这么简单，需要匹配的红外收发器和光学结构。</li>
+</ul>
+<h3 id="38-smartcard">3.8 Smartcard 模式</h3>
+<p>Smartcard 模式面向 ISO 7816 类智能卡。它在 UART 框架上增加了半双工数据线、特殊校验、保护时间和时钟输出等能力。</p>
+<p>主要特点：</p>
+<ul>
+<li>通常使用一根双向 I/O 数据线。</li>
+<li>USART 可输出卡片工作时钟 CK。</li>
+<li>常使用<strong>偶校验</strong>，并有特定停止位规则。</li>
+<li>支持保护时间（Guard Time），避免连续字符间隔不符合卡规范。</li>
+<li>需要电源、复位、时钟和数据等配套电路。</li>
+</ul>
+<p>Smartcard 模式适合真正的 ISO 7816 卡接口，不适合拿来代替普通 UART。卡座的电压、电流、上电顺序、ESD 和电平转换必须按卡规范设计；USART 只负责其中的串行控制器部分。</p>
+<h3 id="39-rs-485-driver-enable">3.9 RS-485 / Driver Enable 模式</h3>
+<p>RS-485 不是 USART 协议，而是差分物理层。STM32 的 USART 可以配合 RS-485 收发器工作；部分型号支持硬件 DE（Driver Enable）引脚自动控制。</p>
+<p>典型连接：</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a>MCU USART TX/RX &lt;--&gt; RS-485 收发器 DI/RO
+<a id="__codelineno-6-2" name="__codelineno-6-2" href="#__codelineno-6-2"></a>MCU DE/RE       &lt;--&gt; RS-485 收发器 DE/RE
+<a id="__codelineno-6-3" name="__codelineno-6-3" href="#__codelineno-6-3"></a>收发器 A/B      &lt;--&gt; 总线 A/B
+</code></pre></div>
+<ul>
+<li><strong>发送前</strong>：DE 拉高，使能发送器。</li>
+<li><strong>发送完成后</strong>：必须等最后一个停止位真正发完，再释放 DE。</li>
+<li><strong>接收时</strong>：DE 拉低，收发器进入接收状态。</li>
+<li><strong>总线</strong>：通常半双工，多节点共享 A/B。</li>
+</ul>
+<p>如果用 GPIO 软件控制 DE，应等待 <code>TC</code>（Transmission Complete），不能只等 <code>TXE</code>。<code>TXE</code> 只表示发送数据寄存器空了，最后一个字节可能还在移位寄存器中；此时提前拉低 DE 会截断最后几个 bit。</p>
+<p>支持硬件 DE 的 USART 可以配置：</p>
+<ul>
+<li>DE 极性。</li>
+<li>DE assertion time：发送前提前多少时间使能。</li>
+<li>DE deassertion time：发送结束后延迟多少时间释放。</li>
+</ul>
+<p>硬件 DE 能减少软件时序错误，但 RS-485 的终端电阻、偏置电阻、节点数量、线缆拓扑和协议仲裁仍需系统设计。Modbus RTU 只是 RS-485 上的一种应用协议，不是 RS-485 的同义词。</p>
+<h3 id="310">3.10 多处理器 / 地址标记模式</h3>
+<p>USART 的 9 位帧和空闲线检测可以组成简单的多机通信方案：</p>
+<ul>
+<li>一个 9 位标志表示“这是地址帧”。</li>
+<li>从机先接收地址，匹配自身地址的从机才接收后续数据。</li>
+<li>其他从机忽略数据，降低 CPU 负担。</li>
+</ul>
+<p>不同 STM32 系列对地址标记、唤醒和静默模式的寄存器支持不同。常见唤醒方式包括：</p>
+<ul>
+<li><strong>空闲线唤醒</strong>：检测到总线空闲后唤醒。</li>
+<li><strong>地址标记唤醒</strong>：只有带地址标记的帧唤醒目标从机。</li>
+</ul>
+<p>这是一个硬件辅助的轻量多机机制，不等于完整总线协议；仍需要应用层定义地址、帧边界、超时、重试和错误恢复。</p>
+<h2 id="rtscts">四、硬件流控：RTS/CTS</h2>
+<p>硬件流控使用额外的 RTS、CTS 信号控制发送速度：</p>
+<ul>
+<li><strong>RTS</strong>：本机告诉对方“我是否准备好接收”。</li>
+<li><strong>CTS</strong>：对方告诉本机“现在是否允许发送”。</li>
+</ul>
+<p>开启硬件流控需要连接 TX、RX、RTS、CTS 和 GND，并且两端极性、有效电平一致。</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a><span class="n">huart1</span><span class="p">.</span><span class="n">Init</span><span class="p">.</span><span class="n">HwFlowCtl</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">UART_HWCONTROL_RTS_CTS</span><span class="p">;</span>
+</code></pre></div>
+<p>适合高波特率、接收端处理速度不稳定、数据不能丢失的场景。对于只有 TX/RX 两根线的模块，不能凭软件开启 RTS/CTS；没有实际连线时开启会导致发送端一直等待 CTS。</p>
+<h2 id="cubemx-hal">五、CubeMX 与 HAL 配置</h2>
+<h3 id="51">5.1 常用初始化字段</h3>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a><span class="n">huart1</span><span class="p">.</span><span class="n">Instance</span><span class="w">          </span><span class="o">=</span><span class="w"> </span><span class="n">USART1</span><span class="p">;</span>
+<a id="__codelineno-8-2" name="__codelineno-8-2" href="#__codelineno-8-2"></a><span class="n">huart1</span><span class="p">.</span><span class="n">Init</span><span class="p">.</span><span class="n">BaudRate</span><span class="w">     </span><span class="o">=</span><span class="w"> </span><span class="mi">115200</span><span class="p">;</span>
+<a id="__codelineno-8-3" name="__codelineno-8-3" href="#__codelineno-8-3"></a><span class="n">huart1</span><span class="p">.</span><span class="n">Init</span><span class="p">.</span><span class="n">WordLength</span><span class="w">   </span><span class="o">=</span><span class="w"> </span><span class="n">UART_WORDLENGTH_8B</span><span class="p">;</span>
+<a id="__codelineno-8-4" name="__codelineno-8-4" href="#__codelineno-8-4"></a><span class="n">huart1</span><span class="p">.</span><span class="n">Init</span><span class="p">.</span><span class="n">StopBits</span><span class="w">     </span><span class="o">=</span><span class="w"> </span><span class="n">UART_STOPBITS_1</span><span class="p">;</span>
+<a id="__codelineno-8-5" name="__codelineno-8-5" href="#__codelineno-8-5"></a><span class="n">huart1</span><span class="p">.</span><span class="n">Init</span><span class="p">.</span><span class="n">Parity</span><span class="w">       </span><span class="o">=</span><span class="w"> </span><span class="n">UART_PARITY_NONE</span><span class="p">;</span>
+<a id="__codelineno-8-6" name="__codelineno-8-6" href="#__codelineno-8-6"></a><span class="n">huart1</span><span class="p">.</span><span class="n">Init</span><span class="p">.</span><span class="n">Mode</span><span class="w">         </span><span class="o">=</span><span class="w"> </span><span class="n">UART_MODE_TX_RX</span><span class="p">;</span>
+<a id="__codelineno-8-7" name="__codelineno-8-7" href="#__codelineno-8-7"></a><span class="n">huart1</span><span class="p">.</span><span class="n">Init</span><span class="p">.</span><span class="n">HwFlowCtl</span><span class="w">    </span><span class="o">=</span><span class="w"> </span><span class="n">UART_HWCONTROL_NONE</span><span class="p">;</span>
+<a id="__codelineno-8-8" name="__codelineno-8-8" href="#__codelineno-8-8"></a><span class="n">huart1</span><span class="p">.</span><span class="n">Init</span><span class="p">.</span><span class="n">OverSampling</span><span class="w">  </span><span class="o">=</span><span class="w"> </span><span class="n">UART_OVERSAMPLING_16</span><span class="p">;</span>
+<a id="__codelineno-8-9" name="__codelineno-8-9" href="#__codelineno-8-9"></a><span class="n">HAL_UART_Init</span><span class="p">(</span><span class="o">&amp;</span><span class="n">huart1</span><span class="p">);</span>
+</code></pre></div>
+<table>
+<thead>
+<tr>
+<th>字段</th>
+<th>作用</th>
+<th>常见选择</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>BaudRate</code></td>
+<td>波特率</td>
+<td>9600、115200</td>
+</tr>
+<tr>
+<td><code>WordLength</code></td>
+<td>帧宽，注意校验位影响</td>
+<td>8B</td>
+</tr>
+<tr>
+<td><code>StopBits</code></td>
+<td>停止位长度</td>
+<td>1</td>
+</tr>
+<tr>
+<td><code>Parity</code></td>
+<td>奇偶校验</td>
+<td>None</td>
+</tr>
+<tr>
+<td><code>Mode</code></td>
+<td>TX、RX 或同时启用</td>
+<td>TX_RX</td>
+</tr>
+<tr>
+<td><code>HwFlowCtl</code></td>
+<td>RTS/CTS 硬件流控</td>
+<td>None</td>
+</tr>
+<tr>
+<td><code>OverSampling</code></td>
+<td>8 倍或 16 倍采样</td>
+<td>16</td>
+</tr>
+<tr>
+<td><code>OneBitSampling</code></td>
+<td>单点采样，部分型号支持</td>
+<td>Disable</td>
+</tr>
+<tr>
+<td><code>AdvancedInit</code></td>
+<td>TX/RX 极性、交换、过采样等扩展</td>
+<td>默认</td>
+</tr>
+</tbody>
+</table>
+<h3 id="52-gpio">5.2 GPIO 配置</h3>
+<p>异步 USART GPIO 通常要求：</p>
+<ul>
+<li>TX：复用推挽输出或芯片规定的复用模式。</li>
+<li>RX：复用输入，必要时配置上拉/下拉。</li>
+<li>CK：同步模式下配置为复用输出/输入。</li>
+<li>DE：硬件 RS-485 模式下配置为对应复用功能。</li>
+<li>选择正确的 Alternate Function。</li>
+<li>开启对应 GPIO 和 USART 外设时钟。</li>
+</ul>
+<p>GPIO 复用错、TX/RX 接反、没有共地，是比代码问题更常见的故障原因。</p>
+<h3 id="53">5.3 波特率计算的工程理解</h3>
+<p>异步波特率由 USART 外设时钟和波特率寄存器共同决定。不同 STM32 系列的 BRR 计算细节不同，不能把 F1 的公式直接套到 F4 或 H7。使用 CubeMX 时让它根据时钟树计算；裸机配置时必须按当前参考手册计算。</p>
+<p>检查顺序：</p>
+<ol>
+<li>确认 USART 挂载的 APB 时钟。</li>
+<li>确认 APB 预分频器和定时器倍频规则不要被混淆。</li>
+<li>确认 <code>OverSampling</code> 是 8 还是 16。</li>
+<li>读取 BRR，反算实际波特率。</li>
+<li>用逻辑分析仪检查实际 bit time。</li>
+</ol>
+<h3 id="54-cubemx">5.4 CubeMX 配置清单</h3>
+<p>以普通异步全双工 <code>115200 8N1</code> 为例，进入 <code>Connectivity -&gt; USARTx</code> 后，按下面顺序检查：</p>
+<ol>
+<li><strong>Mode</strong> 选 <code>Asynchronous</code>，并启用 <code>TX/RX</code>。</li>
+<li><strong>Baud Rate</strong> 设为对端约定值，例如 <code>115200</code>。</li>
+<li><strong>Word Length / Parity / Stop Bits</strong> 与对端完全一致：常规设备使用 <code>8 Bits / None / 1</code>。</li>
+<li><strong>Hardware Flow Control</strong> 没有实际 RTS/CTS 连线时选 <code>Disable</code>。</li>
+<li>在 <strong>GPIO Settings</strong> 确认 TX、RX 分配到了实际接线的复用引脚；不同封装可用引脚不同。</li>
+<li>中断收发：在 <strong>NVIC Settings</strong> 开启对应 <code>USARTx global interrupt</code>。</li>
+<li>DMA 收发：在 <strong>DMA Settings</strong> 添加 RX/TX 请求，通常选 <code>Normal</code>；连续接收按目标系列的 DMA 能力选择 Circular 或 Receive-to-Idle。</li>
+<li>回到 <strong>Clock Configuration</strong>，确认 APB 时钟没有超出该 USART 实例的上限；改时钟树后重新核对实际波特率。</li>
+</ol>
+<p>不同工作模式是在这份基础配置上增减：</p>
+<table>
+<thead>
+<tr>
+<th>目标模式</th>
+<th>CubeMX/初始化额外项</th>
+<th>引脚或外设要求</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>仅发送</td>
+<td>只启用 TX</td>
+<td>TX + GND</td>
+</tr>
+<tr>
+<td>仅接收</td>
+<td>只启用 RX</td>
+<td>RX + GND</td>
+</tr>
+<tr>
+<td>同步 USART</td>
+<td><code>Synchronous</code>，设置 Clock polarity/phase</td>
+<td>额外 CK，且对端支持</td>
+</tr>
+<tr>
+<td>单线半双工</td>
+<td><code>Half Duplex</code></td>
+<td>只使用 USART 的单线数据脚</td>
+</tr>
+<tr>
+<td>LIN</td>
+<td><code>LIN</code>，配置 Break detect length</td>
+<td>LIN 收发器与 LIN 帧调度</td>
+</tr>
+<tr>
+<td>IrDA</td>
+<td><code>IrDA</code>，配置 Prescaler/低功耗选项</td>
+<td>红外编码/接收硬件</td>
+</tr>
+<tr>
+<td>Smartcard</td>
+<td><code>Smartcard</code>，配置 Guard Time/NACK 等</td>
+<td>ISO 7816 卡接口电路</td>
+</tr>
+<tr>
+<td>RS-485 硬件 DE</td>
+<td><code>RS485</code>，配置 DE 极性及前后延时</td>
+<td>支持 DE 的 USART 和 RS-485 收发器</td>
+</tr>
+</tbody>
+</table>
+<div class="admonition warning">
+<p class="admonition-title">不是每个 USART 实例都有全部模式</p>
+<p>F1/F4 中，名称为 <code>UARTx</code> 的外设通常只提供异步能力；同步、LIN、Smartcard、IrDA 和硬件 DE 的支持也因具体芯片和实例而异。CubeMX 未显示某个模式，不能通过强行套用别的型号寄存器来开启；应以本芯片参考手册的 USART 功能表为准。</p>
+</div>
+<h3 id="55">5.5 同步模式的配置与时序检查</h3>
+<p>同步 USART 的关键不是只多配一个 CK 引脚，而是两端必须对齐时钟行为：</p>
+<ol>
+<li>先确认哪一端输出 CK，另一端只能作为时钟接收方。</li>
+<li>对齐 CK 空闲电平（CPOL）和数据采样边沿（CPHA）。</li>
+<li>明确最后一位后是否仍要输出时钟脉冲；有些从设备依赖该脉冲完成最后一位采样。</li>
+<li>保持数据位、校验位、停止位配置一致。</li>
+<li>用示波器或逻辑分析仪确认数据在采样沿前已经稳定，而不是只看“有 CK 波形”。</li>
+</ol>
+<p>同步 USART 的 CK 只在同步发送/接收相关时序中工作，不能把它当成独立的持续系统时钟输出。若目标是高速、无停止位、标准化的同步外设通信，应优先评估 SPI。</p>
+<h3 id="56-lin">5.6 LIN 的最小主机发送流程</h3>
+<p>STM32 的 LIN 支持负责 UART 侧的 Break 检测或发送辅助，但完整帧仍由应用组织。主机最小流程是：</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a>发送 Break -&gt; 发送 0x55 Sync -&gt; 发送 PID -&gt; 发送或等待 Data -&gt; 校验 Checksum
+</code></pre></div>
+<p>实现时特别注意：</p>
+<ul>
+<li>Break 不是普通字符 <code>0x00</code>，它要求低电平持续时间超过常规字符帧；应使用 HAL/LL/寄存器提供的 Break 发送功能。</li>
+<li><code>PID</code> 的两个校验位由 6 位 ID 计算而来；不能把裸 ID 直接当 PID 发送。</li>
+<li>Data 由主机发送还是从机响应，取决于该帧在调度表中的定义。</li>
+<li>Checksum 的经典/增强算法取决于 LIN 版本和帧定义；主从双方必须一致。</li>
+<li>LIN 标准速率较低，常见上限为 20 kbit/s；不要把它当作高速 UART 总线。</li>
+</ul>
+<h3 id="57-rs-485">5.7 RS-485 的最小发送时序</h3>
+<p>软件控制 DE 时，推荐的发送顺序如下：</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-10-1" name="__codelineno-10-1" href="#__codelineno-10-1"></a><span class="k">static</span><span class="w"> </span><span class="n">HAL_StatusTypeDef</span><span class="w"> </span><span class="nf">RS485_Transmit</span><span class="p">(</span><span class="n">UART_HandleTypeDef</span><span class="w"> </span><span class="o">*</span><span class="n">huart</span><span class="p">,</span>
+<a id="__codelineno-10-2" name="__codelineno-10-2" href="#__codelineno-10-2"></a><span class="w">                                        </span><span class="n">GPIO_TypeDef</span><span class="w"> </span><span class="o">*</span><span class="n">de_port</span><span class="p">,</span>
+<a id="__codelineno-10-3" name="__codelineno-10-3" href="#__codelineno-10-3"></a><span class="w">                                        </span><span class="kt">uint16_t</span><span class="w"> </span><span class="n">de_pin</span><span class="p">,</span>
+<a id="__codelineno-10-4" name="__codelineno-10-4" href="#__codelineno-10-4"></a><span class="w">                                        </span><span class="k">const</span><span class="w"> </span><span class="kt">uint8_t</span><span class="w"> </span><span class="o">*</span><span class="n">data</span><span class="p">,</span>
+<a id="__codelineno-10-5" name="__codelineno-10-5" href="#__codelineno-10-5"></a><span class="w">                                        </span><span class="kt">uint16_t</span><span class="w"> </span><span class="n">size</span><span class="p">)</span>
+<a id="__codelineno-10-6" name="__codelineno-10-6" href="#__codelineno-10-6"></a><span class="p">{</span>
+<a id="__codelineno-10-7" name="__codelineno-10-7" href="#__codelineno-10-7"></a><span class="w">    </span><span class="n">HAL_GPIO_WritePin</span><span class="p">(</span><span class="n">de_port</span><span class="p">,</span><span class="w"> </span><span class="n">de_pin</span><span class="p">,</span><span class="w"> </span><span class="n">GPIO_PIN_SET</span><span class="p">);</span><span class="w">  </span><span class="cm">/* 使能收发器发送 */</span>
+<a id="__codelineno-10-8" name="__codelineno-10-8" href="#__codelineno-10-8"></a>
+<a id="__codelineno-10-9" name="__codelineno-10-9" href="#__codelineno-10-9"></a><span class="w">    </span><span class="n">HAL_StatusTypeDef</span><span class="w"> </span><span class="n">status</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">HAL_UART_Transmit</span><span class="p">(</span><span class="n">huart</span><span class="p">,</span><span class="w"> </span><span class="p">(</span><span class="kt">uint8_t</span><span class="w"> </span><span class="o">*</span><span class="p">)</span><span class="n">data</span><span class="p">,</span>
+<a id="__codelineno-10-10" name="__codelineno-10-10" href="#__codelineno-10-10"></a><span class="w">                                                  </span><span class="n">size</span><span class="p">,</span><span class="w"> </span><span class="mi">100</span><span class="p">);</span>
+<a id="__codelineno-10-11" name="__codelineno-10-11" href="#__codelineno-10-11"></a><span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">status</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="n">HAL_OK</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-10-12" name="__codelineno-10-12" href="#__codelineno-10-12"></a><span class="w">        </span><span class="k">while</span><span class="w"> </span><span class="p">(</span><span class="n">__HAL_UART_GET_FLAG</span><span class="p">(</span><span class="n">huart</span><span class="p">,</span><span class="w"> </span><span class="n">UART_FLAG_TC</span><span class="p">)</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="n">RESET</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-10-13" name="__codelineno-10-13" href="#__codelineno-10-13"></a><span class="w">        </span><span class="p">}</span>
+<a id="__codelineno-10-14" name="__codelineno-10-14" href="#__codelineno-10-14"></a><span class="w">    </span><span class="p">}</span>
+<a id="__codelineno-10-15" name="__codelineno-10-15" href="#__codelineno-10-15"></a>
+<a id="__codelineno-10-16" name="__codelineno-10-16" href="#__codelineno-10-16"></a><span class="w">    </span><span class="n">HAL_GPIO_WritePin</span><span class="p">(</span><span class="n">de_port</span><span class="p">,</span><span class="w"> </span><span class="n">de_pin</span><span class="p">,</span><span class="w"> </span><span class="n">GPIO_PIN_RESET</span><span class="p">);</span><span class="w"> </span><span class="cm">/* 释放总线，回到接收 */</span>
+<a id="__codelineno-10-17" name="__codelineno-10-17" href="#__codelineno-10-17"></a><span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="n">status</span><span class="p">;</span>
+<a id="__codelineno-10-18" name="__codelineno-10-18" href="#__codelineno-10-18"></a><span class="p">}</span>
+</code></pre></div>
+<p>这里等的是 <code>TC</code>，不是 <code>TXE</code>。此函数是阻塞式示例，适合低频短帧；高频或 RTOS 场景使用 UART DMA/中断完成回调，再在确认 <code>TC</code> 后释放 DE。多节点 RS-485 还必须由上层协议规定谁可以说话；DE 只能解决收发器方向，不能解决总线冲突。</p>
+<h3 id="58-dma-idle">5.8 DMA + IDLE 的接收缓冲边界</h3>
+<p><code>HAL_UARTEx_ReceiveToIdle_DMA()</code> 的回调给出本次收到的 <code>size</code>，但应用仍应决定如何保存这些字节：</p>
+<ul>
+<li><strong>固定长度协议</strong>：累计到预期长度后处理。</li>
+<li><strong>有结束符的文本协议</strong>：在数据中查找 <code>\r\n</code>、<code>\n</code> 等结束符。</li>
+<li><strong>带长度字段的二进制协议</strong>：先收帧头，再按长度字段收完整帧。</li>
+<li><strong>Modbus RTU</strong>：IDLE 可辅助判断帧间空闲，但 CRC 和协议规定的帧间时间仍是最终依据。</li>
+</ul>
+<p>不要在回调中直接解析复杂协议或访问可能被另一任务同时修改的缓冲。推荐在回调中记录长度、切换/复制缓冲或投递队列，再交给主循环或 RTOS 任务解析。循环 DMA 下还要处理写指针回绕，不能只把每次回调都当作从 <code>rx_buf[0]</code> 开始的新消息。</p>
+<h2 id="dma">六、三种收发方式：轮询、中断、DMA</h2>
+<h3 id="61">6.1 轮询</h3>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-11-1" name="__codelineno-11-1" href="#__codelineno-11-1"></a><span class="n">HAL_UART_Transmit</span><span class="p">(</span><span class="o">&amp;</span><span class="n">huart1</span><span class="p">,</span><span class="w"> </span><span class="n">tx</span><span class="p">,</span><span class="w"> </span><span class="n">tx_len</span><span class="p">,</span><span class="w"> </span><span class="mi">100</span><span class="p">);</span>
+<a id="__codelineno-11-2" name="__codelineno-11-2" href="#__codelineno-11-2"></a><span class="n">HAL_UART_Receive</span><span class="p">(</span><span class="o">&amp;</span><span class="n">huart1</span><span class="p">,</span><span class="w"> </span><span class="n">rx</span><span class="p">,</span><span class="w"> </span><span class="n">rx_len</span><span class="p">,</span><span class="w"> </span><span class="mi">100</span><span class="p">);</span>
+</code></pre></div>
+<p>优点是简单，适合启动阶段、自检和少量短数据。缺点是函数阻塞 CPU；接收等待期间，其他任务无法及时运行。生产代码不要随意使用 <code>HAL_MAX_DELAY</code>，否则断线或无数据时可能永久卡住。</p>
+<h3 id="62">6.2 中断</h3>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-12-1" name="__codelineno-12-1" href="#__codelineno-12-1"></a><span class="n">HAL_UART_Receive_IT</span><span class="p">(</span><span class="o">&amp;</span><span class="n">huart1</span><span class="p">,</span><span class="w"> </span><span class="o">&amp;</span><span class="n">rx_byte</span><span class="p">,</span><span class="w"> </span><span class="mi">1</span><span class="p">);</span>
+<a id="__codelineno-12-2" name="__codelineno-12-2" href="#__codelineno-12-2"></a><span class="n">HAL_UART_Transmit_IT</span><span class="p">(</span><span class="o">&amp;</span><span class="n">huart1</span><span class="p">,</span><span class="w"> </span><span class="n">tx</span><span class="p">,</span><span class="w"> </span><span class="n">tx_len</span><span class="p">);</span>
+<a id="__codelineno-12-3" name="__codelineno-12-3" href="#__codelineno-12-3"></a>
+<a id="__codelineno-12-4" name="__codelineno-12-4" href="#__codelineno-12-4"></a><span class="kt">void</span><span class="w"> </span><span class="nf">HAL_UART_RxCpltCallback</span><span class="p">(</span><span class="n">UART_HandleTypeDef</span><span class="w"> </span><span class="o">*</span><span class="n">huart</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-12-5" name="__codelineno-12-5" href="#__codelineno-12-5"></a><span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">huart</span><span class="o">-&gt;</span><span class="n">Instance</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="n">USART1</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-12-6" name="__codelineno-12-6" href="#__codelineno-12-6"></a><span class="w">        </span><span class="cm">/* 取走字节，放入环形缓冲，然后重新启动接收 */</span>
+<a id="__codelineno-12-7" name="__codelineno-12-7" href="#__codelineno-12-7"></a><span class="w">        </span><span class="n">HAL_UART_Receive_IT</span><span class="p">(</span><span class="n">huart</span><span class="p">,</span><span class="w"> </span><span class="o">&amp;</span><span class="n">rx_byte</span><span class="p">,</span><span class="w"> </span><span class="mi">1</span><span class="p">);</span>
+<a id="__codelineno-12-8" name="__codelineno-12-8" href="#__codelineno-12-8"></a><span class="w">    </span><span class="p">}</span>
+<a id="__codelineno-12-9" name="__codelineno-12-9" href="#__codelineno-12-9"></a><span class="p">}</span>
+</code></pre></div>
+<p>中断适合中等速率、数据量不太大的持续通信。回调中应快速完成“取数据、入队、置标志”，不要打印日志、做复杂解析或调用长时间阻塞函数。</p>
+<h3 id="63-dma">6.3 DMA</h3>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-13-1" name="__codelineno-13-1" href="#__codelineno-13-1"></a><span class="n">HAL_UART_Transmit_DMA</span><span class="p">(</span><span class="o">&amp;</span><span class="n">huart1</span><span class="p">,</span><span class="w"> </span><span class="n">tx</span><span class="p">,</span><span class="w"> </span><span class="n">tx_len</span><span class="p">);</span>
+<a id="__codelineno-13-2" name="__codelineno-13-2" href="#__codelineno-13-2"></a><span class="n">HAL_UART_Receive_DMA</span><span class="p">(</span><span class="o">&amp;</span><span class="n">huart1</span><span class="p">,</span><span class="w"> </span><span class="n">rx</span><span class="p">,</span><span class="w"> </span><span class="n">rx_len</span><span class="p">);</span>
+<a id="__codelineno-13-3" name="__codelineno-13-3" href="#__codelineno-13-3"></a>
+<a id="__codelineno-13-4" name="__codelineno-13-4" href="#__codelineno-13-4"></a><span class="kt">void</span><span class="w"> </span><span class="nf">HAL_UART_RxCpltCallback</span><span class="p">(</span><span class="n">UART_HandleTypeDef</span><span class="w"> </span><span class="o">*</span><span class="n">huart</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-13-5" name="__codelineno-13-5" href="#__codelineno-13-5"></a><span class="w">    </span><span class="cm">/* DMA 接收完成，处理 rx 或通知任务 */</span>
+<a id="__codelineno-13-6" name="__codelineno-13-6" href="#__codelineno-13-6"></a><span class="p">}</span>
+</code></pre></div>
+<p>DMA 适合高速、连续、大块数据。DMA 缓冲区必须在传输完成前一直有效，不能把函数栈上的临时数组传给异步 DMA。发送 DMA 完成通常表示数据已经从内存搬到外设，但 RS-485 释放 DE 仍应确认 <code>TC</code>，因为最后一个 bit 可能还没出线。</p>
+<h3 id="64">6.4 接收不定长数据：空闲线检测</h3>
+<p>UART 协议经常是“长度未知、以一段时间没有新字节作为帧结束”。STM32 可利用 IDLE 标志：接收过数据后，线路在一个字符时间内没有新数据，就触发空闲检测。</p>
+<p>较新的 HAL 提供：</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-14-1" name="__codelineno-14-1" href="#__codelineno-14-1"></a><span class="n">HAL_UARTEx_ReceiveToIdle_DMA</span><span class="p">(</span><span class="o">&amp;</span><span class="n">huart1</span><span class="p">,</span><span class="w"> </span><span class="n">rx_buf</span><span class="p">,</span><span class="w"> </span><span class="k">sizeof</span><span class="p">(</span><span class="n">rx_buf</span><span class="p">));</span>
+<a id="__codelineno-14-2" name="__codelineno-14-2" href="#__codelineno-14-2"></a>
+<a id="__codelineno-14-3" name="__codelineno-14-3" href="#__codelineno-14-3"></a><span class="kt">void</span><span class="w"> </span><span class="nf">HAL_UARTEx_RxEventCallback</span><span class="p">(</span><span class="n">UART_HandleTypeDef</span><span class="w"> </span><span class="o">*</span><span class="n">huart</span><span class="p">,</span>
+<a id="__codelineno-14-4" name="__codelineno-14-4" href="#__codelineno-14-4"></a><span class="w">                                </span><span class="kt">uint16_t</span><span class="w"> </span><span class="n">size</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-14-5" name="__codelineno-14-5" href="#__codelineno-14-5"></a><span class="w">    </span><span class="cm">/* size 表示本次已经收到的长度 */</span>
+<a id="__codelineno-14-6" name="__codelineno-14-6" href="#__codelineno-14-6"></a><span class="p">}</span>
+</code></pre></div>
+<p>这种方式比“每收到 1 字节就进一次中断”更省 CPU，也比固定长度接收更适合 AT 指令、GPS 行、Modbus RTU 等不定长帧。IDLE 只是提示“暂时没有数据”，不是协议层完整性证明；仍要在应用层检查长度、CRC、结束符和超时。</p>
+<h2 id="_1">七、状态标志与错误处理</h2>
+<p>常见状态：</p>
+<table>
+<thead>
+<tr>
+<th>标志</th>
+<th>含义</th>
+<th>处理重点</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>TXE</code></td>
+<td>发送数据寄存器为空</td>
+<td>可以写入下一个数据</td>
+</tr>
+<tr>
+<td><code>TC</code></td>
+<td>整个帧已发送完成</td>
+<td>RS-485 释放 DE 必须等它</td>
+</tr>
+<tr>
+<td><code>RXNE</code></td>
+<td>收到一个数据</td>
+<td>及时读取，防止溢出</td>
+</tr>
+<tr>
+<td><code>IDLE</code></td>
+<td>接收线空闲</td>
+<td>可作为不定长帧边界提示</td>
+</tr>
+<tr>
+<td><code>ORE</code></td>
+<td>接收溢出</td>
+<td>说明读取不及时，需清除并检查设计</td>
+</tr>
+<tr>
+<td><code>FE</code></td>
+<td>帧错误</td>
+<td>波特率、停止位、线路干扰可能不匹配</td>
+</tr>
+<tr>
+<td><code>NE</code></td>
+<td>噪声错误</td>
+<td>检查布线、采样和电平质量</td>
+</tr>
+<tr>
+<td><code>PE</code></td>
+<td>奇偶校验错误</td>
+<td>两端校验配置不一致或数据受损</td>
+</tr>
+<tr>
+<td>其他错误位</td>
+<td>具体错误位以芯片参考手册为准</td>
+<td>不要跨系列照抄寄存器名</td>
+</tr>
+</tbody>
+</table>
+<p>不同系列的状态寄存器可能叫 <code>SR</code>、<code>ISR</code>，清除错误的读写顺序也可能不同。使用 HAL 时优先调用 HAL 提供的错误处理；使用寄存器时严格按当前芯片参考手册操作。</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-15-1" name="__codelineno-15-1" href="#__codelineno-15-1"></a><span class="kt">void</span><span class="w"> </span><span class="nf">HAL_UART_ErrorCallback</span><span class="p">(</span><span class="n">UART_HandleTypeDef</span><span class="w"> </span><span class="o">*</span><span class="n">huart</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-15-2" name="__codelineno-15-2" href="#__codelineno-15-2"></a><span class="w">    </span><span class="kt">uint32_t</span><span class="w"> </span><span class="n">err</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">HAL_UART_GetError</span><span class="p">(</span><span class="n">huart</span><span class="p">);</span>
+<a id="__codelineno-15-3" name="__codelineno-15-3" href="#__codelineno-15-3"></a><span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">err</span><span class="w"> </span><span class="o">&amp;</span><span class="w"> </span><span class="n">HAL_UART_ERROR_ORE</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-15-4" name="__codelineno-15-4" href="#__codelineno-15-4"></a><span class="w">        </span><span class="cm">/* 接收太慢：增大缓冲、降低中断负担或改 DMA */</span>
+<a id="__codelineno-15-5" name="__codelineno-15-5" href="#__codelineno-15-5"></a><span class="w">    </span><span class="p">}</span>
+<a id="__codelineno-15-6" name="__codelineno-15-6" href="#__codelineno-15-6"></a><span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">err</span><span class="w"> </span><span class="o">&amp;</span><span class="w"> </span><span class="n">HAL_UART_ERROR_FE</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-15-7" name="__codelineno-15-7" href="#__codelineno-15-7"></a><span class="w">        </span><span class="cm">/* 检查波特率、停止位、线路电平和干扰 */</span>
+<a id="__codelineno-15-8" name="__codelineno-15-8" href="#__codelineno-15-8"></a><span class="w">    </span><span class="p">}</span>
+<a id="__codelineno-15-9" name="__codelineno-15-9" href="#__codelineno-15-9"></a><span class="p">}</span>
+</code></pre></div>
+<h2 id="_2">八、常见故障排查</h2>
+<ol>
+<li><strong>完全没有波形</strong>：检查外设时钟、GPIO AF、USART 是否真正初始化和使能。</li>
+<li><strong>波形正常但全是乱码</strong>：检查波特率、时钟树、数据位、校验、停止位和电平标准。</li>
+<li><strong>发送正常、接收异常</strong>：优先查 TX/RX 是否交叉、RX GPIO 模式、接收中断/DMA 是否启动。</li>
+<li><strong>只有第一帧正常</strong>：检查是否只启动了一次中断接收；回调中要重新启动，DMA 要处理 Normal/循环模式边界。</li>
+<li><strong>偶发丢字节</strong>：检查 ORE、CPU 是否被阻塞、缓冲区是否太小，优先改为 DMA + 环形缓冲。</li>
+<li><strong>RS-485 最后一个字节错误</strong>：DE 在 <code>TXE</code> 时就释放了，改为等待 <code>TC</code>。</li>
+<li><strong>LIN 不工作</strong>：确认使用 LIN 收发器、Break 长度、PID 校验和主机调度表，不要只把普通 UART 波特率设好。</li>
+<li><strong>开启 RTS/CTS 后不发送</strong>：CTS 没接或有效电平配置反了。</li>
+<li><strong>DMA 数据异常</strong>：检查缓冲区生命周期、DMA 数据宽度、内存自增和缓存一致性（带 D-Cache 的 MCU 尤其要注意）。</li>
+<li><strong>阻塞函数卡死</strong>：不要在中断回调中调用长时间轮询函数；设置合理 timeout，不要滥用 <code>HAL_MAX_DELAY</code>。</li>
+</ol>
+<h2 id="_3">九、如何选择模式</h2>
+<table>
+<thead>
+<tr>
+<th>需求</th>
+<th>推荐模式</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>调试日志、GPS、蓝牙模块</td>
+<td>异步全双工或仅发送</td>
+</tr>
+<tr>
+<td>两块 MCU 只剩一根数据线</td>
+<td>单线半双工</td>
+</tr>
+<tr>
+<td>汽车低成本车身网络</td>
+<td>LIN</td>
+</tr>
+<tr>
+<td>红外短距离通信</td>
+<td>IrDA</td>
+</tr>
+<tr>
+<td>ISO 7816 智能卡</td>
+<td>Smartcard</td>
+</tr>
+<tr>
+<td>工业差分多点总线</td>
+<td>USART + RS-485 收发器</td>
+</tr>
+<tr>
+<td>高速且接收长度不固定</td>
+<td>异步 UART + DMA + IDLE</td>
+</tr>
+<tr>
+<td>时序由主机统一提供</td>
+<td>USART 同步模式</td>
+</tr>
+<tr>
+<td>多 MCU 共用一条简单串口</td>
+<td>9 位地址标记/唤醒模式</td>
+</tr>
+</tbody>
+</table>
+<h2 id="_4">参考</h2>
+<ul>
+<li>相关外设与裸机寄存器风格见 <a href="peripheral-drivers.md">peripheral-drivers.md</a></li>
+<li>总线选择可对照 <a href="../stm32-spi/">stm32-spi.md</a> 和 <a href="../stm32-i2c/">stm32-i2c.md</a></li>
+<li>具体寄存器、支持的模式和引脚复用以对应 STM32 型号参考手册、数据手册和 CubeMX 为准</li>
+</ul>
+
+
+
+
+
+
+
+  
+    
+  
+  
+    
+  
+
+
+  <aside class="md-source-file">
+    
+      
+  <span class="md-source-file__fact">
+    <span class="md-icon" title="最后更新">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M21 13.1c-.1 0-.3.1-.4.2l-1 1 2.1 2.1 1-1c.2-.2.2-.6 0-.8l-1.3-1.3c-.1-.1-.2-.2-.4-.2m-1.9 1.8-6.1 6V23h2.1l6.1-6.1zM12.5 7v5.2l4 2.4-1 1L11 13V7zM11 21.9c-5.1-.5-9-4.8-9-9.9C2 6.5 6.5 2 12 2c5.3 0 9.6 4.1 10 9.3-.3-.1-.6-.2-1-.2s-.7.1-1 .2C19.6 7.2 16.2 4 12 4c-4.4 0-8 3.6-8 8 0 4.1 3.1 7.5 7.1 7.9l-.1.2z"/></svg>
+    </span>
+    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="2026年8月25日 14:30:02 UTC">2026年8月25日</span>
+  </span>
+
+    
+    
+      
+  <span class="md-source-file__fact">
+    <span class="md-icon" title="创建日期">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M14.47 15.08 11 13V7h1.5v5.25l3.08 1.83c-.41.28-.79.62-1.11 1m-1.39 4.84c-.36.05-.71.08-1.08.08-4.42 0-8-3.58-8-8s3.58-8 8-8 8 3.58 8 8c0 .37-.03.72-.08 1.08.69.1 1.33.32 1.92.64.1-.56.16-1.13.16-1.72 0-5.5-4.5-10-10-10S2 6.5 2 12s4.47 10 10 10c.59 0 1.16-.06 1.72-.16-.32-.59-.54-1.23-.64-1.92M18 15v3h-3v2h3v3h2v-3h3v-2h-3v-3z"/></svg>
+    </span>
+    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="2026年8月25日 14:30:02 UTC">2026年8月25日</span>
+  </span>
+
+    
+    
+    
+  </aside>
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8z"/></svg>
+  回到页面顶部
+</button>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+  
+</div>
+      
+        
+<div class="md-social">
+  
+    
+    
+    
+    
+      
+      
+    
+    <a href="https://github.com/hellobugger" target="_blank" rel="noopener" title="github.com" class="md-social__link">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M173.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6m-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3m44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9M252.8 8C114.1 8 8 113.3 8 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C436.2 457.8 504 362.9 504 252 504 113.3 391.5 8 252.8 8M105.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1m-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7m32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1m-11.4-14.7c-1.6 1-1.6 3.6 0 5.9s4.3 3.3 5.6 2.3c1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2"/></svg>
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "../..", "features": ["navigation.tabs", "navigation.sections", "navigation.top", "toc.integrate", "search.highlight", "search.suggest", "content.code.copy", "content.code.annotate", "content.action.edit"], "search": "../../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "\u5df2\u590d\u5236", "clipboard.copy": "\u590d\u5236", "search.result.more.one": "\u5728\u8be5\u9875\u4e0a\u8fd8\u6709 1 \u4e2a\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.more.other": "\u5728\u8be5\u9875\u4e0a\u8fd8\u6709 # \u4e2a\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.none": "\u6ca1\u6709\u627e\u5230\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.one": "\u627e\u5230 1 \u4e2a\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.other": "# \u4e2a\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.placeholder": "\u952e\u5165\u4ee5\u5f00\u59cb\u641c\u7d22", "search.result.term.missing": "\u7f3a\u5c11", "select.version": "\u9009\u62e9\u5f53\u524d\u7248\u672c"}, "version": null}</script>
+    
+    
+      <script src="../../assets/javascripts/bundle.d7400e89.min.js"></script>
+      
+        <script src="../../javascripts/extra.js?v=7"></script>
+      
+    
+  </body>
+</html>

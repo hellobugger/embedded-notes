@@ -1,0 +1,3308 @@
+
+<!doctype html>
+<html lang="zh" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="嵌入式软件/硬件调试心得与工作备忘">
+      
+      
+        <meta name="author" content="聂文俊">
+      
+      
+        <link rel="canonical" href="https://hellobugger.github.io/embedded-notes/mcu/stm32-spi/">
+      
+      
+        <link rel="prev" href="../stm32-rtc/">
+      
+      
+        <link rel="next" href="../stm32-timer/">
+      
+      
+        
+      
+      
+      <link rel="icon" href="../../assets/images/favicon.png">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.7">
+    
+    
+      
+        <title>STM32 SPI：从四根线讲透软件 SPI / 硬件 SPI / DMA / 各种模式 - 嵌入式工作笔记</title>
+      
+    
+    
+      <link rel="stylesheet" href="../../assets/stylesheets/main.ec1eaa64.min.css">
+      
+        
+        <link rel="stylesheet" href="../../assets/stylesheets/palette.ab4e12ef.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+      <link rel="stylesheet" href="../../stylesheets/extra.css?v=4">
+    
+    <script>__md_scope=new URL("../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    
+    
+      
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#stm32-spi-spi-spi-dma" class="md-skip">
+          跳转至
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+<header class="md-header" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="页眉">
+    <a href="../.." title="嵌入式工作笔记" class="md-header__button md-logo" aria-label="嵌入式工作笔记" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            嵌入式工作笔记
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              STM32 SPI：从四根线讲透软件 SPI / 硬件 SPI / DMA / 各种模式
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+        <form class="md-header__option" data-md-component="palette">
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="切换至深色模式"  type="radio" name="__palette" id="__palette_0">
+    
+      <label class="md-header__button md-icon" title="切换至深色模式" for="__palette_1" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a4 4 0 0 0-4 4 4 4 0 0 0 4 4 4 4 0 0 0 4-4 4 4 0 0 0-4-4m0 10a6 6 0 0 1-6-6 6 6 0 0 1 6-6 6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="" data-md-color-scheme="slate" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="切换至浅色模式"  type="radio" name="__palette" id="__palette_1">
+    
+      <label class="md-header__button md-icon" title="切换至浅色模式" for="__palette_0" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 18c-.89 0-1.74-.2-2.5-.55C11.56 16.5 13 14.42 13 12s-1.44-4.5-3.5-5.45C10.26 6.2 11.11 6 12 6a6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+</form>
+      
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="搜索" placeholder="搜索" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="查找">
+        
+        <button type="reset" class="md-search__icon md-icon" title="清空当前内容" aria-label="清空当前内容" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+        <div class="md-search__suggest" data-md-component="search-suggest"></div>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            正在初始化搜索引擎
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/hellobugger/embedded-notes" title="前往仓库" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M173.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6m-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3m44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9M252.8 8C114.1 8 8 113.3 8 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C436.2 457.8 504 362.9 504 252 504 113.3 391.5 8 252.8 8M105.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1m-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7m32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1m-11.4-14.7c-1.6 1-1.6 3.6 0 5.9s4.3 3.3 5.6 2.3c1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2"/></svg>
+  </div>
+  <div class="md-source__repository">
+    hellobugger/embedded-notes
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+  
+
+      
+        
+          
+            
+<nav class="md-tabs" aria-label="标签" data-md-component="tabs">
+  <div class="md-grid">
+    <ul class="md-tabs__list">
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../.." class="md-tabs__link">
+        
+  
+  
+    
+  
+  首页
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../environment/develop-environment/" class="md-tabs__link">
+          
+  
+  
+  开发环境
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../environment-tips/clion-tips/" class="md-tabs__link">
+          
+  
+  
+  开发环境技巧
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../hardware/esp32-reset/" class="md-tabs__link">
+          
+  
+  
+  硬件调试
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+    
+  
+  
+    
+    
+      <li class="md-tabs__item md-tabs__item--active">
+        <a href="../stm32-adc/" class="md-tabs__link">
+          
+  
+  
+  MCU 与驱动
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../programming/embedded-c-macros-inline/" class="md-tabs__link">
+          
+  
+  
+  programming
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../rtos/freertos-scheduler/" class="md-tabs__link">
+          
+  
+  
+  RTOS
+
+        </a>
+      </li>
+    
+  
+
+      
+    </ul>
+  </div>
+</nav>
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+  
+
+
+  
+
+<nav class="md-nav md-nav--primary md-nav--lifted md-nav--integrated" aria-label="导航栏" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="../.." title="嵌入式工作笔记" class="md-nav__button md-logo" aria-label="嵌入式工作笔记" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    嵌入式工作笔记
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/hellobugger/embedded-notes" title="前往仓库" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M173.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6m-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3m44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9M252.8 8C114.1 8 8 113.3 8 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C436.2 457.8 504 362.9 504 252 504 113.3 391.5 8 252.8 8M105.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1m-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7m32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1m-11.4-14.7c-1.6 1-1.6 3.6 0 5.9s4.3 3.3 5.6 2.3c1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2"/></svg>
+  </div>
+  <div class="md-source__repository">
+    hellobugger/embedded-notes
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../.." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    首页
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2" >
+        
+          
+          <label class="md-nav__link" for="__nav_2" id="__nav_2_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    开发环境
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_2">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    开发环境
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../environment/develop-environment/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    开发环境搭建
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" >
+        
+          
+          <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    开发环境技巧
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_3">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    开发环境技巧
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../environment-tips/clion-tips/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    CLion + CubeMX 使用技巧
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../environment-tips/eide-tips/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    VSCode + EIDE 使用技巧
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../environment-tips/esp-idf-tips/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    VSCode + ESP-IDF 使用技巧
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../environment-tips/keil-c51c251-tips/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Keil C51 / C251 使用技巧
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../environment-tips/keil5-cubemx-tips/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Keil5 + CubeMX 使用技巧
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../environment-tips/platformio-tips/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    VSCode + PlatformIO 使用技巧
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../environment-tips/rtthread-studio-tips/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    RT-Thread Studio 使用技巧
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../environment-tips/stm32cubeide-tips/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    STM32CubeIDE 使用技巧
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4" >
+        
+          
+          <label class="md-nav__link" for="__nav_4" id="__nav_4_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    硬件调试
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    硬件调试
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../hardware/esp32-reset/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ESP32-S3 反复复位（Wi-Fi 连接时）
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../hardware/power-ripple/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    电源纹波测试
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../hardware/scope-tips/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    示波器使用技巧
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5" checked>
+        
+          
+          <label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    MCU 与驱动
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_5">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    MCU 与驱动
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../stm32-adc/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    STM32 ADC：从配置到 DMA 的一篇讲透
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../stm32-can/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    CAN 总线：从通信机制到收发中断的一篇讲透
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../stm32-canfd/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    CAN FD 进阶：FDCAN 控制器从协议到寄存器的一篇讲透
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../stm32-clock-tree/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    STM32 时钟系统：五个时钟源
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../stm32-crc/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    STM32 CRC 硬件校验：从多项式到 DMA/协议落地的一篇讲透
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../stm32-dac/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    STM32 DAC：从配置到 DMA 的一篇讲透
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../stm32-fsmc/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    STM32 FSMC：把外设当作内存来读写的并行总线
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../stm32-i2c/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    STM32 I2C：从两根线讲透软件 IIC / 硬件 I2C / DMA / SMBus
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../stm32-lib-comparison/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    标准库 / LL / HAL 对比
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../stm32-notes/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    STM32H7 调试笔记
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../stm32-rng/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    STM32 RNG 硬件随机数生成器：从熵源到安全使用的一篇讲透
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../stm32-rtc/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    STM32 RTC：从走时到一堆「隐藏功能」的一篇讲透
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    STM32 SPI：从四根线讲透软件 SPI / 硬件 SPI / DMA / 各种模式
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    STM32 SPI：从四根线讲透软件 SPI / 硬件 SPI / DMA / 各种模式
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="目录">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      目录
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#_1" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        一、通信机制：四根线怎么就把事办了
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="一、通信机制：四根线怎么就把事办了">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#11" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        1.1 四根线的分工
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#12" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        1.2 为什么没有地址也能「点名」：片选机制
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#13" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        1.3 速率与时钟
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#14-i2c-uart" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        1.4 与 I2C / UART 的对比：什么时候选谁
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#spi-vs-spi" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        二、软件 SPI vs 硬件 SPI：同一件事的两种做法
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="二、软件 SPI vs 硬件 SPI：同一件事的两种做法">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#21-spi-gpio" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2.1 软件 SPI：用 GPIO 模拟时序
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#22-spi" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2.2 硬件 SPI：专用外设接管
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#23" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2.3 逐维度对比
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#24" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2.4 到底用哪个：一张决策表
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#spi" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        三、硬件 SPI 的各个模式：把「模式」这个词一拆到底
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="三、硬件 SPI 的各个模式：把「模式」这个词一拆到底">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#31-vs" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3.1 角色模式：主模式 vs 从模式
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#32-cpol-cpha0123" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3.2 时钟极性 CPOL 与时钟相位 CPHA：四种模式（0/1/2/3）
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#33-8-16" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3.3 数据宽度模式：8 位帧 / 16 位帧
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#34-msb-lsb" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3.4 字节序：MSB 先行 / LSB 先行
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#35-cubemx-8-mode" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3.5 方向模式：CubeMX 的 8 个 Mode 选项，一拆到底
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="3.5 方向模式：CubeMX 的 8 个 Mode 选项，一拆到底">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#351-full-duplex-master" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3.5.1 Full-Duplex Master（全双工主模式）—— 默认首选
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#352-full-duplex-slave" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3.5.2 Full-Duplex Slave（全双工从模式）
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#353-half-duplex-master" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3.5.3 Half-Duplex Master（半双工主模式）
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#354-half-duplex-slave" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3.5.4 Half-Duplex Slave（半双工从模式）
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#355-receive-only-master" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3.5.5 Receive Only Master（仅接收主模式）—— 纯读最省事
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#356-receive-only-slave" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3.5.6 Receive Only Slave（仅接收从模式）
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#357-transmit-only-master" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3.5.7 Transmit Only Master（仅发送主模式）—— 纯写最顺手
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#358-transmit-only-slave" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3.5.8 Transmit Only Slave（仅发送从模式）
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#36-nss-vs" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3.6 NSS 管理：硬件片选 vs 软件片选
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#37-motorola-vs-ti" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3.7 帧格式模式（Motorola vs TI）与高级特性
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#spi-cubemx-hal" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        四、硬件 SPI 配置说明：CubeMX + HAL
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="四、硬件 SPI 配置说明：CubeMX + HAL">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#41-cubemx-f4-f1" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        4.1 CubeMX 页面（F4 为例，F1 类似）
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#42-hal" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        4.2 HAL 初始化结构体逐字段
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#43" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        4.3 波特率计算：分频怎么定
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#44-dma" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        4.4 三套收发接口：轮询 / 中断 / DMA
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#dma" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        五、DMA：把搬字节的活交给硬件
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="五、DMA：把搬字节的活交给硬件">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#51-dma" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        5.1 为什么要 DMA
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#52-hal-dma" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        5.2 HAL 的 DMA 收发流程
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#53-cubemx-dma" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        5.3 CubeMX 里怎么开 DMA
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#54-dma-flash" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        5.4 全双工 DMA 的「哑字节」技巧（读 Flash 必看）
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#55-dma" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        5.5 DMA 的坑与边界
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#_2" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        六、避坑备忘
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#_3" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        参考
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../stm32-timer/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    STM32 定时器：从时基到一堆「隐藏功能」的一篇讲透
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../stm32-usart-uart/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    STM32 USART / UART：从异步串口讲透每一种模式
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../stm32-watchdog/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    独立看门狗 IWDG 与窗口看门狗 WWDG
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_6" >
+        
+          
+          <label class="md-nav__link" for="__nav_6" id="__nav_6_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    programming
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_6_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_6">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    programming
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../programming/embedded-c-macros-inline/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    嵌入式 C 语言：宏、内联函数与代码编写注意事项
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_7" >
+        
+          
+          <label class="md-nav__link" for="__nav_7" id="__nav_7_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    RTOS
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_7_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_7">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    RTOS
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../rtos/freertos-scheduler/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    FreeRTOS 任务调度
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../rtos/queue-semaphore/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    队列与信号量
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+  
+    <a href="https://github.com/hellobugger/embedded-notes/blob/main/docs/mcu/stm32-spi.md" title="编辑此页" class="md-content__button md-icon" rel="edit">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M10 20H6V4h7v5h5v3.1l2-2V8l-6-6H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h4zm10.2-7c.1 0 .3.1.4.2l1.3 1.3c.2.2.2.6 0 .8l-1 1-2.1-2.1 1-1c.1-.1.2-.2.4-.2m0 3.9L14.1 23H12v-2.1l6.1-6.1z"/></svg>
+    </a>
+  
+  
+
+
+<h1 id="stm32-spi-spi-spi-dma">STM32 SPI：从四根线讲透软件 SPI / 硬件 SPI / DMA / 各种模式</h1>
+<blockquote>
+<p>一句话：<strong>SPI 是一条「主设备打拍子、从设备跟拍」的四线全双工总线</strong>——主设备用时钟线（SCLK）打节拍，两根数据线（MOSI 出、MISO 进）每拍同时收一个比特、发一个比特，再用一根片选线（CS/NSS）点名「这一轮跟谁说话」。要讲清楚的其实是六件事——<strong>这四根线凭什么能高速全双工</strong>（通信机制与时序）、<strong>同一个接口为什么有「软件」和「硬件」两种做法</strong>（软 SPI vs 硬 SPI）、<strong>硬件 SPI 的「模式」到底指什么</strong>（主/从、CPOL/CPHA 四模式、全双工/半双工等一拆到底）、<strong>硬件 SPI 怎么配</strong>（配置说明）、<strong>怎么把 CPU 从搬字节里解放出来</strong>（DMA）、以及<strong>工程上踩过的坑</strong>（避坑备忘）。本文以 F1/F4 的 HAL 为例，寄存器名与配置以 HAL 为准。</p>
+</blockquote>
+<h2 id="_1">一、通信机制：四根线怎么就把事办了</h2>
+<h3 id="11">1.1 四根线的分工</h3>
+<p>SPI 通常用 <strong>四根线</strong>，各司其职：</p>
+<table>
+<thead>
+<tr>
+<th>信号</th>
+<th>全称</th>
+<th>方向</th>
+<th>作用</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>SCLK</strong></td>
+<td>Serial Clock</td>
+<td>主 → 从</td>
+<td><strong>时钟线</strong>，主设备产生，给全总线打拍子</td>
+</tr>
+<tr>
+<td><strong>MOSI</strong></td>
+<td>Master Out Slave In</td>
+<td>主 → 从</td>
+<td>主出从入：主设备发数据给从设备</td>
+</tr>
+<tr>
+<td><strong>MISO</strong></td>
+<td>Master In Slave Out</td>
+<td>从 → 主</td>
+<td>主入从出：从设备发数据给主设备</td>
+</tr>
+<tr>
+<td><strong>CS/NSS</strong></td>
+<td>Chip Select / Slave Select</td>
+<td>主 → 从</td>
+<td><strong>片选线，低有效</strong>：拉低 = 点名这个从机上场</td>
+</tr>
+</tbody>
+</table>
+<p>和 I2C 的「一根线分时收发、喊地址点名」不同，SPI 用一句话理解它的性格：</p>
+<blockquote>
+<p><strong>SPI 是「老师给一排学生单独上小课」——老师打拍子（SCLK），把要讲的话写在黑板（MOSI）上，学生把回答写在纸条（MISO）上递上来，每一拍两边同时进行；谁被点名（CS 拉低）谁才听课，没被点名的学生把嘴闭上（MISO 高阻）。</strong></p>
+</blockquote>
+<p>三个关键特征：</p>
+<ul>
+<li><strong>全双工</strong>：每来一个时钟沿，主设备<strong>同时</strong>发出去 1 bit、收进来 1 bit。所以「发一个字节」=「收一个字节」，读写天然配对。</li>
+<li><strong>无地址、无 ACK</strong>：不像 I2C 那样先喊 7 位地址再听应答。SPI 靠 <strong>CS 片选</strong>定位从机，发出去的数据<strong>从设备有没有收到没人管</strong>——协议层没有应答机制，可靠与否全靠上层自己约定。</li>
+<li><strong>同步</strong>：数据在时钟的边沿采样/变化，时钟由主设备独占产生，所以<strong>速率可以很高</strong>（F4 上可达十几 Mbps ~ 几十 Mbps），远超 I2C 的 1M。</li>
+</ul>
+<h3 id="12">1.2 为什么没有地址也能「点名」：片选机制</h3>
+<p>I2C 靠「地址广播」让从机应答，SPI 靠 <strong>CS 引脚物理选中</strong>：</p>
+<ul>
+<li>一主一从：从机的 CS 直接接地（常选），省一根线。</li>
+<li>一主多从：每个从机<strong>单独一根 CS</strong>，主设备同一时刻只拉低一个。</li>
+<li>多个从机接<strong>同一条 SCLK/MOSI/MISO 总线</strong>（共总线），靠 CS 决定当前谁参与。</li>
+</ul>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>            ┌─────────┐
+<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>   SCLK ────┤         │
+<a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>   MOSI ────┤  主 MCU  │
+<a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a>   MISO ────┤         │
+<a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a>            └────┬────┘
+<a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a>        CS1  ←───┘  CS2  ←───┘  CS3  ←───┘
+<a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a>                 │        │        │
+<a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a>            ┌─────────┐ ┌─────────┐ ┌─────────┐
+<a id="__codelineno-0-9" name="__codelineno-0-9" href="#__codelineno-0-9"></a>            │ 从机 1   │ │ 从机 2   │ │ 从机 3   │  （共享 SCLK/MOSI/MISO）
+<a id="__codelineno-0-10" name="__codelineno-0-10" href="#__codelineno-0-10"></a>            └─────────┘ └─────────┘ └─────────┘
+</code></pre></div>
+<div class="admonition warning">
+<p class="admonition-title">没被选中的从机 MISO 必须是高阻</p>
+<p>所有从机的 MISO 都接在主设备同一根线上，<strong>只有 CS 被拉低的那个允许驱动 MISO</strong>，其余必须把 MISO 置为<strong>高阻（三态）</strong>。如果某个从机不理会 CS 状态、MISO 一直强驱动，多从机时总线直接打架（数据全是乱的）。这也是「换一块从机模块总线就废」的常见原因——多半是那块的 MISO 输出行为不对。</p>
+</div>
+<h3 id="13">1.3 速率与时钟</h3>
+<p>SPI 没有固定档位，<strong>主设备 SCLK 想多快就多快</strong>，唯一约束是「从机手册最高支持多少」和「线路/上拉能承受多快」。硬件 SPI 的波特率来自<strong>外设时钟分频</strong>：</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>SCLK = PCLK / 预分频      // 预分频为 2、4、8、…、256（2 的幂）
+</code></pre></div>
+<ul>
+<li><strong>F1</strong>：SPI1 挂 <strong>APB2</strong>（最高 72MHz），SPI2/3 挂 <strong>APB1</strong>（最高 36MHz）。APB2 全速时 SPI1 最高 36Mbps（÷2）。</li>
+<li><strong>F4</strong>：SPI1/4/5/6 挂 <strong>APB2</strong>（最高 84MHz），SPI2/3 挂 <strong>APB1</strong>（最高 42MHz）。APB2 全速时 SPI1 最高 42Mbps（÷2）。</li>
+</ul>
+<p>工程上 <strong>1M ~ 10Mbps</strong> 是绝大多数 SPI Flash / ADC / 显示屏的常见区间，分频算出来落在 <code>PCLK/8 ~ PCLK/64</code> 附近。</p>
+<h3 id="14-i2c-uart">1.4 与 I2C / UART 的对比：什么时候选谁</h3>
+<table>
+<thead>
+<tr>
+<th>维度</th>
+<th>SPI</th>
+<th>I2C</th>
+<th>UART</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>线数</td>
+<td><strong>4 根</strong>（SCLK+MOSI+MISO+CS）</td>
+<td>2 根（SCL+SDA）</td>
+<td>2 根（TX+RX）</td>
+</tr>
+<tr>
+<td>结构</td>
+<td><strong>主从，一主多从</strong>（靠 CS 片选）</td>
+<td>主从，可多从（靠地址）</td>
+<td><strong>点对点</strong>，无地址</td>
+</tr>
+<tr>
+<td>速度</td>
+<td><strong>数十 Mbps</strong>（最快）</td>
+<td>100k~1M</td>
+<td>通常 ≤ 几 Mbps</td>
+</tr>
+<tr>
+<td>全双工</td>
+<td>✅（天然）</td>
+<td>❌ 半双工</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>硬件握手</td>
+<td>❌ 无 ACK</td>
+<td>✅ 有 ACK</td>
+<td>❌ 无</td>
+</tr>
+<tr>
+<td>总线仲裁</td>
+<td>❌</td>
+<td>✅ 支持多主</td>
+<td>❌</td>
+</tr>
+<tr>
+<td>数据搬运</td>
+<td>最省 CPU（配 DMA）</td>
+<td>省 CPU</td>
+<td>省 CPU</td>
+</tr>
+</tbody>
+</table>
+<p><strong>怎么选</strong>：追求速度、要全双工、外设是「一块一片」的结构 → <strong>SPI</strong>（SPI Flash、高速 ADC、LCD/OLED、SD 卡、以太网 PHY）；接线紧张、多从机共总线、要 ACK 可靠性 → <strong>I2C</strong>（传感器、EEPROM、RTC）。<strong>SPI 是「高速外设的默认总线」，I2C 是「低速传感器的默认总线」。</strong></p>
+<h2 id="spi-vs-spi">二、软件 SPI vs 硬件 SPI：同一件事的两种做法</h2>
+<p>这是 SPI 专题最核心的辨析。<strong>同一个外设，为什么有的工程师「用 GPIO 自己模拟」，有的用「芯片自带的 SPI 外设」？</strong> 区别不是功能不同，而是<strong>实现主体不同</strong>——软件 SPI 用 CPU 逐位翻转 GPIO，硬件 SPI 用芯片内部的专用外设自动管理时序。</p>
+<h3 id="21-spi-gpio">2.1 软件 SPI：用 GPIO 模拟时序</h3>
+<p>软件 SPI 是<strong>不依赖芯片自带的 SPI 外设，直接用三个普通 GPIO（+ 一个片选）模拟出 SCLK/MOSI/MISO 的行为</strong>。一个最简的核心逻辑：</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="cm">/* 软件 SPI 的核心：写 MOSI → 拉高 SCLK（打一拍）→ 读 MISO，如此循环 8 次 */</span>
+<a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a><span class="k">static</span><span class="w"> </span><span class="kt">void</span><span class="w"> </span><span class="nf">SPI_WriteByte</span><span class="p">(</span><span class="kt">uint8_t</span><span class="w"> </span><span class="kt">byte</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a><span class="w">    </span><span class="k">for</span><span class="w"> </span><span class="p">(</span><span class="kt">int</span><span class="w"> </span><span class="n">i</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span><span class="w"> </span><span class="n">i</span><span class="w"> </span><span class="o">&lt;</span><span class="w"> </span><span class="mi">8</span><span class="p">;</span><span class="w"> </span><span class="n">i</span><span class="o">++</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a><span class="w">        </span><span class="cm">/* 1. 先放数据：MSB 先行，SCLK 还没拉高时 MOSI 就绪 */</span>
+<a id="__codelineno-2-5" name="__codelineno-2-5" href="#__codelineno-2-5"></a><span class="w">        </span><span class="n">HAL_GPIO_WritePin</span><span class="p">(</span><span class="n">MOSI_GPIO_Port</span><span class="p">,</span><span class="w"> </span><span class="n">MOSI_Pin</span><span class="p">,</span>
+<a id="__codelineno-2-6" name="__codelineno-2-6" href="#__codelineno-2-6"></a><span class="w">                          </span><span class="p">(</span><span class="kt">byte</span><span class="w"> </span><span class="o">&amp;</span><span class="w"> </span><span class="mh">0x80</span><span class="p">)</span><span class="w"> </span><span class="o">?</span><span class="w"> </span><span class="n">GPIO_PIN_SET</span><span class="w"> </span><span class="o">:</span><span class="w"> </span><span class="n">GPIO_PIN_RESET</span><span class="p">);</span>
+<a id="__codelineno-2-7" name="__codelineno-2-7" href="#__codelineno-2-7"></a><span class="w">        </span><span class="kt">byte</span><span class="w"> </span><span class="o">&lt;&lt;=</span><span class="w"> </span><span class="mi">1</span><span class="p">;</span>
+<a id="__codelineno-2-8" name="__codelineno-2-8" href="#__codelineno-2-8"></a>
+<a id="__codelineno-2-9" name="__codelineno-2-9" href="#__codelineno-2-9"></a><span class="w">        </span><span class="cm">/* 2. 拉高时钟：上升沿，从机此刻采样 MOSI */</span>
+<a id="__codelineno-2-10" name="__codelineno-2-10" href="#__codelineno-2-10"></a><span class="w">        </span><span class="n">HAL_GPIO_WritePin</span><span class="p">(</span><span class="n">SCLK_GPIO_Port</span><span class="p">,</span><span class="w"> </span><span class="n">SCLK_Pin</span><span class="p">,</span><span class="w"> </span><span class="n">GPIO_PIN_SET</span><span class="p">);</span>
+<a id="__codelineno-2-11" name="__codelineno-2-11" href="#__codelineno-2-11"></a><span class="w">        </span><span class="n">SPI_Delay</span><span class="p">();</span><span class="w">    </span><span class="cm">/* 半个时钟周期（空循环延时） */</span>
+<a id="__codelineno-2-12" name="__codelineno-2-12" href="#__codelineno-2-12"></a>
+<a id="__codelineno-2-13" name="__codelineno-2-13" href="#__codelineno-2-13"></a><span class="w">        </span><span class="cm">/* 3. 拉低时钟：下降沿，主设备此刻采样 MISO */</span>
+<a id="__codelineno-2-14" name="__codelineno-2-14" href="#__codelineno-2-14"></a><span class="w">        </span><span class="n">HAL_GPIO_WritePin</span><span class="p">(</span><span class="n">SCLK_GPIO_Port</span><span class="p">,</span><span class="w"> </span><span class="n">SCLK_Pin</span><span class="p">,</span><span class="w"> </span><span class="n">GPIO_PIN_RESET</span><span class="p">);</span>
+<a id="__codelineno-2-15" name="__codelineno-2-15" href="#__codelineno-2-15"></a><span class="w">        </span><span class="n">SPI_Delay</span><span class="p">();</span>
+<a id="__codelineno-2-16" name="__codelineno-2-16" href="#__codelineno-2-16"></a><span class="w">    </span><span class="p">}</span>
+<a id="__codelineno-2-17" name="__codelineno-2-17" href="#__codelineno-2-17"></a><span class="p">}</span>
+</code></pre></div>
+<p>它的<strong>本质</strong>是：把协议里的每一拍（一个 bit）都拆成「放数据 + 翻时钟 + 读数据 + 延时」的指令序列，由 <strong>CPU 一条条执行</strong>。速率由延时函数决定（通常空循环 delay loop），<strong>不精确、但能跑</strong>。上面这段实现的就是 <strong>Mode 0</strong>（空闲低、上升沿采样）——想换模式，改的是「空闲电平」和「采样沿」这两处代码逻辑。</p>
+<h3 id="22-spi">2.2 硬件 SPI：专用外设接管</h3>
+<p>硬件 SPI 用的是芯片内部<strong>专门的 SPI 外设</strong>（F1 的 SPI1/2，F4 的 SPI1/2/3/4/5/6），它内置移位寄存器 + 状态机，自动完成「拉时钟、搬数据、管理 NSS」，CPU 只需要「把要发的字节写进数据寄存器，然后等标志/中断」，同时读走收到的字节。</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="cm">/* 硬件 SPI：CPU 只填缓冲和长度，外设自动做时序 */</span>
+<a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a><span class="n">HAL_SPI_Transmit</span><span class="p">(</span><span class="o">&amp;</span><span class="n">hspi1</span><span class="p">,</span><span class="w"> </span><span class="n">txData</span><span class="p">,</span><span class="w"> </span><span class="n">len</span><span class="p">,</span><span class="w"> </span><span class="n">HAL_MAX_DELAY</span><span class="p">);</span>
+<a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a><span class="n">HAL_SPI_Receive</span><span class="p">(</span><span class="o">&amp;</span><span class="n">hspi1</span><span class="p">,</span><span class="w"> </span><span class="n">rxData</span><span class="p">,</span><span class="w"> </span><span class="n">len</span><span class="p">,</span><span class="w"> </span><span class="n">HAL_MAX_DELAY</span><span class="p">);</span>
+</code></pre></div>
+<p>它的<strong>本质</strong>是：<strong>每个时钟沿「发 1 收 1」由硬件移位寄存器完成</strong>，CPU 不参与逐位翻转，只关心「开始、完成、出错」。发送时 CPU 写一次数据寄存器，硬件就自动把整帧按配置的 CPOL/CPHA 送出去；接收时每收满一个字节硬件置标志，CPU 读走即可。</p>
+<h3 id="23">2.3 逐维度对比</h3>
+<table>
+<thead>
+<tr>
+<th>对比维度</th>
+<th>软件 SPI</th>
+<th>硬件 SPI</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>实现主体</strong></td>
+<td>CPU 逐位翻转 GPIO，靠空循环延时</td>
+<td>芯片自带 SPI 外设（移位寄存器+状态机）</td>
+</tr>
+<tr>
+<td><strong>引脚需求</strong></td>
+<td>任意 3 个 GPIO（+CS），无特殊要求</td>
+<td>必须接在 SPI 专用 AF 引脚（如 F4 的 PA5/PA6/PA7）</td>
+</tr>
+<tr>
+<td><strong>时序精度</strong></td>
+<td>取决于延时循环，<strong>受中断/编译优化影响，有抖动</strong></td>
+<td>硬件时钟精确，<strong>稳定</strong></td>
+</tr>
+<tr>
+<td><strong>波特率</strong></td>
+<td>由延时决定，不精确（通常几十 kHz ~ 几 Mbps）</td>
+<td>精确可配（PCLK ÷ 2~256），<strong>可上几十 Mbps</strong></td>
+</tr>
+<tr>
+<td><strong>速率上限</strong></td>
+<td>受 GPIO 翻转速度 + 中断影响，很难上 10M</td>
+<td>可达 PCLK/2（F4 SPI1 最高约 42Mbps）</td>
+</tr>
+<tr>
+<td><strong>CPU 占用</strong></td>
+<td><strong>高</strong>，每个位都要 CPU 忙等延时</td>
+<td>低，字节级可交给中断/DMA（见第五节）</td>
+</tr>
+<tr>
+<td><strong>全双工</strong></td>
+<td>可以，但收发时序要靠代码小心对齐</td>
+<td><strong>天然全双工</strong>，硬件自动同拍收发</td>
+</tr>
+<tr>
+<td><strong>可靠性</strong></td>
+<td>无硬件错误检测，出错难定位</td>
+<td>有硬件错误标志（溢出 OVR / 模式错误 MODF / CRC），HAL 能查错误码</td>
+</tr>
+<tr>
+<td><strong>对中断敏感</strong></td>
+<td><strong>严重</strong>，中断打断会破坏时序</td>
+<td>弱，时序由硬件保证</td>
+</tr>
+<tr>
+<td><strong>可移植性</strong></td>
+<td>跨芯片强（任何 GPIO 都能模拟）</td>
+<td>强（HAL 封装统一，但引脚要换）</td>
+</tr>
+<tr>
+<td><strong>代码量 / 依赖</strong></td>
+<td>自写 ~30 行，零依赖，可读性好</td>
+<td>依赖 HAL 库，初始化结构体较多</td>
+</tr>
+<tr>
+<td><strong>调试难度</strong></td>
+<td>简单透明，波形看得懂；但慢</td>
+<td>配置项多（模式/极性/相位/分频），配错难查</td>
+</tr>
+</tbody>
+</table>
+<h3 id="24">2.4 到底用哪个：一张决策表</h3>
+<table>
+<thead>
+<tr>
+<th>场景</th>
+<th>推荐</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>SPI Flash / 高速 ADC / LCD / SD 卡，追求速度与稳定</td>
+<td><strong>硬件 SPI</strong>（默认首选）</td>
+</tr>
+<tr>
+<td>新板子刚回来、先快速点亮一个模块验证硬件</td>
+<td><strong>软件 SPI</strong>（几分钟就能跑，不依赖 CubeMX，方便排硬件）</td>
+</tr>
+<tr>
+<td>引脚被占用，只能用三个不支持的 GPIO 口</td>
+<td><strong>软件 SPI</strong></td>
+</tr>
+<tr>
+<td>跑 RTOS，数据量大，需要把 CPU 空出来</td>
+<td><strong>硬件 SPI + DMA</strong></td>
+</tr>
+<tr>
+<td>跨平台移植（代码要在多型号 MCU 复用）</td>
+<td><strong>软件 SPI</strong>（或封装好的一层抽象）</td>
+</tr>
+<tr>
+<td>接线紧张，且速度要求不高（几百 kHz 就够）</td>
+<td><strong>软件 SPI</strong>（省引脚，但慢）</td>
+</tr>
+</tbody>
+</table>
+<div class="admonition tip">
+<p class="admonition-title">工程惯例：能用硬件就用硬件</p>
+<p>硬件 SPI 的「配置复杂」只在<strong>第一次配</strong>时付出成本，配好后它比软件 SPI 快一两个数量级、还省 CPU。软件 SPI 适合<strong>调试早期</strong>和<strong>引脚受限/跨平台</strong>的场合，作为「兜底方案」存在。<strong>全双工和高速是 SPI 的招牌，用软件 SPI 等于把这两张牌都丢了</strong>——除非速度真的无所谓。</p>
+</div>
+<h2 id="spi">三、硬件 SPI 的各个模式：把「模式」这个词一拆到底</h2>
+<p>「SPI 模式」是新手最容易混的坑，因为<strong>它在不同语境下指四件完全不同的东西</strong>：芯片角色（主/从）、时钟格式（CPOL/CPHA 四模式）、数据格式（8/16 位、MSB/LSB）、传输方向（全双工/半双工/单工）。配错任何一个，通信就废。下面逐个拆开。</p>
+<h3 id="31-vs">3.1 角色模式：主模式 vs 从模式</h3>
+<p>SPI 永远是<strong>一主一从（或一主多从）</strong>通信，MCU 通常当主，偶尔当从（比如被另一块 MCU 或上位机拉数据）。</p>
+<table>
+<thead>
+<tr>
+<th>角色</th>
+<th>谁产生时钟</th>
+<th>谁控制片选</th>
+<th>HAL 配置</th>
+<th>HAL 收发函数</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>主模式</strong></td>
+<td>MCU 产生 SCLK</td>
+<td>MCU 自己拉 CS</td>
+<td><code>SPI_MODE_MASTER</code></td>
+<td><code>HAL_SPI_Transmit / Receive / TransmitReceive</code></td>
+</tr>
+<tr>
+<td><strong>从模式</strong></td>
+<td>外部主设备产生 SCLK</td>
+<td>外部主设备拉 CS</td>
+<td><code>SPI_MODE_SLAVE</code></td>
+<td><code>HAL_SPI_SlaveTransmit / Receive / TransmitReceive</code></td>
+</tr>
+</tbody>
+</table>
+<ul>
+<li>主模式：时钟分频由自己的 PCLK 决定；CS 多半用普通 GPIO 软件控制（见 3.6）。</li>
+<li>从模式：<strong>没有自己的时钟</strong>，SCLK 完全由对方给；速度上限由从机自身决定，主设备跑太快会溢出。</li>
+<li><strong>主从必须一方当主、一方当从，且时钟极性/相位一致</strong>（见 3.2），否则波形对不上，全是乱码。</li>
+</ul>
+<h3 id="32-cpol-cpha0123">3.2 时钟极性 CPOL 与时钟相位 CPHA：四种模式（0/1/2/3）</h3>
+<p><strong>「SPI 模式 0~3」就是 CPOL 和 CPHA 的组合</strong>，这是 SPI 最常说的「模式」，也是<strong>主从必须对齐</strong>的关键参数。</p>
+<ul>
+<li><strong>CPOL（Clock Polarity，极性）</strong>：决定 <strong>SCLK 空闲时是高还是低</strong>。</li>
+<li>CPOL=0：空闲为<strong>低</strong>，脉冲是「低→高→低」。</li>
+<li>CPOL=1：空闲为<strong>高</strong>，脉冲是「高→低→高」。</li>
+<li><strong>CPHA（Clock Phase，相位）</strong>：决定<strong>在哪个时钟沿采样数据</strong>。</li>
+<li>CPHA=0：<strong>第一个边沿</strong>采样（空闲跳变后的第一个沿）。</li>
+<li>CPHA=1：<strong>第二个边沿</strong>采样。</li>
+</ul>
+<p>四种组合（<strong>主从必须取同一个编号</strong>）：</p>
+<table>
+<thead>
+<tr>
+<th>模式</th>
+<th>CPOL</th>
+<th>CPHA</th>
+<th>空闲电平</th>
+<th>采样沿</th>
+<th>变化沿</th>
+<th>典型设备</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Mode 0</strong></td>
+<td>0</td>
+<td>0</td>
+<td>低</td>
+<td>第一个沿（<strong>上升沿</strong>）</td>
+<td>下降沿</td>
+<td>绝大多数（W25Q 系列 SPI Flash 等）</td>
+</tr>
+<tr>
+<td><strong>Mode 1</strong></td>
+<td>0</td>
+<td>1</td>
+<td>低</td>
+<td>第二个沿（<strong>下降沿</strong>）</td>
+<td>上升沿</td>
+<td>少数传感器</td>
+</tr>
+<tr>
+<td><strong>Mode 2</strong></td>
+<td>1</td>
+<td>0</td>
+<td>高</td>
+<td>第一个沿（<strong>下降沿</strong>）</td>
+<td>上升沿</td>
+<td>少数器件</td>
+</tr>
+<tr>
+<td><strong>Mode 3</strong></td>
+<td>1</td>
+<td>1</td>
+<td>高</td>
+<td>第二个沿（<strong>上升沿</strong>）</td>
+<td>下降沿</td>
+<td>W25Q 系列（支持 0 和 3）、部分 ADC</td>
+</tr>
+</tbody>
+</table>
+<p>时序图（Mode 0 为例，注意「空闲低、上升沿采样」）：</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a>Mode 0（CPOL=0, CPHA=0）：空闲低，第一个沿（上升沿）采样
+<a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a>SCLK   ─┐   ┌┐   ┌┐   ┌┐   ┌┐   ┌┐   ┌┐   ┌┐
+<a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a>        │   ││   ││   ││   ││   ││   ││   ││
+<a id="__codelineno-4-4" name="__codelineno-4-4" href="#__codelineno-4-4"></a>        └───┘└───┘└───┘└───┘└───┘└───┘└───┘
+<a id="__codelineno-4-5" name="__codelineno-4-5" href="#__codelineno-4-5"></a>MOSI   X D7  X D6  X D5  X D4  X D3  X D2  X D1  X D0
+<a id="__codelineno-4-6" name="__codelineno-4-6" href="#__codelineno-4-6"></a>         ↑    ↑    ↑    ↑    ↑    ↑    ↑    ↑
+<a id="__codelineno-4-7" name="__codelineno-4-7" href="#__codelineno-4-7"></a>        每个上升沿采样（数据在 SCLK 低电平期间变化，上升沿前已稳定）
+</code></pre></div>
+<p>Mode 1（CPOL=0, CPHA=1）：空闲低，<strong>下降沿采样</strong>，数据在上升沿就绪：</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a>Mode 1（CPOL=0, CPHA=1）：空闲低，下降沿采样
+<a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a>SCLK  ────┐   ┌───┐   ┌───┐   ┌───┐   ┌────
+<a id="__codelineno-5-3" name="__codelineno-5-3" href="#__codelineno-5-3"></a>          │   │   │   │   │   │   │   │
+<a id="__codelineno-5-4" name="__codelineno-5-4" href="#__codelineno-5-4"></a>          └───┘   └───┘   └───┘   └───┘
+<a id="__codelineno-5-5" name="__codelineno-5-5" href="#__codelineno-5-5"></a>          采样点：每个 ↓（下降沿）
+</code></pre></div>
+<p>Mode 2/3 只是把空闲电平翻到<strong>高</strong>，采样沿对应为第一个沿（下降沿）/第二个沿（上升沿），图把上面的低换成高即可。</p>
+<p><strong>工程上怎么确定该用哪个模式</strong>：</p>
+<ol>
+<li><strong>查从机 datasheet</strong> 的时序章节，通常会写「支持 SPI Mode 0/3」或给出 CPOL/CPHA 图。</li>
+<li><strong>SPI Flash（W25Q 等）几乎都支持 Mode 0 和 Mode 3</strong>——这两个模式采样沿都在时钟波形的「同一边」逻辑（空闲电平不同但采/发配合一致），很多器件两种都兼容。</li>
+<li>不确定时，<strong>先用 Mode 0 试</strong>，读回全 FF 或全 00 再试 Mode 3——两种最常见。</li>
+<li><strong>主从必须一致</strong>：主机 Mode 0、从机 Mode 3，数据全错且难查，这是 SPI 不工作的头号配置坑。</li>
+</ol>
+<div class="admonition tip">
+<p class="admonition-title">一句话记 CPOL/CPHA</p>
+<p><strong>CPOL 决定「歇着的时候电平」</strong>，<strong>CPHA 决定「第几个沿下手采样」</strong>。Mode 编号 = CPOL×2 + CPHA。Mode 0/3 覆盖了绝大多数 SPI Flash。</p>
+</div>
+<h3 id="33-8-16">3.3 数据宽度模式：8 位帧 / 16 位帧</h3>
+<p>SPI 一次收发的基本单位叫<strong>帧</strong>，HAL 用 <code>DataSize</code> 配置：</p>
+<ul>
+<li><strong>8 位</strong>（<code>SPI_DATASIZE_8BIT</code>）：绝大多数传感器/Flash/LCD，<strong>默认</strong>。</li>
+<li><strong>16 位</strong>（<code>SPI_DATASIZE_16BIT</code>）：音频 DAC/ADC（I2S 常用）、部分高速器件按 16 位组织数据。</li>
+</ul>
+<p><strong>注意</strong>：帧宽必须与从机一致；同时<strong>和 DMA 的 Data Width 是两回事</strong>——DMA 搬运宽度（字节/半字/字）是「怎么搬」，SPI 帧宽是「一帧几个 bit」。8 位帧 + DMA 用字节（8 bit）搬运；16 位帧 + DMA 用半字（16 bit）搬运，DMA 配错宽度数据会错位。</p>
+<h3 id="34-msb-lsb">3.4 字节序：MSB 先行 / LSB 先行</h3>
+<ul>
+<li><strong>MSB 先行</strong>（<code>SPI_FIRSTBIT_MSB</code>）：先发最高位。<strong>绝大多数 SPI 器件</strong>，默认。</li>
+<li><strong>LSB 先行</strong>（<code>SPI_FIRSTBIT_LSB</code>）：先发最低位。少数器件（某些 ADC、74HC595 系列）要求。</li>
+</ul>
+<p><strong>主从必须一致</strong>，且软件 SPI 移植时最容易在这栽跟头——代码里 <code>byte &amp; 0x80</code>（MSB）还是 <code>byte &amp; 0x01</code>（LSB）写反，硬件连上就全是反的。</p>
+<h3 id="35-cubemx-8-mode">3.5 方向模式：CubeMX 的 8 个 Mode 选项，一拆到底</h3>
+<p>CubeMX 里 SPI 的 <strong>Mode 下拉框</strong>不是一件事，而是<strong>两个开关的笛卡尔积</strong>：</p>
+<ul>
+<li><strong>角色</strong>：Master（主，自己产生时钟）/ Slave（从，被动跟拍）——见 3.1</li>
+<li><strong>数据方向</strong>：Full-Duplex（全双工）/ Half-Duplex（半双工）/ Receive Only（仅收）/ Transmit Only（仅发）</li>
+</ul>
+<p><strong>2 种角色 × 4 种方向 = 8 个选项</strong>，就是你在下拉框里看到的全部：</p>
+<table>
+<thead>
+<tr>
+<th>CubeMX 选项</th>
+<th>HAL <code>Mode</code></th>
+<th>HAL <code>Direction</code></th>
+<th>寄存器位</th>
+<th>本机（MCU）占用的引脚</th>
+<th>典型用途</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Full-Duplex Master</strong></td>
+<td><code>SPI_MODE_MASTER</code></td>
+<td><code>SPI_DIRECTION_2LINES</code></td>
+<td>BIDIMODE=0, RXONLY=0</td>
+<td>SCK + MOSI(发) + MISO(收)</td>
+<td><strong>默认首选</strong>：Flash/ADC/LCD/SD</td>
+</tr>
+<tr>
+<td><strong>Full-Duplex Slave</strong></td>
+<td><code>SPI_MODE_SLAVE</code></td>
+<td><code>SPI_DIRECTION_2LINES</code></td>
+<td>BIDIMODE=0, RXONLY=0</td>
+<td>SCK(入) + MOSI(入) + MISO(出)</td>
+<td>被另一主设备当从机拉数据</td>
+</tr>
+<tr>
+<td><strong>Half-Duplex Master</strong></td>
+<td><code>SPI_MODE_MASTER</code></td>
+<td><code>SPI_DIRECTION_1LINE</code></td>
+<td>BIDIMODE=1</td>
+<td>SCK + <strong>MOSI 一根线双向</strong></td>
+<td>引脚紧张的两块 MCU 互连</td>
+</tr>
+<tr>
+<td><strong>Half-Duplex Slave</strong></td>
+<td><code>SPI_MODE_SLAVE</code></td>
+<td><code>SPI_DIRECTION_1LINE</code></td>
+<td>BIDIMODE=1</td>
+<td>SCK(入) + <strong>MISO 一根线双向</strong></td>
+<td>同上，从机一侧</td>
+</tr>
+<tr>
+<td><strong>Receive Only Master</strong></td>
+<td><code>SPI_MODE_MASTER</code></td>
+<td><code>SPI_DIRECTION_2LINES_RXONLY</code></td>
+<td>BIDIMODE=0, RXONLY=1</td>
+<td>SCK + MISO(收)，<strong>MOSI 被释放</strong></td>
+<td>纯读：FIFO、连续输出型 ADC、只读器件</td>
+</tr>
+<tr>
+<td><strong>Receive Only Slave</strong></td>
+<td><code>SPI_MODE_SLAVE</code></td>
+<td><code>SPI_DIRECTION_2LINES_RXONLY</code></td>
+<td>BIDIMODE=0, RXONLY=1</td>
+<td>SCK(入) + MOSI(入)，<strong>MISO 被释放</strong></td>
+<td>从机纯接收（少见）</td>
+</tr>
+<tr>
+<td><strong>Transmit Only Master</strong></td>
+<td><code>SPI_MODE_MASTER</code></td>
+<td><code>SPI_DIRECTION_2LINES</code></td>
+<td>BIDIMODE=0, RXONLY=0</td>
+<td>SCK + MOSI(发)，<strong>MISO 被释放</strong></td>
+<td>纯写：74HC595、LED 灯带、DAC、发命令</td>
+</tr>
+<tr>
+<td><strong>Transmit Only Slave</strong></td>
+<td><code>SPI_MODE_SLAVE</code></td>
+<td><code>SPI_DIRECTION_2LINES</code></td>
+<td>BIDIMODE=0, RXONLY=0</td>
+<td>SCK(入) + MISO(出)，<strong>MOSI 被释放</strong></td>
+<td>从机纯发送（少见）</td>
+</tr>
+</tbody>
+</table>
+<div class="admonition warning">
+<p class="admonition-title">「Transmit Only」在 F1/F4 上没有专门的寄存器位</p>
+<p>F1/F4 的 SPI 只有一个「关发送」的开关 <strong>RXONLY</strong>（Receive Only），<strong>没有 TXONLY 位</strong>。所以 <strong>Transmit Only 的寄存器配置和 Full-Duplex 完全一样</strong>（BIDIMODE=0, RXONLY=0），区别只是 <strong>CubeMX 不分配 MISO 引脚、代码里也不调用接收</strong>。别指望在 <code>Direction</code> 里找到一个「仅发送」的常量——它不存在，<code>仅发送 = 全双工配置 + 不用接收</code>。</p>
+</div>
+<p><strong>先讲透三个寄存器位</strong>，这 8 个模式在硬件上就是它们：</p>
+<table>
+<thead>
+<tr>
+<th>寄存器位</th>
+<th>含义</th>
+<th>取值</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>BIDIMODE</strong>（双向模式）</td>
+<td>0 = 两线单向（MOSI/MISO 分开）；1 = <strong>一线双向（半双工）</strong></td>
+<td>半双工模式的开关</td>
+</tr>
+<tr>
+<td><strong>RXONLY</strong>（仅接收）</td>
+<td>1 = <strong>关闭发送</strong>，MOSI 释放，只从 MISO 收</td>
+<td>「Receive Only」就是这个位</td>
+</tr>
+<tr>
+<td><strong>BIDIOE</strong>（双向输出使能）</td>
+<td>半双工下：1 = 本机往 SD 线上发；0 = 本机从 SD 线上收</td>
+<td>半双工里切换收发方向</td>
+</tr>
+</tbody>
+</table>
+<p>下面逐个模式展开。</p>
+<h4 id="351-full-duplex-master">3.5.1 Full-Duplex Master（全双工主模式）—— 默认首选</h4>
+<ul>
+<li><strong>配置</strong>：<code>Mode = SPI_MODE_MASTER</code>，<code>Direction = SPI_DIRECTION_2LINES</code>。</li>
+<li><strong>引脚</strong>：SCK + MOSI(发) + MISO(收)，三根全用。</li>
+<li><strong>行为</strong>：每来一个时钟，<strong>同时</strong>往 MOSI 发 1 bit、从 MISO 收 1 bit。写就是发，读就要发哑字节喂时钟。</li>
+<li><strong>HAL 函数</strong>：<code>HAL_SPI_Transmit / Receive / TransmitReceive</code>（读用 <code>TransmitReceive</code>，见下）。</li>
+<li><strong>什么时候用</strong>：<strong>90% 的场景</strong>。SPI Flash、高速 ADC、LCD/OLED、SD 卡、以太网 PHY……全双工是 SPI 的招牌，没特殊理由就用它。</li>
+</ul>
+<p>全双工里「<strong>读</strong>」的固定套路（命令+数据一个事务串完）：</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a><span class="cm">/* 读 Flash：先发命令+地址，再发哑字节把数据带回来 */</span>
+<a id="__codelineno-6-2" name="__codelineno-6-2" href="#__codelineno-6-2"></a><span class="kt">uint8_t</span><span class="w"> </span><span class="n">cmd</span><span class="p">[</span><span class="mi">4</span><span class="p">]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{</span><span class="mh">0x03</span><span class="p">,</span><span class="w"> </span><span class="n">addr_hi</span><span class="p">,</span><span class="w"> </span><span class="n">addr_mid</span><span class="p">,</span><span class="w"> </span><span class="n">addr_lo</span><span class="p">};</span>
+<a id="__codelineno-6-3" name="__codelineno-6-3" href="#__codelineno-6-3"></a><span class="n">HAL_SPI_Transmit</span><span class="p">(</span><span class="o">&amp;</span><span class="n">hspi1</span><span class="p">,</span><span class="w"> </span><span class="n">cmd</span><span class="p">,</span><span class="w"> </span><span class="mi">4</span><span class="p">,</span><span class="w"> </span><span class="n">HAL_MAX_DELAY</span><span class="p">);</span>
+<a id="__codelineno-6-4" name="__codelineno-6-4" href="#__codelineno-6-4"></a><span class="kt">uint8_t</span><span class="w"> </span><span class="n">dummy</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mh">0xFF</span><span class="p">,</span><span class="w"> </span><span class="n">rx</span><span class="p">[</span><span class="mi">16</span><span class="p">];</span>
+<a id="__codelineno-6-5" name="__codelineno-6-5" href="#__codelineno-6-5"></a><span class="n">HAL_SPI_TransmitReceive</span><span class="p">(</span><span class="o">&amp;</span><span class="n">hspi1</span><span class="p">,</span><span class="w"> </span><span class="o">&amp;</span><span class="n">dummy</span><span class="p">,</span><span class="w"> </span><span class="n">rx</span><span class="p">,</span><span class="w"> </span><span class="mi">16</span><span class="p">,</span><span class="w"> </span><span class="n">HAL_MAX_DELAY</span><span class="p">);</span><span class="w">  </span><span class="cm">/* 发哑字节，收真数据 */</span>
+</code></pre></div>
+<div class="admonition warning">
+<p class="admonition-title">全双工里「只发不收」会 OVR 溢出</p>
+<p>全双工是<strong>每拍必收</strong>。如果你只调 <code>HAL_SPI_Transmit</code> 而不读接收缓冲，从机发回来的字节会在 RXNE 里堆积，触发 <strong>OVR（溢出）错误</strong>，重则把后续通信卡住。<strong>想「纯发」请用 Transmit Only Master</strong>（MISO 不接、无接收），或每次发完读走 RX 缓冲。</p>
+</div>
+<h4 id="352-full-duplex-slave">3.5.2 Full-Duplex Slave（全双工从模式）</h4>
+<ul>
+<li><strong>配置</strong>：<code>Mode = SPI_MODE_SLAVE</code>，<code>Direction = SPI_DIRECTION_2LINES</code>。</li>
+<li><strong>引脚</strong>：SCK(入) + MOSI(入) + MISO(出)。<strong>没有自己的时钟</strong>，SCLK 完全由外部主设备给。</li>
+<li><strong>行为</strong>：主设备打拍子，从机在上升沿采 MOSI、在下降沿往 MISO 放数据——<strong>同时收发</strong>，只是节奏是别人的。</li>
+<li><strong>HAL 函数</strong>：<code>HAL_SPI_SlaveTransmit / SlaveReceive / SlaveTransmitReceive</code>（注意函数名带 <code>Slave</code>，不是主模式的 <code>HAL_SPI_Transmit</code>）。</li>
+<li><strong>什么时候用</strong>：你的 MCU 被另一块主设备（另一块 MCU、FPGA、上位机扩展卡）当作从机拉数据。比如板间通信、SPI 从机外设、模拟一个从设备给主设备测。</li>
+</ul>
+<p>主从两端的典型配对：</p>
+<table>
+<thead>
+<tr>
+<th>主设备（Master）</th>
+<th>从设备（Slave）</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Full-Duplex Master</td>
+<td>Full-Duplex Slave</td>
+<td>最常见配对，三线 SCK/MOSI/MISO + 一根 CS</td>
+</tr>
+<tr>
+<td>Transmit Only Master</td>
+<td>Receive Only Slave</td>
+<td>主只管发、从只管收（如主往从灌配置）</td>
+</tr>
+<tr>
+<td>Receive Only Master</td>
+<td>Transmit Only Slave</td>
+<td>从机被点读，主设备只收</td>
+</tr>
+</tbody>
+</table>
+<h4 id="353-half-duplex-master">3.5.3 Half-Duplex Master（半双工主模式）</h4>
+<ul>
+<li><strong>配置</strong>：<code>Mode = SPI_MODE_MASTER</code>，<code>Direction = SPI_DIRECTION_1LINE</code>。</li>
+<li><strong>引脚</strong>：SCK + <strong>一根双向数据线（主设备侧是 MOSI 引脚）</strong>。MOSI/MISO 不再各管各的，<strong>这一根线分时收/发</strong>。</li>
+<li><strong>行为</strong>：同一根线上，先发一批（BIDIOE=1，本机驱动），再切到收（BIDIOE=0，等对端驱动）。<strong>同一时刻只能有一个方向</strong>，吞吐减半。</li>
+<li><strong>HAL 函数</strong>：<code>HAL_SPI_Transmit</code> 后再 <code>HAL_SPI_Receive</code>，<strong>HAL 会在切换时自动改 BIDIOE</strong>，但方向翻转瞬间对端也要把线让出来：</li>
+</ul>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a><span class="cm">/* 半双工：同一根线上先发后收 */</span>
+<a id="__codelineno-7-2" name="__codelineno-7-2" href="#__codelineno-7-2"></a><span class="kt">uint8_t</span><span class="w"> </span><span class="n">tx</span><span class="p">[</span><span class="mi">4</span><span class="p">]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{</span><span class="mh">0xAA</span><span class="p">,</span><span class="w"> </span><span class="mh">0xBB</span><span class="p">,</span><span class="w"> </span><span class="mh">0xCC</span><span class="p">,</span><span class="w"> </span><span class="mh">0xDD</span><span class="p">};</span>
+<a id="__codelineno-7-3" name="__codelineno-7-3" href="#__codelineno-7-3"></a><span class="kt">uint8_t</span><span class="w"> </span><span class="n">rx</span><span class="p">[</span><span class="mi">4</span><span class="p">];</span>
+<a id="__codelineno-7-4" name="__codelineno-7-4" href="#__codelineno-7-4"></a><span class="n">HAL_SPI_Transmit</span><span class="p">(</span><span class="o">&amp;</span><span class="n">hspi1</span><span class="p">,</span><span class="w"> </span><span class="n">tx</span><span class="p">,</span><span class="w"> </span><span class="mi">4</span><span class="p">,</span><span class="w"> </span><span class="n">HAL_MAX_DELAY</span><span class="p">);</span><span class="w">  </span><span class="cm">/* 发阶段：SD 线为输出 */</span>
+<a id="__codelineno-7-5" name="__codelineno-7-5" href="#__codelineno-7-5"></a><span class="n">SPI_TurnaroundDelay</span><span class="p">();</span><span class="w">                           </span><span class="cm">/* 留出让线时间（turnaround） */</span>
+<a id="__codelineno-7-6" name="__codelineno-7-6" href="#__codelineno-7-6"></a><span class="n">HAL_SPI_Receive</span><span class="p">(</span><span class="o">&amp;</span><span class="n">hspi1</span><span class="p">,</span><span class="w"> </span><span class="n">rx</span><span class="p">,</span><span class="w"> </span><span class="mi">4</span><span class="p">,</span><span class="w"> </span><span class="n">HAL_MAX_DELAY</span><span class="p">);</span><span class="w">   </span><span class="cm">/* 收阶段：SD 线为输入 */</span>
+</code></pre></div>
+<ul>
+<li><strong>什么时候用</strong>：<strong>引脚紧张到只剩一根数据线</strong>、且对端也支持半双工（另一块 STM32 或专门支持 1 线的器件）时才用。普通 4 线 SPI 从机（W25Q Flash 等）<strong>不能</strong>工作在半双工下。</li>
+</ul>
+<div class="admonition warning">
+<p class="admonition-title">半双工的三个前提，缺一不可</p>
+<ol>
+<li><strong>对端也必须支持半双工</strong>（BIDIMODE=1）——普通 SPI 从机（Flash、大多数传感器）不行；</li>
+<li><strong>方向切换要留时间</strong>：发切收的瞬间，一端还拉着线、另一端就要读，中间不给 turnaround 时间数据必错；</li>
+<li><strong>半双工里数据线物理接法要拐弯</strong>：主机的 MOSI 引脚要接到<strong>从机的 MISO 引脚</strong>（不是对端的 MOSI），因为从机侧的双向线是 MISO。接线表上对端那一格是「MISO」，别按全双工的直连思维接。</li>
+</ol>
+</div>
+<h4 id="354-half-duplex-slave">3.5.4 Half-Duplex Slave（半双工从模式）</h4>
+<ul>
+<li><strong>配置</strong>：<code>Mode = SPI_MODE_SLAVE</code>，<code>Direction = SPI_DIRECTION_1LINE</code>。</li>
+<li><strong>引脚</strong>：SCK(入) + <strong>一根双向数据线（从机侧是 MISO 引脚）</strong>。</li>
+<li><strong>行为</strong>：和 3.5.3 完全同构，只是站在从机一侧——主设备先发，从机在接收阶段把线让出来；轮到从机发时（BIDIOE=1）才驱动 MISO。</li>
+<li><strong>什么时候用</strong>：和 3.5.3 成对出现。两块 MCU 用 1 线互连时，<strong>主侧选 Half-Duplex Master，从侧选 Half-Duplex Slave</strong>，数据线接「主的 MOSI ↔ 从的 MISO」。</li>
+</ul>
+<h4 id="355-receive-only-master">3.5.5 Receive Only Master（仅接收主模式）—— 纯读最省事</h4>
+<ul>
+<li><strong>配置</strong>：<code>Mode = SPI_MODE_MASTER</code>，<code>Direction = SPI_DIRECTION_2LINES_RXONLY</code>（就是寄存器里 RXONLY=1）。</li>
+<li><strong>引脚</strong>：SCK + MISO(收)。<strong>MOSI 被释放</strong>（可以做 GPIO 干别的），因为发送被硬件关了。</li>
+<li><strong>行为</strong>：主设备照常产生时钟，<strong>硬件自动发空数据</strong>（0x00）喂从机，你只从 MISO 收——<strong>不用像全双工那样手动发哑字节</strong>，这是它最大的省事点。</li>
+<li><strong>HAL 函数</strong>：<code>HAL_SPI_Receive</code>：</li>
+</ul>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a><span class="cm">/* 纯收：无需哑字节，硬件自动喂时钟 */</span>
+<a id="__codelineno-8-2" name="__codelineno-8-2" href="#__codelineno-8-2"></a><span class="kt">uint8_t</span><span class="w"> </span><span class="n">rx</span><span class="p">[</span><span class="mi">16</span><span class="p">];</span>
+<a id="__codelineno-8-3" name="__codelineno-8-3" href="#__codelineno-8-3"></a><span class="n">HAL_SPI_Receive</span><span class="p">(</span><span class="o">&amp;</span><span class="n">hspi1</span><span class="p">,</span><span class="w"> </span><span class="n">rx</span><span class="p">,</span><span class="w"> </span><span class="mi">16</span><span class="p">,</span><span class="w"> </span><span class="n">HAL_MAX_DELAY</span><span class="p">);</span>
+</code></pre></div>
+<ul>
+<li><strong>什么时候用</strong>：<strong>从机只是「被点读」、永远不回写</strong>的场景——FIFO 深度读取、连续输出型 ADC、只读状态寄存器、以及「读数据阶段」的 SPI Flash（发完命令地址后切 RXONLY 收）。<strong>比全双工省一根引脚、少一份哑字节代码。</strong></li>
+</ul>
+<h4 id="356-receive-only-slave">3.5.6 Receive Only Slave（仅接收从模式）</h4>
+<ul>
+<li><strong>配置</strong>：<code>Mode = SPI_MODE_SLAVE</code>，<code>Direction = SPI_DIRECTION_2LINES_RXONLY</code>。</li>
+<li><strong>引脚</strong>：SCK(入) + MOSI(入)。<strong>MISO 被释放</strong>（从机不需要回数据）。</li>
+<li><strong>行为</strong>：主设备发什么，从机收什么；<strong>从机永远不驱动 MISO</strong>。</li>
+<li><strong>什么时候用</strong>：从机只当「接收终端」——比如一块 MCU 只负责接收主设备下发的配置/数据、不回任何东西（配合主机的 Transmit Only Master）。实际工程里<strong>少见</strong>，多数从机会被要求「应答」点什么。</li>
+</ul>
+<h4 id="357-transmit-only-master">3.5.7 Transmit Only Master（仅发送主模式）—— 纯写最顺手</h4>
+<ul>
+<li><strong>配置</strong>：<code>Mode = SPI_MODE_MASTER</code>，<code>Direction = SPI_DIRECTION_2LINES</code>——<strong>和全双工同一份寄存器配置</strong>（F1/F4 没有 TXONLY 位，见本节开头的 warning）。</li>
+<li><strong>引脚</strong>：SCK + MOSI(发)。<strong>MISO 不分配/不接</strong>（被释放）。</li>
+<li><strong>行为</strong>：只往 MOSI 写，从不读。<strong>因为 MISO 没接、没有接收路径，也就不存在全双工「只发不收」的 OVR 溢出坑</strong>——这是它相对「全双工只调 Transmit」的最大好处。</li>
+<li><strong>HAL 函数</strong>：<code>HAL_SPI_Transmit</code>：</li>
+</ul>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a><span class="cm">/* 纯发：MISO 不接，只写 MOSI */</span>
+<a id="__codelineno-9-2" name="__codelineno-9-2" href="#__codelineno-9-2"></a><span class="kt">uint8_t</span><span class="w"> </span><span class="n">data</span><span class="p">[</span><span class="mi">8</span><span class="p">]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{</span><span class="mh">0x55</span><span class="p">,</span><span class="w"> </span><span class="mh">0xAA</span><span class="p">,</span><span class="w"> </span><span class="mh">0x01</span><span class="p">,</span><span class="w"> </span><span class="mh">0x02</span><span class="p">,</span><span class="w"> </span><span class="mh">0x03</span><span class="p">,</span><span class="w"> </span><span class="mh">0x04</span><span class="p">,</span><span class="w"> </span><span class="mh">0x05</span><span class="p">,</span><span class="w"> </span><span class="mh">0x06</span><span class="p">};</span>
+<a id="__codelineno-9-3" name="__codelineno-9-3" href="#__codelineno-9-3"></a><span class="n">HAL_SPI_Transmit</span><span class="p">(</span><span class="o">&amp;</span><span class="n">hspi1</span><span class="p">,</span><span class="w"> </span><span class="n">data</span><span class="p">,</span><span class="w"> </span><span class="mi">8</span><span class="p">,</span><span class="w"> </span><span class="n">HAL_MAX_DELAY</span><span class="p">);</span>
+</code></pre></div>
+<ul>
+<li><strong>什么时候用</strong>：<strong>所有「单向写」外设</strong>——74HC595 移位寄存器、WS2812 等 LED 灯带（用 SPI 协议模拟时序）、SPI DAC 写数据、往 Flash 发写命令、只写不读的传感器配置。<strong>这类场景别用全双工，直接选 Transmit Only 最干净。</strong></li>
+</ul>
+<h4 id="358-transmit-only-slave">3.5.8 Transmit Only Slave（仅发送从模式）</h4>
+<ul>
+<li><strong>配置</strong>：<code>Mode = SPI_MODE_SLAVE</code>，<code>Direction = SPI_DIRECTION_2LINES</code>（同样无 TXONLY 位，和全双工从模式同配置）。</li>
+<li><strong>引脚</strong>：SCK(入) + MISO(出)。<strong>MOSI 不接</strong>（从机不需要接收）。</li>
+<li><strong>行为</strong>：主设备一打时钟，从机就把数据往 MISO 甩，<strong>从不接收任何东西</strong>。</li>
+<li><strong>什么时候用</strong>：从机是「纯数据源」——被主设备点读就吐数据（配合主机的 Receive Only Master），比如一个只管上报数据的从设备。实际工程里<strong>少见</strong>，多数从机至少要接命令。</li>
+</ul>
+<h3 id="36-nss-vs">3.6 NSS 管理：硬件片选 vs 软件片选</h3>
+<p>CS/NSS 引脚有两种管理方式，<code>NSS</code> 字段配置：</p>
+<table>
+<thead>
+<tr>
+<th>方式</th>
+<th>HAL 配置</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>软件片选</strong></td>
+<td><code>SPI_NSS_SOFT</code></td>
+<td>NSS 引脚<strong>不作为外设控制</strong>，用普通 GPIO 手动拉 CS</td>
+</tr>
+<tr>
+<td><strong>硬件片选</strong></td>
+<td><code>SPI_NSS_HARD</code></td>
+<td>外设自动控制 NSS 引脚（主模式下每帧自动拉低/拉高）</td>
+</tr>
+</tbody>
+</table>
+<p>工程上 <strong>90% 都用软件片选</strong>，原因：</p>
+<ul>
+<li>多从机时每从一根 CS，外设硬件只管理一根，<strong>一主多从必须用软件片选</strong>（每个从机一个 GPIO）。</li>
+<li>软件片选灵活：什么时候拉低、拉高完全自己控制，能精确控制「片选边界」（比如 Flash 的整个命令事务期间 CS 保持低）。</li>
+<li><strong>硬件片选 + 主模式</strong>有个经典的坑：<strong>MODF（模式错误）</strong>——主模式下 NSS 被拉低（干扰或硬件管理不当）会触发 MODF 错误，外设直接停摆，需要先清错误再复位外设才能恢复。</li>
+</ul>
+<div class="admonition warning">
+<p class="admonition-title">软件片选也要注意时序</p>
+<p>软件片选不是「随便拉一下就行」：<strong>拉低 CS 后要给一小段建立时间（delay）再发时钟</strong>，帧结束先等发送完成（<code>HAL_SPI_GetState</code> 回到 READY）再拉高 CS。很多「偶发读错」就是 CS 拉得太紧，从机还没准备好时钟就来了。</p>
+</div>
+<h3 id="37-motorola-vs-ti">3.7 帧格式模式（Motorola vs TI）与高级特性</h3>
+<ul>
+<li><strong>Motorola 帧格式</strong>：默认，就是上面讲的 CPOL/CPHA 四种模式。</li>
+<li><strong>TI 模式</strong>（<code>SPI_TIMODE_ENABLE</code>）：德州仪器的同步帧格式，带帧同步信号，<strong>一般用不到</strong>，遇到了再查手册。</li>
+<li><strong>CRC 计算</strong>（部分 F4）：<code>CRCCalculation</code> 使能后收发帧尾带 CRC 校验字节，用于高可靠性链路（如电力/军工），普通应用不开。</li>
+<li><strong>菊花链（Daisy Chain）</strong>：多个从机的 SDO 依次串起来连成一条数据链，靠<strong>命令里带从机地址</strong>区分，片选共用一根。适合「多片同型号、追求少引脚」的场景，<strong>读写时序和普通多从机完全不同</strong>，用到再单独学。</li>
+</ul>
+<h2 id="spi-cubemx-hal">四、硬件 SPI 配置说明：CubeMX + HAL</h2>
+<h3 id="41-cubemx-f4-f1">4.1 CubeMX 页面（F4 为例，F1 类似）</h3>
+<p><code>Connectivity → SPI1</code>，关键参数：</p>
+<table>
+<thead>
+<tr>
+<th>参数</th>
+<th>说明</th>
+<th>典型值</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Mode</strong></td>
+<td>角色 + 方向：Full-Duplex Master / Slave、Half-Duplex、Transmit Only 等</td>
+<td><strong>Full-Duplex Master</strong>（默认首选）</td>
+</tr>
+<tr>
+<td><strong>Data Size</strong></td>
+<td>帧宽：8 Bits / 16 Bits</td>
+<td><strong>8 Bits</strong>（绝大多数从机）</td>
+</tr>
+<tr>
+<td><strong>Clock Polarity (CPOL)</strong></td>
+<td>空闲电平：Low / High</td>
+<td>见从机手册，不确定先 Low（Mode 0）</td>
+</tr>
+<tr>
+<td><strong>Clock Phase (CPHA)</strong></td>
+<td>采样沿：1 Edge / 2 Edge</td>
+<td>见从机手册，不确定先 1 Edge（Mode 0）</td>
+</tr>
+<tr>
+<td><strong>NSS</strong></td>
+<td>片选管理：Software / Hardware</td>
+<td><strong>Software</strong>（默认，多从机必须）</td>
+</tr>
+<tr>
+<td><strong>Baud Rate Prescaler</strong></td>
+<td>波特率预分频：2/4/8/…/256</td>
+<td>按目标速率算（见 4.3）</td>
+</tr>
+<tr>
+<td><strong>First Bit</strong></td>
+<td>字节序：MSB / LSB First</td>
+<td><strong>MSB First</strong>（默认）</td>
+</tr>
+<tr>
+<td><strong>TI Mode</strong></td>
+<td>TI 帧格式开关</td>
+<td><strong>Disable</strong></td>
+</tr>
+</tbody>
+</table>
+<p>在 <strong>GPIO Settings</strong> 确认引脚复用为 SPI 的 AF（F4 的 SPI1 是 PA5=SCK、PA6=MISO、PA7=MOSI，AF5），<strong>速率设 High</strong>（外设时钟分频后够用即可）。</p>
+<h3 id="42-hal">4.2 HAL 初始化结构体逐字段</h3>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-10-1" name="__codelineno-10-1" href="#__codelineno-10-1"></a><span class="n">SPI_HandleTypeDef</span><span class="w"> </span><span class="n">hspi1</span><span class="p">;</span>
+<a id="__codelineno-10-2" name="__codelineno-10-2" href="#__codelineno-10-2"></a>
+<a id="__codelineno-10-3" name="__codelineno-10-3" href="#__codelineno-10-3"></a><span class="n">hspi1</span><span class="p">.</span><span class="n">Instance</span><span class="w">               </span><span class="o">=</span><span class="w"> </span><span class="n">SPI1</span><span class="p">;</span>
+<a id="__codelineno-10-4" name="__codelineno-10-4" href="#__codelineno-10-4"></a><span class="n">hspi1</span><span class="p">.</span><span class="n">Init</span><span class="p">.</span><span class="n">Mode</span><span class="w">              </span><span class="o">=</span><span class="w"> </span><span class="n">SPI_MODE_MASTER</span><span class="p">;</span><span class="w">        </span><span class="cm">/* 主模式 */</span>
+<a id="__codelineno-10-5" name="__codelineno-10-5" href="#__codelineno-10-5"></a><span class="n">hspi1</span><span class="p">.</span><span class="n">Init</span><span class="p">.</span><span class="n">Direction</span><span class="w">         </span><span class="o">=</span><span class="w"> </span><span class="n">SPI_DIRECTION_2LINES</span><span class="p">;</span><span class="w">   </span><span class="cm">/* 全双工：MOSI+MISO */</span>
+<a id="__codelineno-10-6" name="__codelineno-10-6" href="#__codelineno-10-6"></a><span class="n">hspi1</span><span class="p">.</span><span class="n">Init</span><span class="p">.</span><span class="n">DataSize</span><span class="w">          </span><span class="o">=</span><span class="w"> </span><span class="n">SPI_DATASIZE_8BIT</span><span class="p">;</span><span class="w">      </span><span class="cm">/* 8 位帧 */</span>
+<a id="__codelineno-10-7" name="__codelineno-10-7" href="#__codelineno-10-7"></a><span class="n">hspi1</span><span class="p">.</span><span class="n">Init</span><span class="p">.</span><span class="n">CLKPolarity</span><span class="w">       </span><span class="o">=</span><span class="w"> </span><span class="n">SPI_POLARITY_LOW</span><span class="p">;</span><span class="w">       </span><span class="cm">/* CPOL=0：空闲低 */</span>
+<a id="__codelineno-10-8" name="__codelineno-10-8" href="#__codelineno-10-8"></a><span class="n">hspi1</span><span class="p">.</span><span class="n">Init</span><span class="p">.</span><span class="n">CLKPhase</span><span class="w">          </span><span class="o">=</span><span class="w"> </span><span class="n">SPI_PHASE_1EDGE</span><span class="p">;</span><span class="w">        </span><span class="cm">/* CPHA=0：第一个沿采样 → 合起来就是 Mode 0 */</span>
+<a id="__codelineno-10-9" name="__codelineno-10-9" href="#__codelineno-10-9"></a><span class="n">hspi1</span><span class="p">.</span><span class="n">Init</span><span class="p">.</span><span class="n">NSS</span><span class="w">               </span><span class="o">=</span><span class="w"> </span><span class="n">SPI_NSS_SOFT</span><span class="p">;</span><span class="w">           </span><span class="cm">/* 软件片选，CS 自己用 GPIO 拉 */</span>
+<a id="__codelineno-10-10" name="__codelineno-10-10" href="#__codelineno-10-10"></a><span class="n">hspi1</span><span class="p">.</span><span class="n">Init</span><span class="p">.</span><span class="n">BaudRatePrescaler</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">SPI_BAUDRATEPRESCALER_16</span><span class="p">;</span><span class="w"> </span><span class="cm">/* 分频 16，见 4.3 计算 */</span>
+<a id="__codelineno-10-11" name="__codelineno-10-11" href="#__codelineno-10-11"></a><span class="n">hspi1</span><span class="p">.</span><span class="n">Init</span><span class="p">.</span><span class="n">FirstBit</span><span class="w">          </span><span class="o">=</span><span class="w"> </span><span class="n">SPI_FIRSTBIT_MSB</span><span class="p">;</span><span class="w">       </span><span class="cm">/* MSB 先行 */</span>
+<a id="__codelineno-10-12" name="__codelineno-10-12" href="#__codelineno-10-12"></a><span class="n">hspi1</span><span class="p">.</span><span class="n">Init</span><span class="p">.</span><span class="n">TIMode</span><span class="w">            </span><span class="o">=</span><span class="w"> </span><span class="n">SPI_TIMODE_DISABLE</span><span class="p">;</span><span class="w">     </span><span class="cm">/* 不用 TI 帧格式 */</span>
+<a id="__codelineno-10-13" name="__codelineno-10-13" href="#__codelineno-10-13"></a><span class="n">hspi1</span><span class="p">.</span><span class="n">Init</span><span class="p">.</span><span class="n">CRCCalculation</span><span class="w">    </span><span class="o">=</span><span class="w"> </span><span class="n">SPI_CRCCALCULATION_DISABLE</span><span class="p">;</span>
+<a id="__codelineno-10-14" name="__codelineno-10-14" href="#__codelineno-10-14"></a><span class="n">hspi1</span><span class="p">.</span><span class="n">Init</span><span class="p">.</span><span class="n">CRCPolynomial</span><span class="w">     </span><span class="o">=</span><span class="w"> </span><span class="mi">7</span><span class="p">;</span>
+<a id="__codelineno-10-15" name="__codelineno-10-15" href="#__codelineno-10-15"></a><span class="n">HAL_SPI_Init</span><span class="p">(</span><span class="o">&amp;</span><span class="n">hspi1</span><span class="p">);</span>
+</code></pre></div>
+<p><strong>换模式怎么改</strong>（对照第三节）：</p>
+<ul>
+<li>改 Mode 1/2/3 → 同时改 <code>CLKPolarity</code> 和 <code>CLKPhase</code> 两个字段（<strong>只改一个 = 配错</strong>）。</li>
+<li>改 16 位帧 → <code>DataSize = SPI_DATASIZE_16BIT</code>，DMA 搬运宽度同步改。</li>
+<li>改从机 → <code>Mode = SPI_MODE_SLAVE</code>，并注意 <code>Direction</code> 按从机角色配。</li>
+</ul>
+<h3 id="43">4.3 波特率计算：分频怎么定</h3>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-11-1" name="__codelineno-11-1" href="#__codelineno-11-1"></a>SCLK 目标 = 外设时钟 PCLK ÷ 预分频
+<a id="__codelineno-11-2" name="__codelineno-11-2" href="#__codelineno-11-2"></a>预分频只能是 2 的幂：2、4、8、16、32、64、128、256
+</code></pre></div>
+<p>以 F4 为例（APB2 = 84MHz，SPI1 挂 APB2）：</p>
+<table>
+<thead>
+<tr>
+<th>预分频</th>
+<th>实际 SCLK</th>
+<th>典型用途</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>÷2</td>
+<td>42 Mbps</td>
+<td>高速 ADC / 高速 SRAM 从机</td>
+</tr>
+<tr>
+<td>÷8</td>
+<td>10.5 Mbps</td>
+<td>W25Q SPI Flash 常见（~10M）</td>
+</tr>
+<tr>
+<td>÷16</td>
+<td>5.25 Mbps</td>
+<td>常规传感器 / LCD</td>
+</tr>
+<tr>
+<td>÷64</td>
+<td>1.31 Mbps</td>
+<td>低速、长线、抗干扰场景</td>
+</tr>
+<tr>
+<td>÷256</td>
+<td>328 kbps</td>
+<td>极慢、兼容老器件</td>
+</tr>
+</tbody>
+</table>
+<p><strong>选法</strong>：<code>预分频 ≥ PCLK ÷ 从机最高速率</code>，选<strong>能覆盖目标速率、又比从机上限略低</strong>的那一档。<strong>别盲目拉最高</strong>——速率越高对布线、电平、从机能力越敏感，多数 SPI 设备跑 5~20M 已经很快了。</p>
+<h3 id="44-dma">4.4 三套收发接口：轮询 / 中断 / DMA</h3>
+<p>HAL 的 SPI 收发函数分三档，和 I2C 同构（这也是第五节 DMA 的入口）：</p>
+<table>
+<thead>
+<tr>
+<th>方式</th>
+<th>发送</th>
+<th>接收</th>
+<th>全双工</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>轮询</strong></td>
+<td><code>HAL_SPI_Transmit</code></td>
+<td><code>HAL_SPI_Receive</code></td>
+<td><code>HAL_SPI_TransmitReceive</code></td>
+</tr>
+<tr>
+<td><strong>中断</strong></td>
+<td><code>HAL_SPI_Transmit_IT</code></td>
+<td><code>HAL_SPI_Receive_IT</code></td>
+<td><code>HAL_SPI_TransmitReceive_IT</code></td>
+</tr>
+<tr>
+<td><strong>DMA</strong></td>
+<td><code>HAL_SPI_Transmit_DMA</code></td>
+<td><code>HAL_SPI_Receive_DMA</code></td>
+<td><code>HAL_SPI_TransmitReceive_DMA</code></td>
+</tr>
+</tbody>
+</table>
+<p><strong>注意 SPI 特有的</strong>：全双工时优先用 <code>TransmitReceive</code>（一次调用同发同收），别「先发后收」两次调用——两次调用之间从机可能已经把数据发出来了，会丢数据或错位。读 Flash 的「发命令→收数据」必须在一个事务里用 <code>TransmitReceive</code> 串好。</p>
+<h2 id="dma">五、DMA：把搬字节的活交给硬件</h2>
+<h3 id="51-dma">5.1 为什么要 DMA</h3>
+<p>SPI 的 CPU 开销比 I2C 好，因为<strong>数据寄存器一次放一个字节</strong>、硬件自动走时钟，但<strong>每个字节仍要 CPU 搬一次</strong>（写 TDR / 读 RDR）。当数据量大（几 KB 的 Flash 页、整屏 LCD 刷新、SD 卡读写）或 CPU 还要忙别的（电机控制、RTOS 调度）时，这个「每字节搬一次」的开销就不可忽视了。</p>
+<p><strong>DMA（Direct Memory Access）</strong> 是一条独立的搬运通道：CPU 只需告诉它「从哪搬到哪、搬多少」，剩下每字节的搬运全由 DMA 控制器在后台完成，<strong>搬完才通知 CPU</strong>。</p>
+<blockquote>
+<p>一句话：<strong>轮询是 CPU 亲自搬货，中断是 CPU 被叫去搬货，DMA 是雇了个搬运工（DMA 控制器）自己搬，搬完才喊你收货。</strong></p>
+</blockquote>
+<h3 id="52-hal-dma">5.2 HAL 的 DMA 收发流程</h3>
+<p>发送 DMA（内存 → SPI 外设数据寄存器）：</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-12-1" name="__codelineno-12-1" href="#__codelineno-12-1"></a><span class="cm">/* 告诉 DMA 把 txData 的 len 个字节搬到 SPI 发送寄存器，返回后 CPU 立刻干别的 */</span>
+<a id="__codelineno-12-2" name="__codelineno-12-2" href="#__codelineno-12-2"></a><span class="n">HAL_SPI_Transmit_DMA</span><span class="p">(</span><span class="o">&amp;</span><span class="n">hspi1</span><span class="p">,</span><span class="w"> </span><span class="n">txData</span><span class="p">,</span><span class="w"> </span><span class="n">len</span><span class="p">);</span>
+<a id="__codelineno-12-3" name="__codelineno-12-3" href="#__codelineno-12-3"></a>
+<a id="__codelineno-12-4" name="__codelineno-12-4" href="#__codelineno-12-4"></a><span class="cm">/* 搬完，回调里收尾 */</span>
+<a id="__codelineno-12-5" name="__codelineno-12-5" href="#__codelineno-12-5"></a><span class="kt">void</span><span class="w"> </span><span class="nf">HAL_SPI_TxCpltCallback</span><span class="p">(</span><span class="n">SPI_HandleTypeDef</span><span class="w"> </span><span class="o">*</span><span class="n">hspi</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-12-6" name="__codelineno-12-6" href="#__codelineno-12-6"></a><span class="w">    </span><span class="cm">/* 数据已全部发出：可以释放缓冲、置标志、或发起下一段 */</span>
+<a id="__codelineno-12-7" name="__codelineno-12-7" href="#__codelineno-12-7"></a><span class="p">}</span>
+</code></pre></div>
+<p>接收 DMA（SPI 外设数据寄存器 → 内存）：</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-13-1" name="__codelineno-13-1" href="#__codelineno-13-1"></a><span class="n">HAL_SPI_Receive_DMA</span><span class="p">(</span><span class="o">&amp;</span><span class="n">hspi1</span><span class="p">,</span><span class="w"> </span><span class="n">rxData</span><span class="p">,</span><span class="w"> </span><span class="n">len</span><span class="p">);</span>
+<a id="__codelineno-13-2" name="__codelineno-13-2" href="#__codelineno-13-2"></a><span class="kt">void</span><span class="w"> </span><span class="nf">HAL_SPI_RxCpltCallback</span><span class="p">(</span><span class="n">SPI_HandleTypeDef</span><span class="w"> </span><span class="o">*</span><span class="n">hspi</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-13-3" name="__codelineno-13-3" href="#__codelineno-13-3"></a><span class="w">    </span><span class="cm">/* rxData 里已有 len 个字节，直接使用 */</span>
+<a id="__codelineno-13-4" name="__codelineno-13-4" href="#__codelineno-13-4"></a><span class="p">}</span>
+</code></pre></div>
+<p><strong>全双工 DMA</strong>（同时收发，最省 CPU 也最容易配错，见 5.4）：</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-14-1" name="__codelineno-14-1" href="#__codelineno-14-1"></a><span class="cm">/* 一个事务里同发同收：TX 缓冲发出 len 个字节，同时 RX 缓冲收进 len 个字节 */</span>
+<a id="__codelineno-14-2" name="__codelineno-14-2" href="#__codelineno-14-2"></a><span class="n">HAL_SPI_TransmitReceive_DMA</span><span class="p">(</span><span class="o">&amp;</span><span class="n">hspi1</span><span class="p">,</span><span class="w"> </span><span class="n">txData</span><span class="p">,</span><span class="w"> </span><span class="n">rxData</span><span class="p">,</span><span class="w"> </span><span class="n">len</span><span class="p">);</span>
+<a id="__codelineno-14-3" name="__codelineno-14-3" href="#__codelineno-14-3"></a><span class="kt">void</span><span class="w"> </span><span class="nf">HAL_SPI_TxRxCpltCallback</span><span class="p">(</span><span class="n">SPI_HandleTypeDef</span><span class="w"> </span><span class="o">*</span><span class="n">hspi</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-14-4" name="__codelineno-14-4" href="#__codelineno-14-4"></a><span class="w">    </span><span class="cm">/* txData 发完、rxData 收满，一次搞定 */</span>
+<a id="__codelineno-14-5" name="__codelineno-14-5" href="#__codelineno-14-5"></a><span class="p">}</span>
+</code></pre></div>
+<p><strong>地址自增</strong>：DMA 搬的时候，源/目的内存地址自动 +1（DMA 配置里的 Memory Increment），CPU 不用管。<strong>搬完触发完成中断 → 回调</strong>，中间 CPU 完全不介入。</p>
+<h3 id="53-cubemx-dma">5.3 CubeMX 里怎么开 DMA</h3>
+<p>在 CubeMX 中 <strong>SPIx 页面 → DMA Settings</strong> 添加通道：</p>
+<table>
+<thead>
+<tr>
+<th>通道</th>
+<th>方向</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>DMA x（TX）</strong></td>
+<td>Memory → Peripheral</td>
+<td>发送：内存 → SPI 数据寄存器</td>
+</tr>
+<tr>
+<td><strong>DMA y（RX）</strong></td>
+<td>Peripheral → Memory</td>
+<td>接收：SPI 数据寄存器 → 内存</td>
+</tr>
+</tbody>
+</table>
+<ul>
+<li>只发不收 → 只加 TX 通道；只收不发 → 只加 RX 通道；<strong>全双工 → 两个都要加</strong>。</li>
+<li><strong>Mode 选 Normal</strong>（默认），<strong>Memory Increment 开</strong>，Data Width 与帧宽对齐：8 位帧用 Byte，16 位帧用 Half Word。</li>
+<li>勾上 DMA 的 <strong>NVIC 中断</strong>，生成代码后 <code>_DMA</code> 系列函数才能用。</li>
+<li>全双工时，TX/RX 两个通道在 CubeMX 里<strong>成对出现</strong>，别漏了 RX——漏配 RX，<code>TransmitReceive_DMA</code> 会一直卡住或只发不收。</li>
+</ul>
+<h3 id="54-dma-flash">5.4 全双工 DMA 的「哑字节」技巧（读 Flash 必看）</h3>
+<p>SPI 读操作要「发哑字节喂时钟」才能收到数据（见 3.5）。用 DMA 做这件事有两种做法：</p>
+<p><strong>做法 A：显式哑数组（简单直观）</strong></p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-15-1" name="__codelineno-15-1" href="#__codelineno-15-1"></a><span class="k">static</span><span class="w"> </span><span class="kt">uint8_t</span><span class="w"> </span><span class="n">dummy</span><span class="p">[</span><span class="mi">64</span><span class="p">];</span><span class="w">          </span><span class="cm">/* 哑数据：内容无所谓，用来喂时钟 */</span>
+<a id="__codelineno-15-2" name="__codelineno-15-2" href="#__codelineno-15-2"></a><span class="kt">uint8_t</span><span class="w"> </span><span class="n">rx</span><span class="p">[</span><span class="mi">64</span><span class="p">];</span>
+<a id="__codelineno-15-3" name="__codelineno-15-3" href="#__codelineno-15-3"></a><span class="n">HAL_SPI_TransmitReceive_DMA</span><span class="p">(</span><span class="o">&amp;</span><span class="n">hspi1</span><span class="p">,</span><span class="w"> </span><span class="n">dummy</span><span class="p">,</span><span class="w"> </span><span class="n">rx</span><span class="p">,</span><span class="w"> </span><span class="mi">64</span><span class="p">);</span><span class="w">   </span><span class="cm">/* 边发哑字节边收真数据 */</span>
+</code></pre></div>
+<p><strong>做法 B：只开 RX、不开 TX</strong>（F4 上 <code>Direction = 2LINES_RXONLY</code> 时 SCLK 照常走，硬件自动发空数据收真数据）——省一个 DMA 通道，但要求从机在「纯接收方向」下也接受。Flash 读数据阶段常用此法。</p>
+<h3 id="55-dma">5.5 DMA 的坑与边界</h3>
+<ul>
+<li><strong>DMA 回调里不要再开 DMA</strong>：回调里调用下一个 <code>_DMA</code> 函数在 HAL 某些时序下会重入异常。改在主循环/任务里发起下一段，回调只置标志。</li>
+<li><strong>DMA 目标缓冲要常驻</strong>：DMA 是「异步搬」，传入的 <code>txData</code>/<code>rxData</code> 必须是生命周期覆盖整个传输的变量（<code>static</code> 或全局或 RTOS 队列缓冲），<strong>不能是函数栈上的局部变量</strong>——函数返回了 DMA 还在搬，读到的就是悬空内存。这是 DMA 调试最经典的崩溃原因。</li>
+<li><strong>每次传输结束要等完成回调再改缓冲</strong>：发送完但回调没来，<code>txData</code> 不能急着改写。</li>
+<li><strong>发送完要等 SPI 空闲再拉高 CS</strong>：DMA 回调只是「数据搬完」，<strong>最后一个字节可能还在硬件移位寄存器里</strong>。要先等 <code>HAL_SPI_GetState(&amp;hspi1) == HAL_SPI_STATE_READY</code>（发送真正结束）再拉高 CS，否则最后几个 bit 被 CS 截断——Flash 读回的数据尾部错位，就是这种「CS 拉太早」的典型症状。</li>
+<li><strong>DMA 不是所有量都值得</strong>：几十字节以下的小数据，轮询/中断可能更快（省去 DMA 的配置开销）；<strong>大量数据（KB 级 Flash 页、LCD 帧缓冲、SD 扇区）才明显受益</strong>。</li>
+</ul>
+<p>三档对比：</p>
+<table>
+<thead>
+<tr>
+<th>方式</th>
+<th>CPU 占用</th>
+<th>实时性</th>
+<th>适合量级</th>
+<th>适合场景</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>轮询</td>
+<td>最高（全程忙等）</td>
+<td>最差（被占用期间干不了别的）</td>
+<td>小、低频</td>
+<td>初始化自检</td>
+</tr>
+<tr>
+<td>中断</td>
+<td>中（每字节被打断一次）</td>
+<td>好</td>
+<td>中</td>
+<td>日常收发</td>
+</tr>
+<tr>
+<td>DMA</td>
+<td><strong>最低</strong>（搬完才打断）</td>
+<td>好</td>
+<td><strong>大、高频</strong></td>
+<td>大块数据、RTOS 场景</td>
+</tr>
+</tbody>
+</table>
+<h2 id="_2">六、避坑备忘</h2>
+<ul>
+<li><strong>主从 CPOL/CPHA 必须一致</strong>：Mode 0 与 Mode 3 各据一方，数据全错。确定模式先查从机 datasheet，不确定先用 Mode 0 试，不行再试 Mode 3。</li>
+<li><strong>读数据要发哑字节</strong>：SPI 全双工，从机发 1 字节、主机必须同步发 1 字节（时钟才走）。读操作记得 <code>TransmitReceive</code> 或发 <code>0xFF</code> 哑数据。</li>
+<li><strong>全双工优先用 TransmitReceive</strong>：别「先发后收」两次调用，中间会丢数据错位。命令+数据在一个事务里串好。</li>
+<li><strong>全双工里别「只发不收」</strong>：全双工每拍必收，不读 RX 缓冲会 OVR 溢出卡通信。纯写场景选 <strong>Transmit Only Master</strong>（MISO 不接，无接收路径）。</li>
+<li><strong>Transmit Only 没有 TXONLY 位</strong>：F1/F4 上「仅发送」= 全双工寄存器配置 + 不分配 MISO，别想在 <code>Direction</code> 里找个「仅发送」常量（只有 RXONLY）。</li>
+<li><strong>半双工要求对端也支持</strong>：普通 4 线 SPI 从机（W25Q Flash 等）不能跑 1 线半双工；半双工切换方向要留 turnaround 时间，数据线接「主的 MOSI ↔ 从的 MISO」。</li>
+<li><strong>没被选中的从机 MISO 要三态</strong>：多从机共总线时，不响应的从机 MISO 必须高阻，否则总线打架。换模块不工作先怀疑这个。</li>
+<li><strong>DMA 缓冲要常驻</strong>：局部变量被 DMA 异步搬运 = 悬空指针崩溃。用 static/全局/队列缓冲。</li>
+<li><strong>DMA 发完等 SPI 空闲再拉 CS</strong>：回调 ≠ 硬件发完，<code>HAL_SPI_GetState</code> 回到 READY 再动 CS，否则尾部 bit 被截断。</li>
+<li><strong>软件片选要留建立时间</strong>：CS 拉低后 delay 一下再发时钟；帧结束等发送完成再拉高。偶发读错先查片选时序。</li>
+<li><strong>16 位帧配 DMA 用半字搬运</strong>：帧宽与 DMA Data Width 对齐，配错数据错位。</li>
+<li><strong>硬件片选 + 主模式小心 MODF</strong>：NSS 意外被拉低会触发模式错误、外设停摆，先清错误再复位（<code>HAL_SPI_DeInit</code> + <code>HAL_SPI_Init</code>）。多从机必须软件片选。</li>
+<li><strong>别盲目拉最高波特率</strong>：速率越高越挑布线和从机，多数器件 5~20M 已经很快。从机手册上限是硬约束，取略低一档更稳。</li>
+<li><strong>阻塞调用别进中断</strong>：<code>HAL_SPI_Transmit</code> 在中断里用会死锁（内部等 SysTick/HAL_Delay）。中断里用 <code>_IT</code>/<code>_DMA</code> 版本，或只置标志。</li>
+<li><strong>DMA 回调里别再开 DMA</strong>：重入异常，改在主循环发起下一段。</li>
+</ul>
+<h2 id="_3">参考</h2>
+<ul>
+<li>相关外设与裸机寄存器风格见 <a href="peripheral-drivers.md">peripheral-drivers.md</a></li>
+<li>与 I2C 的通信机制对比见 <a href="../stm32-i2c/">stm32-i2c.md</a></li>
+<li>寄存器级细节：对应参考手册 SPI 章节；F4 见 RM0385/RM0402 的 SPI 章节</li>
+<li>深入协议：NXP/各大厂 SPI Block Guide；各从机 datasheet 的 SPI 时序章节（定 CPOL/CPHA、最高速率、片选要求）</li>
+</ul>
+
+
+
+
+
+
+
+  
+    
+  
+  
+    
+  
+
+
+  <aside class="md-source-file">
+    
+      
+  <span class="md-source-file__fact">
+    <span class="md-icon" title="最后更新">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M21 13.1c-.1 0-.3.1-.4.2l-1 1 2.1 2.1 1-1c.2-.2.2-.6 0-.8l-1.3-1.3c-.1-.1-.2-.2-.4-.2m-1.9 1.8-6.1 6V23h2.1l6.1-6.1zM12.5 7v5.2l4 2.4-1 1L11 13V7zM11 21.9c-5.1-.5-9-4.8-9-9.9C2 6.5 6.5 2 12 2c5.3 0 9.6 4.1 10 9.3-.3-.1-.6-.2-1-.2s-.7.1-1 .2C19.6 7.2 16.2 4 12 4c-4.4 0-8 3.6-8 8 0 4.1 3.1 7.5 7.1 7.9l-.1.2z"/></svg>
+    </span>
+    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="2026年8月25日 14:30:02 UTC">2026年8月25日</span>
+  </span>
+
+    
+    
+      
+  <span class="md-source-file__fact">
+    <span class="md-icon" title="创建日期">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M14.47 15.08 11 13V7h1.5v5.25l3.08 1.83c-.41.28-.79.62-1.11 1m-1.39 4.84c-.36.05-.71.08-1.08.08-4.42 0-8-3.58-8-8s3.58-8 8-8 8 3.58 8 8c0 .37-.03.72-.08 1.08.69.1 1.33.32 1.92.64.1-.56.16-1.13.16-1.72 0-5.5-4.5-10-10-10S2 6.5 2 12s4.47 10 10 10c.59 0 1.16-.06 1.72-.16-.32-.59-.54-1.23-.64-1.92M18 15v3h-3v2h3v3h2v-3h3v-2h-3v-3z"/></svg>
+    </span>
+    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="2026年8月25日 14:30:02 UTC">2026年8月25日</span>
+  </span>
+
+    
+    
+    
+  </aside>
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8z"/></svg>
+  回到页面顶部
+</button>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+  
+</div>
+      
+        
+<div class="md-social">
+  
+    
+    
+    
+    
+      
+      
+    
+    <a href="https://github.com/hellobugger" target="_blank" rel="noopener" title="github.com" class="md-social__link">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M173.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6m-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3m44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9M252.8 8C114.1 8 8 113.3 8 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C436.2 457.8 504 362.9 504 252 504 113.3 391.5 8 252.8 8M105.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1m-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7m32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1m-11.4-14.7c-1.6 1-1.6 3.6 0 5.9s4.3 3.3 5.6 2.3c1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2"/></svg>
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "../..", "features": ["navigation.tabs", "navigation.sections", "navigation.top", "toc.integrate", "search.highlight", "search.suggest", "content.code.copy", "content.code.annotate", "content.action.edit"], "search": "../../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "\u5df2\u590d\u5236", "clipboard.copy": "\u590d\u5236", "search.result.more.one": "\u5728\u8be5\u9875\u4e0a\u8fd8\u6709 1 \u4e2a\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.more.other": "\u5728\u8be5\u9875\u4e0a\u8fd8\u6709 # \u4e2a\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.none": "\u6ca1\u6709\u627e\u5230\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.one": "\u627e\u5230 1 \u4e2a\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.other": "# \u4e2a\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.placeholder": "\u952e\u5165\u4ee5\u5f00\u59cb\u641c\u7d22", "search.result.term.missing": "\u7f3a\u5c11", "select.version": "\u9009\u62e9\u5f53\u524d\u7248\u672c"}, "version": null}</script>
+    
+    
+      <script src="../../assets/javascripts/bundle.d7400e89.min.js"></script>
+      
+        <script src="../../javascripts/extra.js?v=7"></script>
+      
+    
+  </body>
+</html>

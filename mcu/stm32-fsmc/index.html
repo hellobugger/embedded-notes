@@ -1,0 +1,2936 @@
+
+<!doctype html>
+<html lang="zh" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="嵌入式软件/硬件调试心得与工作备忘">
+      
+      
+        <meta name="author" content="聂文俊">
+      
+      
+        <link rel="canonical" href="https://hellobugger.github.io/embedded-notes/mcu/stm32-fsmc/">
+      
+      
+        <link rel="prev" href="../stm32-dac/">
+      
+      
+        <link rel="next" href="../stm32-i2c/">
+      
+      
+        
+      
+      
+      <link rel="icon" href="../../assets/images/favicon.png">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.7">
+    
+    
+      
+        <title>STM32 FSMC：把外设当作内存来读写的并行总线 - 嵌入式工作笔记</title>
+      
+    
+    
+      <link rel="stylesheet" href="../../assets/stylesheets/main.ec1eaa64.min.css">
+      
+        
+        <link rel="stylesheet" href="../../assets/stylesheets/palette.ab4e12ef.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+      <link rel="stylesheet" href="../../stylesheets/extra.css?v=4">
+    
+    <script>__md_scope=new URL("../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    
+    
+      
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#stm32-fsmc" class="md-skip">
+          跳转至
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+<header class="md-header" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="页眉">
+    <a href="../.." title="嵌入式工作笔记" class="md-header__button md-logo" aria-label="嵌入式工作笔记" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            嵌入式工作笔记
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              STM32 FSMC：把外设当作内存来读写的并行总线
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+        <form class="md-header__option" data-md-component="palette">
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="切换至深色模式"  type="radio" name="__palette" id="__palette_0">
+    
+      <label class="md-header__button md-icon" title="切换至深色模式" for="__palette_1" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a4 4 0 0 0-4 4 4 4 0 0 0 4 4 4 4 0 0 0 4-4 4 4 0 0 0-4-4m0 10a6 6 0 0 1-6-6 6 6 0 0 1 6-6 6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="" data-md-color-scheme="slate" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="切换至浅色模式"  type="radio" name="__palette" id="__palette_1">
+    
+      <label class="md-header__button md-icon" title="切换至浅色模式" for="__palette_0" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 18c-.89 0-1.74-.2-2.5-.55C11.56 16.5 13 14.42 13 12s-1.44-4.5-3.5-5.45C10.26 6.2 11.11 6 12 6a6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+</form>
+      
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="搜索" placeholder="搜索" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="查找">
+        
+        <button type="reset" class="md-search__icon md-icon" title="清空当前内容" aria-label="清空当前内容" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+        <div class="md-search__suggest" data-md-component="search-suggest"></div>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            正在初始化搜索引擎
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/hellobugger/embedded-notes" title="前往仓库" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M173.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6m-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3m44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9M252.8 8C114.1 8 8 113.3 8 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C436.2 457.8 504 362.9 504 252 504 113.3 391.5 8 252.8 8M105.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1m-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7m32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1m-11.4-14.7c-1.6 1-1.6 3.6 0 5.9s4.3 3.3 5.6 2.3c1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2"/></svg>
+  </div>
+  <div class="md-source__repository">
+    hellobugger/embedded-notes
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+  
+
+      
+        
+          
+            
+<nav class="md-tabs" aria-label="标签" data-md-component="tabs">
+  <div class="md-grid">
+    <ul class="md-tabs__list">
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../.." class="md-tabs__link">
+        
+  
+  
+    
+  
+  首页
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../environment/develop-environment/" class="md-tabs__link">
+          
+  
+  
+  开发环境
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../environment-tips/clion-tips/" class="md-tabs__link">
+          
+  
+  
+  开发环境技巧
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../hardware/esp32-reset/" class="md-tabs__link">
+          
+  
+  
+  硬件调试
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+    
+  
+  
+    
+    
+      <li class="md-tabs__item md-tabs__item--active">
+        <a href="../stm32-adc/" class="md-tabs__link">
+          
+  
+  
+  MCU 与驱动
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../programming/embedded-c-macros-inline/" class="md-tabs__link">
+          
+  
+  
+  programming
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../rtos/freertos-scheduler/" class="md-tabs__link">
+          
+  
+  
+  RTOS
+
+        </a>
+      </li>
+    
+  
+
+      
+    </ul>
+  </div>
+</nav>
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+  
+
+
+  
+
+<nav class="md-nav md-nav--primary md-nav--lifted md-nav--integrated" aria-label="导航栏" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="../.." title="嵌入式工作笔记" class="md-nav__button md-logo" aria-label="嵌入式工作笔记" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    嵌入式工作笔记
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/hellobugger/embedded-notes" title="前往仓库" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M173.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6m-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3m44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9M252.8 8C114.1 8 8 113.3 8 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C436.2 457.8 504 362.9 504 252 504 113.3 391.5 8 252.8 8M105.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1m-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7m32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1m-11.4-14.7c-1.6 1-1.6 3.6 0 5.9s4.3 3.3 5.6 2.3c1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2"/></svg>
+  </div>
+  <div class="md-source__repository">
+    hellobugger/embedded-notes
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../.." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    首页
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2" >
+        
+          
+          <label class="md-nav__link" for="__nav_2" id="__nav_2_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    开发环境
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_2">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    开发环境
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../environment/develop-environment/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    开发环境搭建
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" >
+        
+          
+          <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    开发环境技巧
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_3">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    开发环境技巧
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../environment-tips/clion-tips/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    CLion + CubeMX 使用技巧
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../environment-tips/eide-tips/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    VSCode + EIDE 使用技巧
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../environment-tips/esp-idf-tips/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    VSCode + ESP-IDF 使用技巧
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../environment-tips/keil-c51c251-tips/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Keil C51 / C251 使用技巧
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../environment-tips/keil5-cubemx-tips/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Keil5 + CubeMX 使用技巧
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../environment-tips/platformio-tips/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    VSCode + PlatformIO 使用技巧
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../environment-tips/rtthread-studio-tips/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    RT-Thread Studio 使用技巧
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../environment-tips/stm32cubeide-tips/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    STM32CubeIDE 使用技巧
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4" >
+        
+          
+          <label class="md-nav__link" for="__nav_4" id="__nav_4_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    硬件调试
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    硬件调试
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../hardware/esp32-reset/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ESP32-S3 反复复位（Wi-Fi 连接时）
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../hardware/power-ripple/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    电源纹波测试
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../hardware/scope-tips/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    示波器使用技巧
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5" checked>
+        
+          
+          <label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    MCU 与驱动
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_5">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    MCU 与驱动
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../stm32-adc/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    STM32 ADC：从配置到 DMA 的一篇讲透
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../stm32-can/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    CAN 总线：从通信机制到收发中断的一篇讲透
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../stm32-canfd/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    CAN FD 进阶：FDCAN 控制器从协议到寄存器的一篇讲透
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../stm32-clock-tree/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    STM32 时钟系统：五个时钟源
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../stm32-crc/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    STM32 CRC 硬件校验：从多项式到 DMA/协议落地的一篇讲透
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../stm32-dac/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    STM32 DAC：从配置到 DMA 的一篇讲透
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    STM32 FSMC：把外设当作内存来读写的并行总线
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    STM32 FSMC：把外设当作内存来读写的并行总线
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="目录">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      目录
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#fsmc" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        一、FSMC 是什么、为什么要有它
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#fsmc_1" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        二、FSMC 长什么样、地址是怎么分片的
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="二、FSMC 长什么样、地址是怎么分片的">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#21-bank-ne" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2.1 Bank 划分与片选（NE）
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#22-haddr-fsmc_a-8-vs-16" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2.2 HADDR 与 FSMC_A 的对应（8 位 vs 16 位数据总线）
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#23-fsmc-bank1-norpsram" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2.3 FSMC 信号（Bank1 NOR/PSRAM 控制器）
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#fsmc_2" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        三、时序：FSMC 的三个时间旋钮（读/写都靠它）
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="三、时序：FSMC 的三个时间旋钮（读/写都靠它）">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#31-f1-72mhz-55ns-sram" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3.1 一个完整的算例（F1 @72MHz 配 55ns SRAM）
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#sram" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        四、接一块并行 SRAM：从零配到读写
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="四、接一块并行 SRAM：从零配到读写">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#41-cubemx" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        4.1 CubeMX 配置
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#42-hal" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        4.2 HAL 代码
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#43" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        4.3 读写验证：先点亮再谈优化
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#_1" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        五、读写在内存里长什么样：寄存器模型
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#nor-flash-id" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        六、NOR Flash 完整示例：读 ID、擦除、编程、回读
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="六、NOR Flash 完整示例：读 ID、擦除、编程、回读">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#61-fsmc-nor" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        6.1 FSMC 配置：NOR 用扩展模式，读写独立时序
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#62" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        6.2 地址与命令宏
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#63-dq7dq6" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        6.3 完成检测：DQ7/DQ6 轮询
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#64-id" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        6.4 读 ID：第一个必做的自检
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#65" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        6.5 擦除 + 编程 + 回读（完整流程）
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#66-nor" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        6.6 NOR 擦写避坑备忘
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#lcd" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        七、典型用法：接 LCD 屏（并口屏的核心套路）
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="七、典型用法：接 LCD 屏（并口屏的核心套路）">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#71" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        7.1 信号映射
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#72" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        7.2 关键：命令地址与数据地址的关系
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#73" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        7.3 刷屏数据量估算
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#nand-norfsmc" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        八、NAND 与 NOR：FSMC 的另一半本事
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#fsmc_3" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        九、FSMC 的「坑」与调试指南
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="九、FSMC 的「坑」与调试指南">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#91" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        9.1 时序太紧，读错写不进
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#92" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        9.2 地址线/数据线接错位
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#93" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        9.3 片选没选对，读写死等
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#94" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        9.4 时钟没开 / 复用没配
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#95" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        9.5 读屏的坑：读显存方向不对
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#fmc-fsm" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        十、FMC / FSM 系列怎么认：换代与选型
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#_2" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        十一、避坑备忘（一页速查）
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#_3" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        参考
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../stm32-i2c/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    STM32 I2C：从两根线讲透软件 IIC / 硬件 I2C / DMA / SMBus
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../stm32-lib-comparison/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    标准库 / LL / HAL 对比
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../stm32-notes/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    STM32H7 调试笔记
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../stm32-rng/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    STM32 RNG 硬件随机数生成器：从熵源到安全使用的一篇讲透
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../stm32-rtc/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    STM32 RTC：从走时到一堆「隐藏功能」的一篇讲透
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../stm32-spi/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    STM32 SPI：从四根线讲透软件 SPI / 硬件 SPI / DMA / 各种模式
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../stm32-timer/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    STM32 定时器：从时基到一堆「隐藏功能」的一篇讲透
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../stm32-usart-uart/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    STM32 USART / UART：从异步串口讲透每一种模式
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../stm32-watchdog/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    独立看门狗 IWDG 与窗口看门狗 WWDG
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_6" >
+        
+          
+          <label class="md-nav__link" for="__nav_6" id="__nav_6_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    programming
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_6_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_6">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    programming
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../programming/embedded-c-macros-inline/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    嵌入式 C 语言：宏、内联函数与代码编写注意事项
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_7" >
+        
+          
+          <label class="md-nav__link" for="__nav_7" id="__nav_7_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    RTOS
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_7_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_7">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    RTOS
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../rtos/freertos-scheduler/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    FreeRTOS 任务调度
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../rtos/queue-semaphore/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    队列与信号量
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+  
+    <a href="https://github.com/hellobugger/embedded-notes/blob/main/docs/mcu/stm32-fsmc.md" title="编辑此页" class="md-content__button md-icon" rel="edit">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M10 20H6V4h7v5h5v3.1l2-2V8l-6-6H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h4zm10.2-7c.1 0 .3.1.4.2l1.3 1.3c.2.2.2.6 0 .8l-1 1-2.1-2.1 1-1c.1-.1.2-.2.4-.2m0 3.9L14.1 23H12v-2.1l6.1-6.1z"/></svg>
+    </a>
+  
+  
+
+
+<h1 id="stm32-fsmc">STM32 FSMC：把外设当作内存来读写的并行总线</h1>
+<blockquote>
+<p>一句话：<strong>FSMC（Flexible Static Memory Controller，可变静态存储控制器）是 STM32 片上的一台「并行总线小主机」</strong>——它把一块 CPU 直接可寻址的地址空间（0x60000000 起）映射成一组片选（NE）+ 读写（NOE/NWE）+ 地址（FSMC_A）+ 数据（FSMC_D）信号，接上 SRAM、NOR Flash、NAND、甚至「长得像 SRAM 的屏」，然后 <strong>CPU 的指针读写 = 外设的读写</strong>，连配置好以后一句 <code>*(uint16_t*)0x60020000 = x</code> 就能完成一次外设访问。本文以 F1/F4 的 FSMC 为主，寄存器名与配置以 HAL 为准，并说明 F4/F1 的时序差异、H7 上的换代名字 FMC。</p>
+<p>想先用再深挖？看 <a href="#三-接一块并行-sram-从零配到读写">第三、四节</a> 的完整 SRAM 实例、<a href="#六-nor-flash-完整示例-读-id-擦除-编程-回读">第六节</a> 的 NOR Flash 示例与 <a href="#七-典型用法-接-lcd-屏-并口屏的核心套路">第七节</a> 的 LCD/FPGA 应用方案。</p>
+</blockquote>
+<h2 id="fsmc">一、FSMC 是什么、为什么要有它</h2>
+<p>CPU 和外设打交道，本质都是「<strong>地址 → 读写 → 数据</strong>」三件事。FSMC 的作用是把这三件事<strong>做成内存接口</strong>：CPU 访问某个地址区间，FSMC 硬件自动把它翻译成并行的片选/读/写时序，<strong>期间 CPU 完全不用管时序</strong>，跟读写普通变量一模一样。这是它和 GPIO 模拟并口、以及 I2C/SPI 这类串行总线的根本区别。</p>
+<table>
+<thead>
+<tr>
+<th>方案</th>
+<th>速度</th>
+<th>接线</th>
+<th>CPU 负担</th>
+<th>适合</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>FSMC 并口</strong></td>
+<td>最快（几 ns ~ 几十 ns 一个周期）</td>
+<td>十几根线</td>
+<td><strong>几乎为零</strong>（指针访问即完成）</td>
+<td>大带宽、大吞吐：LCD 屏、外部 SRAM、FPGA/CPLD 寄存器</td>
+</tr>
+<tr>
+<td><strong>GPIO 模拟并口</strong></td>
+<td>慢（每条信号软件拉，几十条指令一个周期）</td>
+<td>同上</td>
+<td>高（每条信号都占 CPU）</td>
+<td>早期简单屏、无 FSMC 的小芯片</td>
+</tr>
+<tr>
+<td><strong>SPI</strong></td>
+<td>中等</td>
+<td>4 根线</td>
+<td>低（但要字节协议开销）</td>
+<td>小屏、Flash、传感器</td>
+</tr>
+<tr>
+<td><strong>I2C</strong></td>
+<td>最慢</td>
+<td>2 根线</td>
+<td>低</td>
+<td>小数据量、多从机</td>
+</tr>
+</tbody>
+</table>
+<p><strong>为什么常用 LCD 接 FSMC 而不是 SPI</strong>：一块 320×240、每像素 16 位色、要 60fps 刷的屏，每秒数据量 = 320×240×2×60 ≈ <strong>9.2 MB/s</strong>。SPI 顶多十几 MHz，一个像素就要 2 个字节挨个推；FSMC 并口一个写周期就出 2 字节，配上 DMA 几乎不占 CPU，带宽差一个量级。</p>
+<h2 id="fsmc_1">二、FSMC 长什么样、地址是怎么分片的</h2>
+<p>FSMC 挂在 AHB 总线上，占用了 CPU 从 <strong>0x60000000</strong> 开始的一块地址空间。它把这块空间按「类型」切成 4 个大区（Bank），每个大区又按片选切成子区：</p>
+<h3 id="21-bank-ne">2.1 Bank 划分与片选（NE）</h3>
+<table>
+<thead>
+<tr>
+<th>大区</th>
+<th>类型</th>
+<th>子区（片选）</th>
+<th>基址</th>
+<th>容量</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Bank 1</strong></td>
+<td><strong>NOR / PSRAM / SRAM</strong></td>
+<td>NE1</td>
+<td><strong>0x6000_0000</strong></td>
+<td>64 MB</td>
+</tr>
+<tr>
+<td></td>
+<td></td>
+<td>NE2</td>
+<td>0x6400_0000</td>
+<td>64 MB</td>
+</tr>
+<tr>
+<td></td>
+<td></td>
+<td>NE3</td>
+<td>0x6800_0000</td>
+<td>64 MB</td>
+</tr>
+<tr>
+<td></td>
+<td></td>
+<td>NE4</td>
+<td>0x6C00_0000</td>
+<td>64 MB</td>
+</tr>
+<tr>
+<td><strong>Bank 2</strong></td>
+<td>NAND Flash</td>
+<td>NCE2</td>
+<td>0x7000_0000</td>
+<td>64 MB</td>
+</tr>
+<tr>
+<td><strong>Bank 3</strong></td>
+<td>NAND Flash</td>
+<td>NCE3</td>
+<td>0x8000_0000</td>
+<td>64 MB</td>
+</tr>
+<tr>
+<td><strong>Bank 4</strong></td>
+<td>PC Card</td>
+<td>NCE4</td>
+<td>0x9000_0000</td>
+<td>64 MB</td>
+</tr>
+</tbody>
+</table>
+<p>每个片选<strong>只占一个固定地址区间</strong>。硬件上，NE1 引脚接谁，谁就在 0x6000_0000 这个区间里被寻址。所以「接哪根片选」决定了这块外设的地址起点，而<strong>在一个片选区间内，最低位地址线就对应外设的寄存器/字节</strong>（见 2.2）。</p>
+<h3 id="22-haddr-fsmc_a-8-vs-16">2.2 HADDR 与 FSMC_A 的对应（8 位 vs 16 位数据总线）</h3>
+<p>FSMC 外部地址线的编号 <strong>不直接等于</strong> CPU 的地址线编号，关键看数据总线宽度：</p>
+<ul>
+<li><strong>16 位数据总线</strong>（最常用，SRAM、并口 LCD 基本都是）：CPU 的 <code>HADDR[1]</code> 接到外设的地址线 <code>A0</code>，<code>HADDR[2]</code>→<code>A1</code>…即 <strong><code>FSMC_A[i] = HADDR[i+1]</code></strong>。因为 16 位访问一次读 2 字节，字节地址总是偶对齐，最低位（HADDR[0]）自然没用了，被 FSMC 吃掉。</li>
+<li><strong>8 位数据总线</strong>：<code>FSMC_A[i] = HADDR[i]</code>，直接一一对应。</li>
+</ul>
+<p><strong>这带来一个常用的「地址步进」结论</strong>：用 16 位总线的 SRAM，从地址 0 开始写数据，地址每 +2 才落到下一个 16 位单元；从地址 0 开始<strong>递增访问偶数地址</strong>（0, 2, 4...），得到的是<strong>连续的 16 位单元</strong>。反过来说，如果某个外设的「寄存器选择」需要一根地址线 A0 来区分命令/数据（见第七节 ILI9341 例子），那<strong>在 16 位总线下访问寄存器地址必须 +2</strong>，才能翻动这根 A0。</p>
+<h3 id="23-fsmc-bank1-norpsram">2.3 FSMC 信号（Bank1 NOR/PSRAM 控制器）</h3>
+<table>
+<thead>
+<tr>
+<th>信号</th>
+<th>方向</th>
+<th>作用</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>NE1~NE4</strong></td>
+<td>出</td>
+<td>片选（Chip Select），低有效，选中对应地址区间</td>
+</tr>
+<tr>
+<td><strong>NOE</strong></td>
+<td>出</td>
+<td>读使能（Output Enable / RD），低有效，读时拉低</td>
+</tr>
+<tr>
+<td><strong>NWE</strong></td>
+<td>出</td>
+<td>写使能（Write Enable），低有效，写时拉低</td>
+</tr>
+<tr>
+<td><strong>FSMC_A[25:0]</strong></td>
+<td>出</td>
+<td>地址总线</td>
+</tr>
+<tr>
+<td><strong>FSMC_D[15:0]</strong></td>
+<td>双向</td>
+<td>数据总线</td>
+</tr>
+<tr>
+<td><strong>NBL0/NBL1</strong></td>
+<td>出</td>
+<td>字节使能（Byte Lane，16 位总线下可选高/低字节）</td>
+</tr>
+<tr>
+<td><strong>NADV</strong></td>
+<td>出</td>
+<td>地址锁存信号（分时复用模式用，异步 SRAM 一般不用）</td>
+</tr>
+<tr>
+<td><strong>NWAIT</strong></td>
+<td>入</td>
+<td>慢速外设插入等待（同步模式用）</td>
+</tr>
+</tbody>
+</table>
+<blockquote>
+<p><strong>FSMC 全自动</strong>：地址落在哪个片选区、什么时候拉 NE/NOE/NWE、周期多长，全由 FSMC 硬件按配置的时序寄存器自动产生——<strong>CPU 不知道、也不需要知道</strong>这些引脚的抖动，它只负责发一个「读/写这个地址」的总线事务。</p>
+</blockquote>
+<h2 id="fsmc_2">三、时序：FSMC 的三个时间旋钮（读/写都靠它）</h2>
+<p>FSMC 的一个访问周期，被切成<strong>地址建立（ADDSET）→ 数据阶段（DATAST）→ 地址保持（ADDHLD）</strong> 三段。三段都按 <strong>HCLK（AHB 时钟，F1 是 72MHz，F4 是 168MHz）</strong> 的整数倍配置：</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>           |&lt;-- ADDSET --&gt;|&lt;------ DATAST ------&gt;|&lt;- ADDHLD -&gt;|
+<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>  地址线    ──────────────┐                        ┌──────────
+<a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>                        └─── 地址有效 ────────────┘
+<a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a>  NE(片选)  ──────────────┐                        ┌──────────
+<a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a>                        └──── 有效 ───────────────┘
+<a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a>  NOE/NWE  ───────────────┐                        ┌──────────
+<a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a>                          └──── 读/写脉冲 ────────┘
+<a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a>  数据线    ──────────────────── 有效数据 ───────────────────
+</code></pre></div>
+<p>三段分别对应外设数据手册里的哪些参数，这是<strong>整个 FSMC 配置唯一的难点</strong>，也是新手最容易配错的地方：</p>
+<table>
+<thead>
+<tr>
+<th>段</th>
+<th>决定什么</th>
+<th>对应对端 SRAM 参数</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>ADDSET</strong></td>
+<td>地址先于读写脉冲建立的时间</td>
+<td>地址建立时间 tAS（Address Setup）</td>
+</tr>
+<tr>
+<td><strong>DATAST</strong></td>
+<td>读写脉冲的宽度（核心时间）</td>
+<td>写脉冲宽度 tWP / 读访问时间 tRC、tDOE</td>
+</tr>
+<tr>
+<td><strong>ADDHLD</strong></td>
+<td>读写结束后地址保持的时间</td>
+<td>地址保持时间 tAH / 数据保持时间 tDH</td>
+</tr>
+</tbody>
+</table>
+<p><strong>换算公式（记住这一个就够）</strong>，单位是 HCLK 周期数：</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>读周期   = (ADDSET + DATAST + ADDHLD) × HCLK   ≥ 对端 tRC（读循环时间）
+<a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a>写周期   = (ADDSET + DATAST + ADDHLD) × HCLK   ≥ 对端 tWC（写循环时间）
+<a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a>DATAST 尤其要保证：  DATAST × HCLK ≥ tWP（写脉冲）/ tAA + 内部建立余量（读访问）
+</code></pre></div>
+<blockquote>
+<p>注意：<strong>F4 在 <code>FSMC_BCR1</code> 里把 ADDHLD 与 ADDSET 合并成一个 <code>ADDSET</code> 字段</strong>（时序寄存器 <code>FSMC_BTR1</code> 用 ADDSET[3:0] 表示，省略了独立 ADDHLD），F4 的时序靠 <code>ADDSET + DATAST</code> 两个值。<strong>F1 的 <code>FSMC_TCR1</code> 才有独立的 <code>ADDHLD</code></strong>。CubeMX 里的字段名（<code>Address setup time</code> / <code>Address hold time</code> / <code>Data setup time</code>）是通用的，它会按芯片自动映射，所以<strong>手算公式以「你用的那个芯片的参考手册时序图」为准</strong>——F1 查 RM0008、F4 查 RM0090，这点在 CubeMX 生成代码里一对照就清楚了。</p>
+</blockquote>
+<h3 id="31-f1-72mhz-55ns-sram">3.1 一个完整的算例（F1 @72MHz 配 55ns SRAM）</h3>
+<p>假设接一片 IS62WV51216（55ns 的 16 位 SRAM），关键参数：tRC/tWC = 55ns、tWP = 45ns、地址建立 tAS ≥ 0、地址保持 tAH ≥ 0。F1 的 HCLK = 72MHz，一个 HCLK = <strong>13.9ns</strong>：</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>ADDSET：对端 tAS≥0，给 1 个 HCLK 就够（13.9ns，留余量）→ ADDSET = 1
+<a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a>DATAST：要满足 tWP≥45ns 和 tRC≥55ns
+<a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a>        45ns ÷ 13.9ns = 3.24 → 向上取整 4 个 HCLK（55.6ns）→ DATAST = 4
+<a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a>ADDHLD：对端 tAH≥0，给 1 个 HCLK → ADDHLD = 1
+<a id="__codelineno-2-5" name="__codelineno-2-5" href="#__codelineno-2-5"></a>总周期 = (1 + 4 + 1) × 13.9 = 83ns ≥ 55ns ✓
+</code></pre></div>
+<blockquote>
+<p>经验法则：<strong>宁可多给、不要少给</strong>。多一个 HCLK 只是慢几十 ns（对这个 SRAM 的带宽毫无影响），少一个 HCLK 直接读错数据、写不进去。先按对端数据手册算一遍，再适当<strong>加 1~2 个 HCLK 做余量</strong>，是调试 SRAM/LCD 时最快的稳法。LCD 这类外设对时序的敏感度通常比 SRAM 还低，<strong>默认给的 ADDSET=15、DATAST=15 大多能点亮</strong>，只是偏慢而已。</p>
+</blockquote>
+<h2 id="sram">四、接一块并行 SRAM：从零配到读写</h2>
+<p>以 F4（HCLK=168MHz）+ IS62WV51216（512K×16 = 1MB SRAM）为例，挂在 <strong>NE1</strong>，地址从 0x60000000 开始。</p>
+<h3 id="41-cubemx">4.1 CubeMX 配置</h3>
+<p><code>FSMC → NOR/SRAM Memory 1</code> 勾选，关键参数：</p>
+<table>
+<thead>
+<tr>
+<th>参数</th>
+<th>值</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Memory type</strong></td>
+<td>SRAM</td>
+<td>最通用</td>
+</tr>
+<tr>
+<td><strong>Data bus width</strong></td>
+<td>16 bit</td>
+<td>本片是 16 位（8 位时注意 2.2 的地址映射）</td>
+</tr>
+<tr>
+<td><strong>Write operation</strong></td>
+<td>Enable</td>
+<td>要能写</td>
+</tr>
+<tr>
+<td><strong>Extended mode</strong></td>
+<td>Disable</td>
+<td>不开的话读写共用一套时序</td>
+</tr>
+<tr>
+<td><strong>Address setup time</strong></td>
+<td>1</td>
+<td>HCLK 数（对端 tAS）</td>
+</tr>
+<tr>
+<td><strong>Address hold time</strong></td>
+<td>1</td>
+<td>HCLK 数（对端 tAH，F1 才有独立项）</td>
+</tr>
+<tr>
+<td><strong>Data setup time</strong></td>
+<td>4</td>
+<td>HCLK 数（对端 tWP/tRC）</td>
+</tr>
+<tr>
+<td><strong>Read/write timing mode</strong></td>
+<td>Mode A</td>
+<td>最标准的异步 SRAM 模式</td>
+</tr>
+</tbody>
+</table>
+<blockquote>
+<p><code>Mode A</code> 对应 SRAM 最经典的读/写波形：读时 NOE 拉低、写时 NWE 拉低，地址和片选全程有效。其他模式（Mode B/C/D、分时复用、同步突发）各有适用场景，初学<strong>只记 Mode A</strong> 即可，绝大多数 SRAM/LCD 都吃这一套。</p>
+</blockquote>
+<h3 id="42-hal">4.2 HAL 代码</h3>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="cm">/* 片选结构体 */</span>
+<a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a><span class="n">SRAM_HandleTypeDef</span><span class="w"> </span><span class="n">hsram</span><span class="p">;</span>
+<a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a><span class="n">FMC_NORSRAM_TimingTypeDef</span><span class="w"> </span><span class="n">timing</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{</span><span class="mi">0</span><span class="p">};</span>
+<a id="__codelineno-3-4" name="__codelineno-3-4" href="#__codelineno-3-4"></a>
+<a id="__codelineno-3-5" name="__codelineno-3-5" href="#__codelineno-3-5"></a><span class="cm">/* 片选配置 */</span>
+<a id="__codelineno-3-6" name="__codelineno-3-6" href="#__codelineno-3-6"></a><span class="n">hsram</span><span class="p">.</span><span class="n">Instance</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">FMC_NORSRAM_DEVICE</span><span class="p">;</span><span class="w">           </span><span class="cm">/* F4 用 FMC 前缀；F1 是 FSMC_NORSRAM_DEVICE */</span>
+<a id="__codelineno-3-7" name="__codelineno-3-7" href="#__codelineno-3-7"></a><span class="n">hsram</span><span class="p">.</span><span class="n">Extended</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">FMC_NORSRAM_EXTENDED_DEVICE</span><span class="p">;</span><span class="w">  </span><span class="cm">/* 不开扩展模式就指向空结构体 */</span>
+<a id="__codelineno-3-8" name="__codelineno-3-8" href="#__codelineno-3-8"></a>
+<a id="__codelineno-3-9" name="__codelineno-3-9" href="#__codelineno-3-9"></a><span class="n">hsram</span><span class="p">.</span><span class="n">Init</span><span class="p">.</span><span class="n">DataAddressMux</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">FMC_DATA_ADDRESS_MUX_DISABLE</span><span class="p">;</span><span class="w">  </span><span class="cm">/* 地址/数据不分时复用 */</span>
+<a id="__codelineno-3-10" name="__codelineno-3-10" href="#__codelineno-3-10"></a><span class="n">hsram</span><span class="p">.</span><span class="n">Init</span><span class="p">.</span><span class="n">MemoryType</span><span class="w">     </span><span class="o">=</span><span class="w"> </span><span class="n">FMC_MEMORY_TYPE_SRAM</span><span class="p">;</span>
+<a id="__codelineno-3-11" name="__codelineno-3-11" href="#__codelineno-3-11"></a><span class="n">hsram</span><span class="p">.</span><span class="n">Init</span><span class="p">.</span><span class="n">MemoryDataWidth</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">FMC_NORSRAM_MEM_BUS_WIDTH_16</span><span class="p">;</span>
+<a id="__codelineno-3-12" name="__codelineno-3-12" href="#__codelineno-3-12"></a><span class="n">hsram</span><span class="p">.</span><span class="n">Init</span><span class="p">.</span><span class="n">BurstAccessMode</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">FMC_BURST_ACCESS_MODE_DISABLE</span><span class="p">;</span>
+<a id="__codelineno-3-13" name="__codelineno-3-13" href="#__codelineno-3-13"></a><span class="n">hsram</span><span class="p">.</span><span class="n">Init</span><span class="p">.</span><span class="n">WaitSignalPolarity</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">FMC_WAIT_SIGNAL_POLARITY_LOW</span><span class="p">;</span>
+<a id="__codelineno-3-14" name="__codelineno-3-14" href="#__codelineno-3-14"></a><span class="n">hsram</span><span class="p">.</span><span class="n">Init</span><span class="p">.</span><span class="n">WrapMode</span><span class="w">      </span><span class="o">=</span><span class="w"> </span><span class="n">FMC_WRAP_MODE_DISABLE</span><span class="p">;</span>
+<a id="__codelineno-3-15" name="__codelineno-3-15" href="#__codelineno-3-15"></a><span class="n">hsram</span><span class="p">.</span><span class="n">Init</span><span class="p">.</span><span class="n">WaitSignalActive</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">FMC_WAIT_TIMING_BEFORE_ACCESS</span><span class="p">;</span>
+<a id="__codelineno-3-16" name="__codelineno-3-16" href="#__codelineno-3-16"></a><span class="n">hsram</span><span class="p">.</span><span class="n">Init</span><span class="p">.</span><span class="n">WriteOperation</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">FMC_WRITE_OPERATION_ENABLE</span><span class="p">;</span>
+<a id="__codelineno-3-17" name="__codelineno-3-17" href="#__codelineno-3-17"></a><span class="n">hsram</span><span class="p">.</span><span class="n">Init</span><span class="p">.</span><span class="n">ReadWriteTiming</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="o">&amp;</span><span class="n">timing</span><span class="p">;</span>
+<a id="__codelineno-3-18" name="__codelineno-3-18" href="#__codelineno-3-18"></a><span class="n">hsram</span><span class="p">.</span><span class="n">Init</span><span class="p">.</span><span class="n">WriteTiming</span><span class="w">     </span><span class="o">=</span><span class="w"> </span><span class="o">&amp;</span><span class="n">timing</span><span class="p">;</span><span class="w">          </span><span class="cm">/* 不开扩展模式，读写共用 timing */</span>
+<a id="__codelineno-3-19" name="__codelineno-3-19" href="#__codelineno-3-19"></a>
+<a id="__codelineno-3-20" name="__codelineno-3-20" href="#__codelineno-3-20"></a><span class="cm">/* 时序：ADDSET=1、ADDHLD=1、DATAST=4（F4 合并后是 ADDSET+ADDHLD 一起给） */</span>
+<a id="__codelineno-3-21" name="__codelineno-3-21" href="#__codelineno-3-21"></a><span class="n">timing</span><span class="p">.</span><span class="n">AddressSetupTime</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">1</span><span class="p">;</span><span class="w">                   </span><span class="cm">/* 地址建立 + 地址保持合并字段（F4） */</span>
+<a id="__codelineno-3-22" name="__codelineno-3-22" href="#__codelineno-3-22"></a><span class="n">timing</span><span class="p">.</span><span class="n">DataSetupTime</span><span class="w">    </span><span class="o">=</span><span class="w"> </span><span class="mi">4</span><span class="p">;</span><span class="w">                   </span><span class="cm">/* 数据阶段（读/写脉冲） */</span>
+<a id="__codelineno-3-23" name="__codelineno-3-23" href="#__codelineno-3-23"></a><span class="cm">/* F1 单独多了 AddressHoldTime 成员；H7 的 FMC 命名类似 F4 */</span>
+<a id="__codelineno-3-24" name="__codelineno-3-24" href="#__codelineno-3-24"></a>
+<a id="__codelineno-3-25" name="__codelineno-3-25" href="#__codelineno-3-25"></a><span class="n">HAL_SRAM_Init</span><span class="p">(</span><span class="o">&amp;</span><span class="n">hsram</span><span class="p">,</span><span class="w"> </span><span class="o">&amp;</span><span class="n">timing</span><span class="p">,</span><span class="w"> </span><span class="nb">NULL</span><span class="p">);</span>
+</code></pre></div>
+<blockquote>
+<p>勾了 <code>Extended mode</code> 时，读用 <code>ReadWriteTiming</code>、写用 <code>WriteTiming</code> 两套独立时序，适合对端读写速度不对称的芯片（NOR Flash 读快写慢）。没把握就<strong>别开</strong>，读写共用一套最省事。</p>
+</blockquote>
+<h3 id="43">4.3 读写验证：先点亮再谈优化</h3>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a><span class="cp">#define SRAM_BASE  0x60000000u                 </span><span class="cm">/* NE1 片选基址 */</span>
+<a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a>
+<a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a><span class="kt">void</span><span class="w"> </span><span class="nf">sram_test</span><span class="p">(</span><span class="kt">void</span><span class="p">)</span>
+<a id="__codelineno-4-4" name="__codelineno-4-4" href="#__codelineno-4-4"></a><span class="p">{</span>
+<a id="__codelineno-4-5" name="__codelineno-4-5" href="#__codelineno-4-5"></a><span class="w">    </span><span class="kt">uint16_t</span><span class="w"> </span><span class="o">*</span><span class="n">ram</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">(</span><span class="kt">uint16_t</span><span class="w"> </span><span class="o">*</span><span class="p">)</span><span class="n">SRAM_BASE</span><span class="p">;</span>
+<a id="__codelineno-4-6" name="__codelineno-4-6" href="#__codelineno-4-6"></a>
+<a id="__codelineno-4-7" name="__codelineno-4-7" href="#__codelineno-4-7"></a><span class="w">    </span><span class="cm">/* 写一个已知值，读回比对——最简单的自检 */</span>
+<a id="__codelineno-4-8" name="__codelineno-4-8" href="#__codelineno-4-8"></a><span class="w">    </span><span class="n">ram</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="w">   </span><span class="o">=</span><span class="w"> </span><span class="mh">0xA55A</span><span class="p">;</span><span class="w">                         </span><span class="cm">/* 第一个 16 位单元（地址 0） */</span>
+<a id="__codelineno-4-9" name="__codelineno-4-9" href="#__codelineno-4-9"></a><span class="w">    </span><span class="n">ram</span><span class="p">[</span><span class="mi">100</span><span class="p">]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mh">0x1234</span><span class="p">;</span><span class="w">                         </span><span class="cm">/* 第 100 个 16 位单元（地址 200） */</span>
+<a id="__codelineno-4-10" name="__codelineno-4-10" href="#__codelineno-4-10"></a>
+<a id="__codelineno-4-11" name="__codelineno-4-11" href="#__codelineno-4-11"></a><span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">ram</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="mh">0xA55A</span><span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span><span class="n">ram</span><span class="p">[</span><span class="mi">100</span><span class="p">]</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="mh">0x1234</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-4-12" name="__codelineno-4-12" href="#__codelineno-4-12"></a><span class="w">        </span><span class="cm">/* 通：地址线/数据线/时序都基本对 */</span>
+<a id="__codelineno-4-13" name="__codelineno-4-13" href="#__codelineno-4-13"></a><span class="w">    </span><span class="p">}</span><span class="w"> </span><span class="k">else</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-4-14" name="__codelineno-4-14" href="#__codelineno-4-14"></a><span class="w">        </span><span class="cm">/* 不通：多半是时序太紧或地址线/数据线接错 */</span>
+<a id="__codelineno-4-15" name="__codelineno-4-15" href="#__codelineno-4-15"></a><span class="w">    </span><span class="p">}</span>
+<a id="__codelineno-4-16" name="__codelineno-4-16" href="#__codelineno-4-16"></a>
+<a id="__codelineno-4-17" name="__codelineno-4-17" href="#__codelineno-4-17"></a><span class="w">    </span><span class="cm">/* 回环测一遍全片：把所有单元填 0x0000 再写 0xFFFF，确认数据线都工作 */</span>
+<a id="__codelineno-4-18" name="__codelineno-4-18" href="#__codelineno-4-18"></a><span class="w">    </span><span class="kt">uint32_t</span><span class="w"> </span><span class="n">i</span><span class="p">;</span>
+<a id="__codelineno-4-19" name="__codelineno-4-19" href="#__codelineno-4-19"></a><span class="w">    </span><span class="k">for</span><span class="w"> </span><span class="p">(</span><span class="n">i</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span><span class="w"> </span><span class="n">i</span><span class="w"> </span><span class="o">&lt;</span><span class="w"> </span><span class="mh">0x20000</span><span class="p">;</span><span class="w"> </span><span class="n">i</span><span class="o">++</span><span class="p">)</span><span class="w"> </span><span class="n">ram</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mh">0x0000</span><span class="p">;</span>
+<a id="__codelineno-4-20" name="__codelineno-4-20" href="#__codelineno-4-20"></a><span class="w">    </span><span class="k">for</span><span class="w"> </span><span class="p">(</span><span class="n">i</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span><span class="w"> </span><span class="n">i</span><span class="w"> </span><span class="o">&lt;</span><span class="w"> </span><span class="mh">0x20000</span><span class="p">;</span><span class="w"> </span><span class="n">i</span><span class="o">++</span><span class="p">)</span><span class="w"> </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">ram</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="w"> </span><span class="o">!=</span><span class="w"> </span><span class="mh">0x0000</span><span class="p">)</span><span class="w"> </span><span class="k">break</span><span class="p">;</span><span class="w">   </span><span class="cm">/* 没走到这就说明有单元写不进 */</span>
+<a id="__codelineno-4-21" name="__codelineno-4-21" href="#__codelineno-4-21"></a><span class="w">    </span><span class="k">for</span><span class="w"> </span><span class="p">(</span><span class="n">i</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span><span class="w"> </span><span class="n">i</span><span class="w"> </span><span class="o">&lt;</span><span class="w"> </span><span class="mh">0x20000</span><span class="p">;</span><span class="w"> </span><span class="n">i</span><span class="o">++</span><span class="p">)</span><span class="w"> </span><span class="n">ram</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mh">0xFFFF</span><span class="p">;</span>
+<a id="__codelineno-4-22" name="__codelineno-4-22" href="#__codelineno-4-22"></a><span class="w">    </span><span class="k">for</span><span class="w"> </span><span class="p">(</span><span class="n">i</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span><span class="w"> </span><span class="n">i</span><span class="w"> </span><span class="o">&lt;</span><span class="w"> </span><span class="mh">0x20000</span><span class="p">;</span><span class="w"> </span><span class="n">i</span><span class="o">++</span><span class="p">)</span><span class="w"> </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">ram</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="w"> </span><span class="o">!=</span><span class="w"> </span><span class="mh">0xFFFF</span><span class="p">)</span><span class="w"> </span><span class="k">break</span><span class="p">;</span>
+<a id="__codelineno-4-23" name="__codelineno-4-23" href="#__codelineno-4-23"></a><span class="p">}</span>
+</code></pre></div>
+<p><strong>第一步一定要先做「写一个值读回来」</strong>，通了再跑全片回环。全片回环测的是：<strong>数据线有没有接错位</strong>（用 0x5555/0xAAAA 交替写能查出 D0~D15 哪根短路/接反）、<strong>地址线有没有接错位</strong>（写 A、读 A+1 能查 HADDR 移位）。这步过了，硬件接线才算真正验证过。</p>
+<h2 id="_1">五、读写在内存里长什么样：寄存器模型</h2>
+<p>FSMC 的 Bank1 支持 NOR Flash、PSRAM、SRAM、ROM 四种。对一个 NOR Flash，它的访问<strong>可以映射成「寄存器模型」</strong>——NOR 里有「命令/地址/数据」三类操作，FSMC 把不同的地址区间当不同的「寄存器」来写，这就是 NOR 编程/擦除的基础：</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a><span class="cp">#define NOR_BASE   0x60000000u                 </span><span class="cm">/* NE1 */</span>
+<a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a><span class="cp">#define NOR_CMD    0x60000000u                 </span><span class="cm">/* 命令寄存器地址 */</span>
+<a id="__codelineno-5-3" name="__codelineno-5-3" href="#__codelineno-5-3"></a><span class="cp">#define NOR_ADDR   0x60000000u + 0x2           </span><span class="cm">/* 地址寄存器（16 位总线，每步 +2） */</span>
+<a id="__codelineno-5-4" name="__codelineno-5-4" href="#__codelineno-5-4"></a><span class="cp">#define NOR_DATA   0x60000000u + 0x4           </span><span class="cm">/* 数据寄存器 */</span>
+<a id="__codelineno-5-5" name="__codelineno-5-5" href="#__codelineno-5-5"></a>
+<a id="__codelineno-5-6" name="__codelineno-5-6" href="#__codelineno-5-6"></a><span class="cm">/* 写一个 NOR 命令序列（解锁→命令→地址→数据）本质就是连续几次指针写 */</span>
+<a id="__codelineno-5-7" name="__codelineno-5-7" href="#__codelineno-5-7"></a><span class="o">*</span><span class="p">(</span><span class="k">volatile</span><span class="w"> </span><span class="kt">uint16_t</span><span class="w"> </span><span class="o">*</span><span class="p">)</span><span class="n">NOR_CMD</span><span class="w">  </span><span class="o">=</span><span class="w"> </span><span class="mh">0x00AA</span><span class="p">;</span><span class="w">       </span><span class="cm">/* 解锁 1 */</span>
+<a id="__codelineno-5-8" name="__codelineno-5-8" href="#__codelineno-5-8"></a><span class="o">*</span><span class="p">(</span><span class="k">volatile</span><span class="w"> </span><span class="kt">uint16_t</span><span class="w"> </span><span class="o">*</span><span class="p">)</span><span class="n">NOR_CMD</span><span class="w">  </span><span class="o">=</span><span class="w"> </span><span class="mh">0x0055</span><span class="p">;</span><span class="w">       </span><span class="cm">/* 解锁 2 */</span>
+<a id="__codelineno-5-9" name="__codelineno-5-9" href="#__codelineno-5-9"></a><span class="o">*</span><span class="p">(</span><span class="k">volatile</span><span class="w"> </span><span class="kt">uint16_t</span><span class="w"> </span><span class="o">*</span><span class="p">)</span><span class="n">NOR_CMD</span><span class="w">  </span><span class="o">=</span><span class="w"> </span><span class="mh">0x0090</span><span class="p">;</span><span class="w">       </span><span class="cm">/* 读 ID 命令 */</span>
+</code></pre></div>
+<p><strong>重点</strong>：FSMC 对「地址空间」没有感情，它只负责「把地址翻译成管脚时序」。至于某个地址代表命令还是数据，<strong>完全由外设自己定</strong>——这就是为什么「把外设当内存」是一种万能思路：只要外设定义好「地址 → 功能」的映射，FSMC 就能驱动。NAND 也一样（它按「页 + 命令/地址/数据 分时复用」，见第八节）。</p>
+<div class="admonition warning">
+<p class="admonition-title">上面的宏只是「概念示意」，不是真实 NOR 的用法</p>
+<p>真正的 NOR Flash 没有「寄存器地址」这个概念。读写数据时它就是<strong>一块普通内存</strong>（按 FSMC 基址直接指针读写），「命令/地址/数据寄存器」的区分是通过<strong>往特定地址写特定命令序列</strong>（JEDEC 解锁 + 命令码）实现的，完整的真实用法见 <a href="#六-nor-flash-完整示例-读-id-擦除-编程-回读">第六节</a>。</p>
+</div>
+<h2 id="nor-flash-id">六、NOR Flash 完整示例：读 ID、擦除、编程、回读</h2>
+<p>上一节的「寄存器模型」只是概念。真正的并行 NOR Flash（S29AL016D、S29GL128P、AM29 系等，几乎全是 <strong>AMD/JEDEC 兼容</strong>的一套命令）工作方式完全不同：</p>
+<ul>
+<li><strong>读数据 = 直接指针读</strong>，NOR 就是一块普通只读内存；</li>
+<li><strong>写数据 ≠ 指针写</strong>：编程/擦除要<strong>先发一组「解锁 + 命令码」</strong>，芯片进入内部操作（内部编程/擦除耗时几十 µs 到几百 ms），期间必须<strong>轮询 DQ7/DQ6 等完成</strong>，完事后自动回到读模式。</li>
+</ul>
+<p>所以驱动 NOR 的核心就是三件事：<strong>发对命令序列</strong>、<strong>等对完成状态</strong>、<strong>回读验证</strong>。下面按这个顺序给完整代码。</p>
+<h3 id="61-fsmc-nor">6.1 FSMC 配置：NOR 用扩展模式，读写独立时序</h3>
+<p>NOR 读慢写快（命令写周期短），比 SRAM 更适合<strong>扩展模式</strong>（读/写两套时序）。以 F4 命名、挂 NE1 为例（F1 把 <code>FMC_</code> 换成 <code>FSMC_</code>）：</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a><span class="k">static</span><span class="w"> </span><span class="kt">void</span><span class="w"> </span><span class="nf">FSMC_NOR_Init</span><span class="p">(</span><span class="kt">void</span><span class="p">)</span>
+<a id="__codelineno-6-2" name="__codelineno-6-2" href="#__codelineno-6-2"></a><span class="p">{</span>
+<a id="__codelineno-6-3" name="__codelineno-6-3" href="#__codelineno-6-3"></a><span class="w">    </span><span class="n">SRAM_HandleTypeDef</span><span class="w"> </span><span class="n">hsram</span><span class="p">;</span><span class="w">                       </span><span class="cm">/* HAL 里 NOR/SRAM 共用这一个句柄类型 */</span>
+<a id="__codelineno-6-4" name="__codelineno-6-4" href="#__codelineno-6-4"></a><span class="w">    </span><span class="n">FMC_NORSRAM_TimingTypeDef</span><span class="w"> </span><span class="n">read_timing</span><span class="w">  </span><span class="o">=</span><span class="w"> </span><span class="p">{</span><span class="mi">0</span><span class="p">};</span>
+<a id="__codelineno-6-5" name="__codelineno-6-5" href="#__codelineno-6-5"></a><span class="w">    </span><span class="n">FMC_NORSRAM_TimingTypeDef</span><span class="w"> </span><span class="n">write_timing</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{</span><span class="mi">0</span><span class="p">};</span>
+<a id="__codelineno-6-6" name="__codelineno-6-6" href="#__codelineno-6-6"></a>
+<a id="__codelineno-6-7" name="__codelineno-6-7" href="#__codelineno-6-7"></a><span class="w">    </span><span class="n">hsram</span><span class="p">.</span><span class="n">Instance</span><span class="w">   </span><span class="o">=</span><span class="w"> </span><span class="n">FMC_NORSRAM_DEVICE</span><span class="p">;</span>
+<a id="__codelineno-6-8" name="__codelineno-6-8" href="#__codelineno-6-8"></a><span class="w">    </span><span class="n">hsram</span><span class="p">.</span><span class="n">Extended</span><span class="w">   </span><span class="o">=</span><span class="w"> </span><span class="n">FMC_NORSRAM_EXTENDED_DEVICE</span><span class="p">;</span><span class="w"> </span><span class="cm">/* 扩展模式：读写独立时序 */</span>
+<a id="__codelineno-6-9" name="__codelineno-6-9" href="#__codelineno-6-9"></a><span class="w">    </span><span class="n">hsram</span><span class="p">.</span><span class="n">Init</span><span class="p">.</span><span class="n">DataAddressMux</span><span class="w">  </span><span class="o">=</span><span class="w"> </span><span class="n">FMC_DATA_ADDRESS_MUX_DISABLE</span><span class="p">;</span>
+<a id="__codelineno-6-10" name="__codelineno-6-10" href="#__codelineno-6-10"></a><span class="w">    </span><span class="n">hsram</span><span class="p">.</span><span class="n">Init</span><span class="p">.</span><span class="n">MemoryType</span><span class="w">      </span><span class="o">=</span><span class="w"> </span><span class="n">FMC_MEMORY_TYPE_NOR</span><span class="p">;</span>
+<a id="__codelineno-6-11" name="__codelineno-6-11" href="#__codelineno-6-11"></a><span class="w">    </span><span class="n">hsram</span><span class="p">.</span><span class="n">Init</span><span class="p">.</span><span class="n">MemoryDataWidth</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">FMC_NORSRAM_MEM_BUS_WIDTH_16</span><span class="p">;</span>
+<a id="__codelineno-6-12" name="__codelineno-6-12" href="#__codelineno-6-12"></a><span class="w">    </span><span class="n">hsram</span><span class="p">.</span><span class="n">Init</span><span class="p">.</span><span class="n">BurstAccessMode</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">FMC_BURST_ACCESS_MODE_DISABLE</span><span class="p">;</span>
+<a id="__codelineno-6-13" name="__codelineno-6-13" href="#__codelineno-6-13"></a><span class="w">    </span><span class="n">hsram</span><span class="p">.</span><span class="n">Init</span><span class="p">.</span><span class="n">WaitSignalPolarity</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">FMC_WAIT_SIGNAL_POLARITY_LOW</span><span class="p">;</span>
+<a id="__codelineno-6-14" name="__codelineno-6-14" href="#__codelineno-6-14"></a><span class="w">    </span><span class="n">hsram</span><span class="p">.</span><span class="n">Init</span><span class="p">.</span><span class="n">WrapMode</span><span class="w">        </span><span class="o">=</span><span class="w"> </span><span class="n">FMC_WRAP_MODE_DISABLE</span><span class="p">;</span>
+<a id="__codelineno-6-15" name="__codelineno-6-15" href="#__codelineno-6-15"></a><span class="w">    </span><span class="n">hsram</span><span class="p">.</span><span class="n">Init</span><span class="p">.</span><span class="n">WaitSignalActive</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">FMC_WAIT_TIMING_BEFORE_ACCESS</span><span class="p">;</span>
+<a id="__codelineno-6-16" name="__codelineno-6-16" href="#__codelineno-6-16"></a><span class="w">    </span><span class="n">hsram</span><span class="p">.</span><span class="n">Init</span><span class="p">.</span><span class="n">WriteOperation</span><span class="w">  </span><span class="o">=</span><span class="w"> </span><span class="n">FMC_WRITE_OPERATION_ENABLE</span><span class="p">;</span>
+<a id="__codelineno-6-17" name="__codelineno-6-17" href="#__codelineno-6-17"></a>
+<a id="__codelineno-6-18" name="__codelineno-6-18" href="#__codelineno-6-18"></a><span class="w">    </span><span class="cm">/* 读时序：要盖住 NOR 的 tRC/tAA（90~110ns 常见）。</span>
+<a id="__codelineno-6-19" name="__codelineno-6-19" href="#__codelineno-6-19"></a><span class="cm">       F1 @72MHz，13.9ns/周期：ADDSET=2、DATAST=8 → (2+8)×13.9 ≈ 139ns ✓ */</span>
+<a id="__codelineno-6-20" name="__codelineno-6-20" href="#__codelineno-6-20"></a><span class="w">    </span><span class="n">read_timing</span><span class="p">.</span><span class="n">AddressSetupTime</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">2</span><span class="p">;</span>
+<a id="__codelineno-6-21" name="__codelineno-6-21" href="#__codelineno-6-21"></a><span class="w">    </span><span class="n">read_timing</span><span class="p">.</span><span class="n">DataSetupTime</span><span class="w">    </span><span class="o">=</span><span class="w"> </span><span class="mi">8</span><span class="p">;</span>
+<a id="__codelineno-6-22" name="__codelineno-6-22" href="#__codelineno-6-22"></a>
+<a id="__codelineno-6-23" name="__codelineno-6-23" href="#__codelineno-6-23"></a><span class="w">    </span><span class="cm">/* 写时序：命令写只需 tWP，够短 */</span>
+<a id="__codelineno-6-24" name="__codelineno-6-24" href="#__codelineno-6-24"></a><span class="w">    </span><span class="n">write_timing</span><span class="p">.</span><span class="n">AddressSetupTime</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">2</span><span class="p">;</span>
+<a id="__codelineno-6-25" name="__codelineno-6-25" href="#__codelineno-6-25"></a><span class="w">    </span><span class="n">write_timing</span><span class="p">.</span><span class="n">DataSetupTime</span><span class="w">    </span><span class="o">=</span><span class="w"> </span><span class="mi">4</span><span class="p">;</span>
+<a id="__codelineno-6-26" name="__codelineno-6-26" href="#__codelineno-6-26"></a>
+<a id="__codelineno-6-27" name="__codelineno-6-27" href="#__codelineno-6-27"></a><span class="w">    </span><span class="n">HAL_SRAM_Init</span><span class="p">(</span><span class="o">&amp;</span><span class="n">hsram</span><span class="p">,</span><span class="w"> </span><span class="o">&amp;</span><span class="n">read_timing</span><span class="p">,</span><span class="w"> </span><span class="o">&amp;</span><span class="n">write_timing</span><span class="p">);</span>
+<a id="__codelineno-6-28" name="__codelineno-6-28" href="#__codelineno-6-28"></a><span class="w">    </span><span class="cm">/* F4 @168MHz：同样 90ns NOR 要更多周期，5.95ns/周期 → 读 DATAST 取 14~16 */</span>
+<a id="__codelineno-6-29" name="__codelineno-6-29" href="#__codelineno-6-29"></a><span class="p">}</span>
+</code></pre></div>
+<p>时序还是那句老话：<strong>先按慢的给、宁慢勿快</strong>。NOR 读本身就不是高速外设，时序放宽没有代价。</p>
+<h3 id="62">6.2 地址与命令宏</h3>
+<p>16 位总线 + 16 位 NOR：<strong>命令地址按数据手册的字节地址写（0x555 / 0x2AA），不要自己移位</strong>——FSMC 在 16 位模式下已经把 HADDR 右移了一位（见 2.2），示例里写 0x555 会自动落到 NOR 的字地址 0x2AA，正好是 AMD/JEDEC 命令要的解锁地址。数据访问则用「字地址 ×2」的宏，方便按字编址。</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a><span class="cp">#define NOR_BASE       0x60000000u                       </span><span class="cm">/* NE1 片选基址 */</span>
+<a id="__codelineno-7-2" name="__codelineno-7-2" href="#__codelineno-7-2"></a><span class="cp">#define NOR_CMD(off)   (*(volatile uint16_t *)(NOR_BASE + (off)))         </span><span class="cm">/* 命令序列，off 为字节偏移 */</span>
+<a id="__codelineno-7-3" name="__codelineno-7-3" href="#__codelineno-7-3"></a><span class="cp">#define NOR_WORD(off)  (*(volatile uint16_t *)(NOR_BASE + ((off) &lt;&lt; 1)))  </span><span class="cm">/* 数据访问，off 为字地址 */</span>
+<a id="__codelineno-7-4" name="__codelineno-7-4" href="#__codelineno-7-4"></a>
+<a id="__codelineno-7-5" name="__codelineno-7-5" href="#__codelineno-7-5"></a><span class="cm">/* 命令码（AMD/JEDEC 兼容件通用） */</span>
+<a id="__codelineno-7-6" name="__codelineno-7-6" href="#__codelineno-7-6"></a><span class="cp">#define NOR_CMD_READ_ID      0x90</span>
+<a id="__codelineno-7-7" name="__codelineno-7-7" href="#__codelineno-7-7"></a><span class="cp">#define NOR_CMD_READ_RESET   0xF0</span>
+<a id="__codelineno-7-8" name="__codelineno-7-8" href="#__codelineno-7-8"></a><span class="cp">#define NOR_CMD_ERASE        0x80</span>
+<a id="__codelineno-7-9" name="__codelineno-7-9" href="#__codelineno-7-9"></a><span class="cp">#define NOR_CMD_SECTOR_ERASE 0x30</span>
+<a id="__codelineno-7-10" name="__codelineno-7-10" href="#__codelineno-7-10"></a><span class="cp">#define NOR_CMD_CHIP_ERASE   0x10</span>
+<a id="__codelineno-7-11" name="__codelineno-7-11" href="#__codelineno-7-11"></a><span class="cp">#define NOR_CMD_PROGRAM      0xA0</span>
+<a id="__codelineno-7-12" name="__codelineno-7-12" href="#__codelineno-7-12"></a>
+<a id="__codelineno-7-13" name="__codelineno-7-13" href="#__codelineno-7-13"></a><span class="cm">/* 两段式解锁（每个命令序列前的"敲门"） */</span>
+<a id="__codelineno-7-14" name="__codelineno-7-14" href="#__codelineno-7-14"></a><span class="k">static</span><span class="w"> </span><span class="kt">void</span><span class="w"> </span><span class="nf">NOR_Unlock</span><span class="p">(</span><span class="kt">void</span><span class="p">)</span>
+<a id="__codelineno-7-15" name="__codelineno-7-15" href="#__codelineno-7-15"></a><span class="p">{</span>
+<a id="__codelineno-7-16" name="__codelineno-7-16" href="#__codelineno-7-16"></a><span class="w">    </span><span class="n">NOR_CMD</span><span class="p">(</span><span class="mh">0x555</span><span class="p">)</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mh">0xAA</span><span class="p">;</span>
+<a id="__codelineno-7-17" name="__codelineno-7-17" href="#__codelineno-7-17"></a><span class="w">    </span><span class="n">NOR_CMD</span><span class="p">(</span><span class="mh">0x2AA</span><span class="p">)</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mh">0x55</span><span class="p">;</span>
+<a id="__codelineno-7-18" name="__codelineno-7-18" href="#__codelineno-7-18"></a><span class="p">}</span>
+</code></pre></div>
+<div class="admonition warning">
+<p class="admonition-title">0x555 是奇地址，为什么能跑</p>
+<p><code>*(uint16_t*)0x60000555</code> 是非对齐访问。<strong>M3/M4（F1/F4）硬件支持非对齐 16 位访问</strong>，所以示例能跑；FSMC 16 位模式下地址 bit0 本来就被忽略，改成偶地址 <code>0x554</code> 效果完全一样。<strong>用 M0/M0+ 等不支持非对齐的核时，把命令地址全改成偶数</strong>（0x554 / 0x2AA）。</p>
+</div>
+<h3 id="63-dq7dq6">6.3 完成检测：DQ7/DQ6 轮询</h3>
+<p>编程/擦除期间芯片内部忙，<strong>读目标地址返回的是状态位，不是数据</strong>。等完有两种办法，DQ6 翻转对编程和擦除通用：</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a><span class="cm">/* 等到目标地址读到两次 DQ6 相同 = 内部操作结束（加超时防死循环） */</span>
+<a id="__codelineno-8-2" name="__codelineno-8-2" href="#__codelineno-8-2"></a><span class="k">static</span><span class="w"> </span><span class="kt">uint8_t</span><span class="w"> </span><span class="nf">NOR_WaitBusy</span><span class="p">(</span><span class="kt">uint32_t</span><span class="w"> </span><span class="n">word_addr</span><span class="p">)</span>
+<a id="__codelineno-8-3" name="__codelineno-8-3" href="#__codelineno-8-3"></a><span class="p">{</span>
+<a id="__codelineno-8-4" name="__codelineno-8-4" href="#__codelineno-8-4"></a><span class="w">    </span><span class="kt">uint16_t</span><span class="w"> </span><span class="n">a</span><span class="p">,</span><span class="w"> </span><span class="n">b</span><span class="p">;</span>
+<a id="__codelineno-8-5" name="__codelineno-8-5" href="#__codelineno-8-5"></a><span class="w">    </span><span class="kt">uint32_t</span><span class="w"> </span><span class="n">cnt</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span>
+<a id="__codelineno-8-6" name="__codelineno-8-6" href="#__codelineno-8-6"></a><span class="w">    </span><span class="k">do</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-8-7" name="__codelineno-8-7" href="#__codelineno-8-7"></a><span class="w">        </span><span class="n">a</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">NOR_WORD</span><span class="p">(</span><span class="n">word_addr</span><span class="p">);</span>
+<a id="__codelineno-8-8" name="__codelineno-8-8" href="#__codelineno-8-8"></a><span class="w">        </span><span class="n">b</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">NOR_WORD</span><span class="p">(</span><span class="n">word_addr</span><span class="p">);</span>
+<a id="__codelineno-8-9" name="__codelineno-8-9" href="#__codelineno-8-9"></a><span class="w">        </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="o">++</span><span class="n">cnt</span><span class="w"> </span><span class="o">&gt;</span><span class="w"> </span><span class="mh">0xFFFFFFu</span><span class="p">)</span><span class="w"> </span><span class="k">return</span><span class="w"> </span><span class="mi">1</span><span class="p">;</span><span class="w">   </span><span class="cm">/* 超时：器件没响应，多半接线/时序问题 */</span>
+<a id="__codelineno-8-10" name="__codelineno-8-10" href="#__codelineno-8-10"></a><span class="w">    </span><span class="p">}</span><span class="w"> </span><span class="k">while</span><span class="w"> </span><span class="p">((</span><span class="n">a</span><span class="w"> </span><span class="o">^</span><span class="w"> </span><span class="n">b</span><span class="p">)</span><span class="w"> </span><span class="o">&amp;</span><span class="w"> </span><span class="mh">0x0040u</span><span class="p">);</span><span class="w">           </span><span class="cm">/* DQ6（bit6）两次不同 = 还在忙 */</span>
+<a id="__codelineno-8-11" name="__codelineno-8-11" href="#__codelineno-8-11"></a><span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span>
+<a id="__codelineno-8-12" name="__codelineno-8-12" href="#__codelineno-8-12"></a><span class="p">}</span>
+</code></pre></div>
+<h3 id="64-id">6.4 读 ID：第一个必做的自检</h3>
+<p>读 ID 能一次性验证<strong>接线、地址换算、时序</strong>三件事——ID 读得对，后面的擦写才有意义：</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a><span class="k">static</span><span class="w"> </span><span class="kt">void</span><span class="w"> </span><span class="nf">NOR_ReadID</span><span class="p">(</span><span class="kt">uint16_t</span><span class="w"> </span><span class="o">*</span><span class="n">manuf</span><span class="p">,</span><span class="w"> </span><span class="kt">uint16_t</span><span class="w"> </span><span class="o">*</span><span class="n">dev</span><span class="p">)</span>
+<a id="__codelineno-9-2" name="__codelineno-9-2" href="#__codelineno-9-2"></a><span class="p">{</span>
+<a id="__codelineno-9-3" name="__codelineno-9-3" href="#__codelineno-9-3"></a><span class="w">    </span><span class="n">NOR_Unlock</span><span class="p">();</span>
+<a id="__codelineno-9-4" name="__codelineno-9-4" href="#__codelineno-9-4"></a><span class="w">    </span><span class="n">NOR_CMD</span><span class="p">(</span><span class="mh">0x555</span><span class="p">)</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">NOR_CMD_READ_ID</span><span class="p">;</span><span class="w">      </span><span class="cm">/* 进入 ID 读模式 */</span>
+<a id="__codelineno-9-5" name="__codelineno-9-5" href="#__codelineno-9-5"></a><span class="w">    </span><span class="o">*</span><span class="n">manuf</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">NOR_WORD</span><span class="p">(</span><span class="mh">0x0000</span><span class="p">);</span><span class="w">             </span><span class="cm">/* 字地址 0x0000 = 厂商码 */</span>
+<a id="__codelineno-9-6" name="__codelineno-9-6" href="#__codelineno-9-6"></a><span class="w">    </span><span class="o">*</span><span class="n">dev</span><span class="w">   </span><span class="o">=</span><span class="w"> </span><span class="n">NOR_WORD</span><span class="p">(</span><span class="mh">0x0001</span><span class="p">);</span><span class="w">             </span><span class="cm">/* 字地址 0x0001 = 设备码 */</span>
+<a id="__codelineno-9-7" name="__codelineno-9-7" href="#__codelineno-9-7"></a><span class="w">    </span><span class="cm">/* 退出 ID 模式，回读模式 */</span>
+<a id="__codelineno-9-8" name="__codelineno-9-8" href="#__codelineno-9-8"></a><span class="w">    </span><span class="n">NOR_Unlock</span><span class="p">();</span>
+<a id="__codelineno-9-9" name="__codelineno-9-9" href="#__codelineno-9-9"></a><span class="w">    </span><span class="n">NOR_CMD</span><span class="p">(</span><span class="mh">0x555</span><span class="p">)</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">NOR_CMD_READ_RESET</span><span class="p">;</span>
+<a id="__codelineno-9-10" name="__codelineno-9-10" href="#__codelineno-9-10"></a><span class="p">}</span>
+<a id="__codelineno-9-11" name="__codelineno-9-11" href="#__codelineno-9-11"></a>
+<a id="__codelineno-9-12" name="__codelineno-9-12" href="#__codelineno-9-12"></a><span class="cm">/* 用法：S29AL016D 应读到 manuf=0x0001（AMD/Spansion），dev=0x2249（查你芯片手册）</span>
+<a id="__codelineno-9-13" name="__codelineno-9-13" href="#__codelineno-9-13"></a><span class="cm">   读出的值不对 → 先别急着擦写，查接线（尤其 A0~A12、D0~D15）、再放宽读时序 */</span>
+</code></pre></div>
+<h3 id="65">6.5 擦除 + 编程 + 回读（完整流程）</h3>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-10-1" name="__codelineno-10-1" href="#__codelineno-10-1"></a><span class="cm">/* 擦除一个扇区：sector_addr 为字地址。S29AL016D 常规扇区 64K 字（128KB），boot 扇区小 */</span>
+<a id="__codelineno-10-2" name="__codelineno-10-2" href="#__codelineno-10-2"></a><span class="k">static</span><span class="w"> </span><span class="kt">uint8_t</span><span class="w"> </span><span class="nf">NOR_SectorErase</span><span class="p">(</span><span class="kt">uint32_t</span><span class="w"> </span><span class="n">sector_addr</span><span class="p">)</span>
+<a id="__codelineno-10-3" name="__codelineno-10-3" href="#__codelineno-10-3"></a><span class="p">{</span>
+<a id="__codelineno-10-4" name="__codelineno-10-4" href="#__codelineno-10-4"></a><span class="w">    </span><span class="n">NOR_Unlock</span><span class="p">();</span>
+<a id="__codelineno-10-5" name="__codelineno-10-5" href="#__codelineno-10-5"></a><span class="w">    </span><span class="n">NOR_CMD</span><span class="p">(</span><span class="mh">0x555</span><span class="p">)</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">NOR_CMD_ERASE</span><span class="p">;</span><span class="w">        </span><span class="cm">/* 进入擦除命令组 */</span>
+<a id="__codelineno-10-6" name="__codelineno-10-6" href="#__codelineno-10-6"></a><span class="w">    </span><span class="n">NOR_Unlock</span><span class="p">();</span>
+<a id="__codelineno-10-7" name="__codelineno-10-7" href="#__codelineno-10-7"></a><span class="w">    </span><span class="n">NOR_WORD</span><span class="p">(</span><span class="n">sector_addr</span><span class="p">)</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">NOR_CMD_SECTOR_ERASE</span><span class="p">;</span><span class="w">   </span><span class="cm">/* 目标扇区写 0x30 */</span>
+<a id="__codelineno-10-8" name="__codelineno-10-8" href="#__codelineno-10-8"></a><span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="n">NOR_WaitBusy</span><span class="p">(</span><span class="n">sector_addr</span><span class="p">);</span><span class="w">      </span><span class="cm">/* 在扇区内轮询完成（典型几十 ms） */</span>
+<a id="__codelineno-10-9" name="__codelineno-10-9" href="#__codelineno-10-9"></a><span class="p">}</span>
+<a id="__codelineno-10-10" name="__codelineno-10-10" href="#__codelineno-10-10"></a>
+<a id="__codelineno-10-11" name="__codelineno-10-11" href="#__codelineno-10-11"></a><span class="cm">/* 编程一个字：word_addr 为字地址。编程前该位置必须是 0xFFFF（已擦除） */</span>
+<a id="__codelineno-10-12" name="__codelineno-10-12" href="#__codelineno-10-12"></a><span class="k">static</span><span class="w"> </span><span class="kt">uint8_t</span><span class="w"> </span><span class="nf">NOR_ProgramWord</span><span class="p">(</span><span class="kt">uint32_t</span><span class="w"> </span><span class="n">word_addr</span><span class="p">,</span><span class="w"> </span><span class="kt">uint16_t</span><span class="w"> </span><span class="n">data</span><span class="p">)</span>
+<a id="__codelineno-10-13" name="__codelineno-10-13" href="#__codelineno-10-13"></a><span class="p">{</span>
+<a id="__codelineno-10-14" name="__codelineno-10-14" href="#__codelineno-10-14"></a><span class="w">    </span><span class="n">NOR_Unlock</span><span class="p">();</span>
+<a id="__codelineno-10-15" name="__codelineno-10-15" href="#__codelineno-10-15"></a><span class="w">    </span><span class="n">NOR_CMD</span><span class="p">(</span><span class="mh">0x555</span><span class="p">)</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">NOR_CMD_PROGRAM</span><span class="p">;</span><span class="w">      </span><span class="cm">/* 编程命令 */</span>
+<a id="__codelineno-10-16" name="__codelineno-10-16" href="#__codelineno-10-16"></a><span class="w">    </span><span class="n">NOR_WORD</span><span class="p">(</span><span class="n">word_addr</span><span class="p">)</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">data</span><span class="p">;</span><span class="w">            </span><span class="cm">/* 这一个写周期把数据送进去，芯片开始内部编程 */</span>
+<a id="__codelineno-10-17" name="__codelineno-10-17" href="#__codelineno-10-17"></a><span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="n">NOR_WaitBusy</span><span class="p">(</span><span class="n">word_addr</span><span class="p">);</span><span class="w">        </span><span class="cm">/* 典型 ~7~10µs 一个字 */</span>
+<a id="__codelineno-10-18" name="__codelineno-10-18" href="#__codelineno-10-18"></a><span class="p">}</span>
+<a id="__codelineno-10-19" name="__codelineno-10-19" href="#__codelineno-10-19"></a>
+<a id="__codelineno-10-20" name="__codelineno-10-20" href="#__codelineno-10-20"></a><span class="cm">/* 完整演示：读 ID → 擦除 → 编程 → 回读验证 */</span>
+<a id="__codelineno-10-21" name="__codelineno-10-21" href="#__codelineno-10-21"></a><span class="kt">void</span><span class="w"> </span><span class="nf">NOR_Demo</span><span class="p">(</span><span class="kt">void</span><span class="p">)</span>
+<a id="__codelineno-10-22" name="__codelineno-10-22" href="#__codelineno-10-22"></a><span class="p">{</span>
+<a id="__codelineno-10-23" name="__codelineno-10-23" href="#__codelineno-10-23"></a><span class="w">    </span><span class="kt">uint16_t</span><span class="w"> </span><span class="n">manuf</span><span class="p">,</span><span class="w"> </span><span class="n">dev</span><span class="p">;</span>
+<a id="__codelineno-10-24" name="__codelineno-10-24" href="#__codelineno-10-24"></a>
+<a id="__codelineno-10-25" name="__codelineno-10-25" href="#__codelineno-10-25"></a><span class="w">    </span><span class="cm">/* 1. 读 ID：地址/接线/时序验证（先做这一步！） */</span>
+<a id="__codelineno-10-26" name="__codelineno-10-26" href="#__codelineno-10-26"></a><span class="w">    </span><span class="n">NOR_ReadID</span><span class="p">(</span><span class="o">&amp;</span><span class="n">manuf</span><span class="p">,</span><span class="w"> </span><span class="o">&amp;</span><span class="n">dev</span><span class="p">);</span>
+<a id="__codelineno-10-27" name="__codelineno-10-27" href="#__codelineno-10-27"></a><span class="w">    </span><span class="cm">/* manuf=0x0001、dev=查手册 —— 对不上就停，别往下走 */</span>
+<a id="__codelineno-10-28" name="__codelineno-10-28" href="#__codelineno-10-28"></a>
+<a id="__codelineno-10-29" name="__codelineno-10-29" href="#__codelineno-10-29"></a><span class="w">    </span><span class="cm">/* 2. 擦除字地址 0x00000 起的扇区，并验证已擦成 0xFFFF */</span>
+<a id="__codelineno-10-30" name="__codelineno-10-30" href="#__codelineno-10-30"></a><span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">NOR_SectorErase</span><span class="p">(</span><span class="mh">0x00000u</span><span class="p">))</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="cm">/* 擦除超时 */</span><span class="w"> </span><span class="p">}</span>
+<a id="__codelineno-10-31" name="__codelineno-10-31" href="#__codelineno-10-31"></a><span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">NOR_WORD</span><span class="p">(</span><span class="mh">0x00000u</span><span class="p">)</span><span class="w"> </span><span class="o">!=</span><span class="w"> </span><span class="mh">0xFFFFu</span><span class="w"> </span><span class="o">||</span><span class="w"> </span><span class="n">NOR_WORD</span><span class="p">(</span><span class="mh">0x00001u</span><span class="p">)</span><span class="w"> </span><span class="o">!=</span><span class="w"> </span><span class="mh">0xFFFFu</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-10-32" name="__codelineno-10-32" href="#__codelineno-10-32"></a><span class="w">        </span><span class="cm">/* 擦除失败：仍读不出 0xFFFF */</span>
+<a id="__codelineno-10-33" name="__codelineno-10-33" href="#__codelineno-10-33"></a><span class="w">    </span><span class="p">}</span>
+<a id="__codelineno-10-34" name="__codelineno-10-34" href="#__codelineno-10-34"></a>
+<a id="__codelineno-10-35" name="__codelineno-10-35" href="#__codelineno-10-35"></a><span class="w">    </span><span class="cm">/* 3. 编程三个字，逐字回读验证 */</span>
+<a id="__codelineno-10-36" name="__codelineno-10-36" href="#__codelineno-10-36"></a><span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">NOR_ProgramWord</span><span class="p">(</span><span class="mh">0x00000u</span><span class="p">,</span><span class="w"> </span><span class="mh">0x1234</span><span class="p">))</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="cm">/* 编程超时 */</span><span class="w"> </span><span class="p">}</span>
+<a id="__codelineno-10-37" name="__codelineno-10-37" href="#__codelineno-10-37"></a><span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">NOR_ProgramWord</span><span class="p">(</span><span class="mh">0x00001u</span><span class="p">,</span><span class="w"> </span><span class="mh">0xA5A5</span><span class="p">))</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="cm">/* 编程超时 */</span><span class="w"> </span><span class="p">}</span>
+<a id="__codelineno-10-38" name="__codelineno-10-38" href="#__codelineno-10-38"></a><span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">NOR_ProgramWord</span><span class="p">(</span><span class="mh">0x00002u</span><span class="p">,</span><span class="w"> </span><span class="mh">0x5A5A</span><span class="p">))</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="cm">/* 编程超时 */</span><span class="w"> </span><span class="p">}</span>
+<a id="__codelineno-10-39" name="__codelineno-10-39" href="#__codelineno-10-39"></a>
+<a id="__codelineno-10-40" name="__codelineno-10-40" href="#__codelineno-10-40"></a><span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">NOR_WORD</span><span class="p">(</span><span class="mh">0x00000u</span><span class="p">)</span><span class="w"> </span><span class="o">!=</span><span class="w"> </span><span class="mh">0x1234u</span><span class="p">)</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="cm">/* 回读不符：编程失败 */</span><span class="w"> </span><span class="p">}</span>
+<a id="__codelineno-10-41" name="__codelineno-10-41" href="#__codelineno-10-41"></a><span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">NOR_WORD</span><span class="p">(</span><span class="mh">0x00001u</span><span class="p">)</span><span class="w"> </span><span class="o">!=</span><span class="w"> </span><span class="mh">0xA5A5u</span><span class="p">)</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="cm">/* 回读不符：编程失败 */</span><span class="w"> </span><span class="p">}</span>
+<a id="__codelineno-10-42" name="__codelineno-10-42" href="#__codelineno-10-42"></a><span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">NOR_WORD</span><span class="p">(</span><span class="mh">0x00002u</span><span class="p">)</span><span class="w"> </span><span class="o">!=</span><span class="w"> </span><span class="mh">0x5A5Au</span><span class="p">)</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="cm">/* 回读不符：编程失败 */</span><span class="w"> </span><span class="p">}</span>
+<a id="__codelineno-10-43" name="__codelineno-10-43" href="#__codelineno-10-43"></a>
+<a id="__codelineno-10-44" name="__codelineno-10-44" href="#__codelineno-10-44"></a><span class="w">    </span><span class="cm">/* 到这里全过 = FSMC 时序、命令序列、完成检测三件事全对 */</span>
+<a id="__codelineno-10-45" name="__codelineno-10-45" href="#__codelineno-10-45"></a><span class="p">}</span>
+</code></pre></div>
+<h3 id="66-nor">6.6 NOR 擦写避坑备忘</h3>
+<ul>
+<li><strong>写之前必须先擦除</strong>：Flash 只能 1→0，往非 0xFFFF 的位置写数据 = 数据错。<strong>同一地址不能连续编程两次</strong>，除非重新擦除。</li>
+<li><strong>读 ID 是第一道关</strong>：ID 读错，九成是接线/地址换算/时序问题，别急着怀疑芯片。ID 对了再擦写。</li>
+<li><strong>命令地址不要自己 ×2</strong>：FSMC 16 位模式已把 HADDR 右移一位，直接按手册写 0x555/0x2AA（M0 系改偶数 0x554 更稳）。</li>
+<li><strong>编程/擦除期间别读该地址当数据</strong>：读回来的是 DQ7/DQ6 状态位，必须等 <code>NOR_WaitBusy</code> 结束。</li>
+<li><strong>别从这片 NOR 里执行代码时擦它</strong>：代码 XIP 运行时擦掉所在扇区 = 当场 HardFault。存数据用固定扇区，别和代码区重叠。</li>
+<li><strong>擦除很慢是正常的</strong>：全片擦除动辄几秒，扇区擦除几十 ms，轮询期间 CPU 干别的活即可（但别同时给同一颗 NOR 发别的命令）。</li>
+<li><strong>芯片有写保护锁</strong>：部分型号（S29GL 系等）上电后扇区锁定，要先按手册解锁，否则擦写"没反应"。</li>
+<li><strong>时序继续沿用「宁慢勿快」</strong>：擦写失败先放宽读时序的 <code>DataSetupTime</code>，别一上来就怀疑芯片。</li>
+</ul>
+<h2 id="lcd">七、典型用法：接 LCD 屏（并口屏的核心套路）</h2>
+<p>并口 TFT LCD（ILI9341、ST7735 等）接 FSMC 是<strong>最典型的应用</strong>，也最能让新手感受到 FSMC 的价值。它的接线和时序跟 SRAM 几乎一样，唯一区别是<strong>多了根「命令/数据选择」线</strong>：</p>
+<h3 id="71">7.1 信号映射</h3>
+<p>并口屏的 <code>RS</code>（Register Select / DCX，选择命令还是数据）在 FSMC 接法里<strong>接到一根地址线</strong>（通常用 FSMC_A16），FSMC 把「命令地址」和「数据地址」做成两个相邻区间：</p>
+<table>
+<thead>
+<tr>
+<th>屏引脚</th>
+<th>接到</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>RS / DCX</strong></td>
+<td><strong>FSMC_A16</strong></td>
+<td>区分命令（A16=0）与数据（A16=1）</td>
+</tr>
+<tr>
+<td><strong>CS</strong></td>
+<td>NE1</td>
+<td>片选</td>
+</tr>
+<tr>
+<td><strong>WR</strong></td>
+<td>NWE</td>
+<td>写使能</td>
+</tr>
+<tr>
+<td><strong>RD</strong></td>
+<td>NOE</td>
+<td>读使能（读屏寄存器/显存用）</td>
+</tr>
+<tr>
+<td><strong>DB[15:0]</strong></td>
+<td>FSMC_D[15:0]</td>
+<td>16 位数据总线</td>
+</tr>
+<tr>
+<td><strong>RST</strong></td>
+<td>GPIO</td>
+<td>复位（一般独立 GPIO 控制）</td>
+</tr>
+</tbody>
+</table>
+<h3 id="72">7.2 关键：命令地址与数据地址的关系</h3>
+<p>用 16 位总线 + A16 做 RS，那么：</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-11-1" name="__codelineno-11-1" href="#__codelineno-11-1"></a>命令地址 = 0x6000_0000 + (0 &lt;&lt; 16) = 0x6000_0000     (A16=0 → 屏当它是命令)
+<a id="__codelineno-11-2" name="__codelineno-11-2" href="#__codelineno-11-2"></a>数据地址 = 0x6000_0000 + (1 &lt;&lt; 16) = 0x6001_0000     (A16=1 → 屏当它是数据)
+</code></pre></div>
+<blockquote>
+<p><strong>为什么地址差 0x10000</strong>：A16 在第 16 位，置 1 就是 +0x10000。而 16 位总线按 2.2 的规则，FSMC_A16 对应 <strong>HADDR[17]</strong>，所以<strong>真正访问数据寄存器要 +0x20000</strong>。以哪个为准，看你怎么定义宏——<strong>经验上：直接按「FSMC_A 的编号」算</strong>（A16 就 +0x10000）最不易错，因为底层 HADDR 的移位已经由 FSMC 处理，你对屏的编程模型只关心「地址线第几位翻了」。</p>
+</blockquote>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-12-1" name="__codelineno-12-1" href="#__codelineno-12-1"></a><span class="cp">#define LCD_REG  *(volatile uint16_t *)0x60000000u    </span><span class="cm">/* 命令 */</span>
+<a id="__codelineno-12-2" name="__codelineno-12-2" href="#__codelineno-12-2"></a><span class="cp">#define LCD_RAM  *(volatile uint16_t *)0x60010000u    </span><span class="cm">/* 数据 */</span>
+<a id="__codelineno-12-3" name="__codelineno-12-3" href="#__codelineno-12-3"></a>
+<a id="__codelineno-12-4" name="__codelineno-12-4" href="#__codelineno-12-4"></a><span class="cm">/* 写一个命令，再写它的参数/数据 */</span>
+<a id="__codelineno-12-5" name="__codelineno-12-5" href="#__codelineno-12-5"></a><span class="kt">void</span><span class="w"> </span><span class="nf">LCD_WriteReg</span><span class="p">(</span><span class="kt">uint8_t</span><span class="w"> </span><span class="n">reg</span><span class="p">,</span><span class="w"> </span><span class="kt">uint16_t</span><span class="w"> </span><span class="n">val</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-12-6" name="__codelineno-12-6" href="#__codelineno-12-6"></a><span class="w">    </span><span class="n">LCD_REG</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">reg</span><span class="p">;</span><span class="w">      </span><span class="cm">/* A16=0，屏认为来了条命令 */</span>
+<a id="__codelineno-12-7" name="__codelineno-12-7" href="#__codelineno-12-7"></a><span class="w">    </span><span class="n">LCD_RAM</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">val</span><span class="p">;</span><span class="w">      </span><span class="cm">/* A16=1，屏认为来了条数据 */</span>
+<a id="__codelineno-12-8" name="__codelineno-12-8" href="#__codelineno-12-8"></a><span class="p">}</span>
+</code></pre></div>
+<p><strong>写显存、刷屏就是不停地 <code>LCD_RAM = pixel</code></strong>，配一个 DMA 把显存数组整个搬过去，CPU 几乎不参与——这就是 FSMC 屏能 60fps 刷的底气。</p>
+<h3 id="73">7.3 刷屏数据量估算</h3>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-13-1" name="__codelineno-13-1" href="#__codelineno-13-1"></a>320×240 屏，16 位色，一帧 = 320×240×2 = 153,600 字节 ≈ 150KB
+<a id="__codelineno-13-2" name="__codelineno-13-2" href="#__codelineno-13-2"></a>60fps → 每秒 9.2 MB
+<a id="__codelineno-13-3" name="__codelineno-13-3" href="#__codelineno-13-3"></a>FSMC 一个写周期按 5 个 HCLK ≈ 30ns（F4 @168MHz）→ 约 33 MB/s
+<a id="__codelineno-13-4" name="__codelineno-13-4" href="#__codelineno-13-4"></a>一条总线撑得住，CPU 还几乎不占——换成 SPI 早就卡成幻灯片
+</code></pre></div>
+<blockquote>
+<p><strong>注意 8 位屏 / 16 位总线不匹配</strong>：屏数据口是 8 位（DB[7:0]）而 FSMC 配 16 位时，要么把屏只接低 8 位（浪费一半带宽）、要么改 FSMC 为 8 位数据宽度（地址映射按 8 位走）。<strong>别把 8 位屏直接挂 16 位总线</strong>，否则每次访问 2 字节、屏只认低 8 位，地址对不齐、读到的数据错位。</p>
+</blockquote>
+<h2 id="nand-norfsmc">八、NAND 与 NOR：FSMC 的另一半本事</h2>
+<p>Bank2/3/4 的 NAND/PC Card 控制器，和 Bank1 的 NOR/PSRAM 控制器<strong>结构不同</strong>：</p>
+<table>
+<thead>
+<tr>
+<th></th>
+<th>Bank1（NOR/PSRAM/SRAM）</th>
+<th>Bank2/3/4（NAND）</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>地址线</td>
+<td>连续地址映射（每个地址对应一个存储单元）</td>
+<td><strong>分时复用</strong>：地址总线在<strong>不同阶段</strong>轮流送「命令、地址、数据」</td>
+</tr>
+<tr>
+<td>寻址方式</td>
+<td>指针读写（地址=单元）</td>
+<td>要<strong>往命令寄存器写命令、往地址寄存器写地址</strong>，再读/写数据寄存器</td>
+</tr>
+<tr>
+<td>时序</td>
+<td>按对端手册设 ADDSET/DATAST</td>
+<td>有独立的 <code>FSMC_PCRx</code>、<code>FSMC_PMEMx</code>、<code>FSMC_PATTx</code> 寄存器</td>
+</tr>
+</tbody>
+</table>
+<p>NAND 没有「地址即单元」的线性映射，因为它按<strong>页</strong>（如 2KB/页）和<strong>块</strong>（如 128 页/块）组织，读一页要「先发读命令 → 发页地址 → 读数据」，坏块还要跳过。<strong>STM32 片上的 NAND 控制器只负责搬数据和产生时序，坏块管理、ECC、FTL（闪存转换层）都得自己在软件里写</strong>，这也是为什么绝大多数项目里 NAND 都靠外部 Flash 芯片或干脆用 W25Q 这类 SPI NOR 的原因——<strong>NOR 简单、NAND 麻烦</strong>。FSMC 驱动 NAND 的实际场景远少于 SRAM/LCD。</p>
+<h2 id="fsmc_3">九、FSMC 的「坑」与调试指南</h2>
+<h3 id="91">9.1 时序太紧，读错写不进</h3>
+<p><strong>症状</strong>：读到的值偶尔错、写 0xA5 读回 0xA0、屏花屏但不死机。<strong>处理</strong>：把 <code>DataSetupTime</code>（DATAST）往上加 2~4 个 HCLK 再试。<strong>时序宁可慢不可快</strong>，这是 FSMC 调试第一条。</p>
+<h3 id="92">9.2 地址线/数据线接错位</h3>
+<p><strong>症状</strong>：写 A 读 A 对，写 A 读 A+1 才对的「错位」现象。<strong>处理</strong>：回想 2.2——<strong>16 位总线下 FSMC_A0 接的是 HADDR[1]</strong>。PCB 上如果按「A0 对 A0」直接接，就等于把地址错了一位。数据线同理，D0~D15 有一根接反/接错，全片数据都错。</p>
+<h3 id="93">9.3 片选没选对，读写死等</h3>
+<p><strong>症状</strong>：HAL 初始化后一访问就 HardFault、或读到的全是 0xFF/0x00。<strong>处理</strong>：核对<strong>外设接的是 NE1 还是 NE2/3/4</strong>，基址要对应（见 2.1 表）。<strong>基址写错一个片选区间，FSMC 照样产生时序，但片选信号根本没拉低那个外设</strong>——它收到的是一堆没有 CS 的无效读写，结果要么全 0xFF、要么根本没反应。</p>
+<h3 id="94">9.4 时钟没开 / 复用没配</h3>
+<p><strong>症状</strong>：FSMC 引脚无波形。<strong>处理</strong>：CubeMX 里 FSMC 相关的 GPIO 要配成 <strong>AF12（F4 的 FSMC 复用功能）</strong>、时钟要开 <code>__HAL_RCC_FSMC_CLK_ENABLE()</code>。漏配 GPIO 复用，FSMC 寄存器配置了也没用，引脚根本不工作。<strong>排查顺序永远是：时钟 → GPIO 复用 → 片选/基址 → 时序</strong>。</p>
+<h3 id="95">9.5 读屏的坑：读显存方向不对</h3>
+<p><strong>症状</strong>：读屏寄存器正确、写显存花屏。<strong>处理</strong>：多数并口屏<strong>写端口和读端口是同一个地址</strong>，靠 RS+读写信号区分；但有的屏读时序对 READ 有独立要求（如需要 RD 拉低时间较长），把 <code>DataSetupTime</code> 调大往往能解决。<strong>先只写不读</strong>，把显示跑起来，再回头处理读。</p>
+<h2 id="fmc-fsm">十、FMC / FSM 系列怎么认：换代与选型</h2>
+<p>「FSMC」在不同系列上有不同名字和微调，容易记混：</p>
+<table>
+<thead>
+<tr>
+<th>系列</th>
+<th>外设名</th>
+<th>特点</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>F1</strong>（103 高密度/互联型）</td>
+<td><strong>FSMC</strong></td>
+<td>最经典，Bank1 的 4 个片选 + NAND/PC Card；时序有独立 ADDHLD</td>
+</tr>
+<tr>
+<td><strong>F4 / F7</strong></td>
+<td><strong>FSMC</strong>（407 等有 FSMC；429/439 是 FMC）</td>
+<td>基本同 F1，Bank1 支持同步突发、时序字段合并（ADDSET 含 hold）</td>
+</tr>
+<tr>
+<td><strong>F4（429/439）/ H7 / L4+</strong></td>
+<td><strong>FMC</strong>（Flexible Memory Controller）</td>
+<td><strong>改名不换义</strong>，多了 SDRAM（H7 有 SDRAM 控制器）、命名从 <code>FSMC_</code> 变 <code>FMC_</code></td>
+</tr>
+<tr>
+<td><strong>G0 / G4 / L4（部分）</strong></td>
+<td>无 FSMC / 有 FMC</td>
+<td>小封装芯片没有，选型前先查「是否集成 FSMC/FMC」</td>
+</tr>
+</tbody>
+</table>
+<p><strong>选型要点</strong>：
+- <strong>小封装、低成本芯片（F0/G0/G03xx、L0/L1 低配）大多没有 FSMC</strong>，要并口屏得用 SPI 屏或 GPIO 模拟。
+- 查手册看 <strong>Bank1 是否支持同步突发</strong>（F4 部分型号有），决定能不能跑 NAND、同步 PSRAM。
+- 想挂 <strong>SDRAM</strong> 只有 <strong>H7（FMC）</strong> 这类带 SDRAM 控制器的型号能行，F1/F4 的 FSMC 不支持。</p>
+<h2 id="_2">十一、避坑备忘（一页速查）</h2>
+<ul>
+<li><strong>时序宁慢勿快</strong>：DATAST 不足是读写错误第一原因，先加满再优化。</li>
+<li><strong>16 位总线地址要 +2 步进</strong>：8 位屏/外设别混接 16 位总线，地址映射会错位（见 2.2）。</li>
+<li><strong>片选决定基址</strong>：接 NE1 就在 0x60000000，接 NE4 就在 0x6C000000，别写错区间。</li>
+<li><strong>第一步先做「写值读回」自检</strong>：通了再跑全片回环，别上来就调复杂外设。</li>
+<li><strong>GPIO 要配 AF 复用、时钟要开</strong>：漏配复用，FSMC 引脚是死的。</li>
+<li><strong>F1/F4 时序字段名不同</strong>：F1 有独立 ADDHLD，F4 合并进 ADDSET；以参考手册时序图和 CubeMX 为准。</li>
+<li><strong>别在中断里直接刷屏</strong>：刷屏用 DMA 搬运，中断里只置标志（和 CAN/ADC 一样的原则）。</li>
+<li><strong>LCD 的 RS 接哪根地址线，命令/数据地址就怎么算</strong>：见第七节，A16 接 RS 是最常见接法。</li>
+</ul>
+<h2 id="_3">参考</h2>
+<ul>
+<li>基础时钟背景见 <a href="../stm32-clock-tree/">stm32-clock-tree.md</a>（FSMC 挂在 AHB 总线上，时序按 HCLK 算）</li>
+<li>相关外设与裸机寄存器风格见 <a href="peripheral-drivers.md">peripheral-drivers.md</a></li>
+<li>寄存器级细节：对应型号参考手册 <strong>FSMC / FMC 章节</strong>（F1：RM0008；F4：RM0090）</li>
+<li>官方应用笔记：AN2784（STM32F10x FSMC 接外部存储）</li>
+<li>ST 社区关于 ADDSET/DATAST 计算的讨论：<a href="https://community.st.com/t5/stm32-mcus-products/how-to-calculate-addset-and-datast-according-to-sram-timing-graph/m-p/58787#M2840">如何根据 SRAM 时序图计算 ADDSET 与 DATAST</a></li>
+<li>理解 FSMC 的内存映射与地址分片：<a href="https://community.st.com/t5/stm32-mcus-products/understanding-stm32f4-fsmc/td-p/495685">Understanding STM32F4 FSMC</a></li>
+</ul>
+
+
+
+
+
+
+
+  
+    
+  
+  
+    
+  
+
+
+  <aside class="md-source-file">
+    
+      
+  <span class="md-source-file__fact">
+    <span class="md-icon" title="最后更新">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M21 13.1c-.1 0-.3.1-.4.2l-1 1 2.1 2.1 1-1c.2-.2.2-.6 0-.8l-1.3-1.3c-.1-.1-.2-.2-.4-.2m-1.9 1.8-6.1 6V23h2.1l6.1-6.1zM12.5 7v5.2l4 2.4-1 1L11 13V7zM11 21.9c-5.1-.5-9-4.8-9-9.9C2 6.5 6.5 2 12 2c5.3 0 9.6 4.1 10 9.3-.3-.1-.6-.2-1-.2s-.7.1-1 .2C19.6 7.2 16.2 4 12 4c-4.4 0-8 3.6-8 8 0 4.1 3.1 7.5 7.1 7.9l-.1.2z"/></svg>
+    </span>
+    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="2026年8月25日 14:30:02 UTC">2026年8月25日</span>
+  </span>
+
+    
+    
+      
+  <span class="md-source-file__fact">
+    <span class="md-icon" title="创建日期">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M14.47 15.08 11 13V7h1.5v5.25l3.08 1.83c-.41.28-.79.62-1.11 1m-1.39 4.84c-.36.05-.71.08-1.08.08-4.42 0-8-3.58-8-8s3.58-8 8-8 8 3.58 8 8c0 .37-.03.72-.08 1.08.69.1 1.33.32 1.92.64.1-.56.16-1.13.16-1.72 0-5.5-4.5-10-10-10S2 6.5 2 12s4.47 10 10 10c.59 0 1.16-.06 1.72-.16-.32-.59-.54-1.23-.64-1.92M18 15v3h-3v2h3v3h2v-3h3v-2h-3v-3z"/></svg>
+    </span>
+    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="2026年8月25日 14:30:02 UTC">2026年8月25日</span>
+  </span>
+
+    
+    
+    
+  </aside>
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8z"/></svg>
+  回到页面顶部
+</button>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+  
+</div>
+      
+        
+<div class="md-social">
+  
+    
+    
+    
+    
+      
+      
+    
+    <a href="https://github.com/hellobugger" target="_blank" rel="noopener" title="github.com" class="md-social__link">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M173.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6m-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3m44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9M252.8 8C114.1 8 8 113.3 8 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C436.2 457.8 504 362.9 504 252 504 113.3 391.5 8 252.8 8M105.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1m-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7m32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1m-11.4-14.7c-1.6 1-1.6 3.6 0 5.9s4.3 3.3 5.6 2.3c1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2"/></svg>
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "../..", "features": ["navigation.tabs", "navigation.sections", "navigation.top", "toc.integrate", "search.highlight", "search.suggest", "content.code.copy", "content.code.annotate", "content.action.edit"], "search": "../../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "\u5df2\u590d\u5236", "clipboard.copy": "\u590d\u5236", "search.result.more.one": "\u5728\u8be5\u9875\u4e0a\u8fd8\u6709 1 \u4e2a\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.more.other": "\u5728\u8be5\u9875\u4e0a\u8fd8\u6709 # \u4e2a\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.none": "\u6ca1\u6709\u627e\u5230\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.one": "\u627e\u5230 1 \u4e2a\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.other": "# \u4e2a\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.placeholder": "\u952e\u5165\u4ee5\u5f00\u59cb\u641c\u7d22", "search.result.term.missing": "\u7f3a\u5c11", "select.version": "\u9009\u62e9\u5f53\u524d\u7248\u672c"}, "version": null}</script>
+    
+    
+      <script src="../../assets/javascripts/bundle.d7400e89.min.js"></script>
+      
+        <script src="../../javascripts/extra.js?v=7"></script>
+      
+    
+  </body>
+</html>

@@ -1,0 +1,93 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1180 540" font-family="Microsoft YaHei, PingFang SC, sans-serif">
+  <defs>
+    <marker id="ah" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#546e7a"/>
+    </marker>
+  </defs>
+
+  <text x="590" y="30" text-anchor="middle" font-size="19" font-weight="bold" fill="#263238">STM32 时钟树示意（F1 / F4 结构）</text>
+
+  <!-- 时钟源 → MUX -->
+  <line x1="210" y1="125" x2="375" y2="125" stroke="#546e7a" stroke-width="1.6" marker-end="url(#ah)"/>
+  <line x1="210" y1="175" x2="375" y2="175" stroke="#546e7a" stroke-width="1.6" marker-end="url(#ah)"/>
+  <path d="M210,225 L465,225 L465,217" fill="none" stroke="#546e7a" stroke-width="1.6" marker-end="url(#ah)"/>
+
+  <!-- 时钟源 -->
+  <rect x="60" y="105" width="150" height="40" rx="6" fill="#e3f2fd" stroke="#1e88e5" stroke-width="1.5"/>
+  <text x="135" y="123" text-anchor="middle" font-size="15" font-weight="bold" fill="#263238">HSI</text>
+  <text x="135" y="137" text-anchor="middle" font-size="12" fill="#455a64">16 MHz 内部RC</text>
+
+  <rect x="60" y="155" width="150" height="40" rx="6" fill="#e3f2fd" stroke="#1e88e5" stroke-width="1.5"/>
+  <text x="135" y="173" text-anchor="middle" font-size="15" font-weight="bold" fill="#263238">HSE</text>
+  <text x="135" y="187" text-anchor="middle" font-size="12" fill="#455a64">外部晶振 8 MHz</text>
+
+  <rect x="60" y="205" width="150" height="40" rx="6" fill="#f3e5f5" stroke="#8e24aa" stroke-width="1.5"/>
+  <text x="135" y="223" text-anchor="middle" font-size="15" font-weight="bold" fill="#263238">PLL 锁相环</text>
+  <text x="135" y="237" text-anchor="middle" font-size="12" fill="#455a64">输入HSI/HSE 倍频</text>
+
+  <!-- MUX -->
+  <rect x="380" y="95" width="170" height="120" rx="8" fill="#fff8e1" stroke="#f9a825" stroke-width="1.5"/>
+  <text x="465" y="148" text-anchor="middle" font-size="15" font-weight="bold" fill="#263238">SYSCLK 选择器</text>
+  <text x="465" y="168" text-anchor="middle" font-size="13" fill="#455a64">SW (MUX)</text>
+  <text x="465" y="188" text-anchor="middle" font-size="12" fill="#78909c">HSI / HSE / PLL 三选一</text>
+
+  <!-- MUX → SYSCLK → AHB → HCLK -->
+  <line x1="550" y1="155" x2="595" y2="160" stroke="#546e7a" stroke-width="1.6" marker-end="url(#ah)"/>
+  <rect x="600" y="138" width="150" height="44" rx="6" fill="#e8f5e9" stroke="#43a047" stroke-width="1.5"/>
+  <text x="675" y="158" text-anchor="middle" font-size="15" font-weight="bold" fill="#263238">SYSCLK</text>
+  <text x="675" y="175" text-anchor="middle" font-size="12" fill="#455a64">系统时钟 / CPU</text>
+
+  <line x1="750" y1="160" x2="785" y2="160" stroke="#546e7a" stroke-width="1.6" marker-end="url(#ah)"/>
+  <rect x="790" y="138" width="170" height="44" rx="6" fill="#fff8e1" stroke="#f9a825" stroke-width="1.5"/>
+  <text x="875" y="158" text-anchor="middle" font-size="14" font-weight="bold" fill="#263238">AHB 预分频</text>
+  <text x="875" y="175" text-anchor="middle" font-size="12" fill="#455a64">÷1 ~ ÷512 → HCLK</text>
+
+  <line x1="960" y1="160" x2="985" y2="160" stroke="#546e7a" stroke-width="1.6" marker-end="url(#ah)"/>
+  <rect x="990" y="138" width="150" height="44" rx="6" fill="#e8f5e9" stroke="#43a047" stroke-width="1.5"/>
+  <text x="1065" y="158" text-anchor="middle" font-size="15" font-weight="bold" fill="#263238">HCLK</text>
+  <text x="1065" y="175" text-anchor="middle" font-size="12" fill="#455a64">AHB 总线</text>
+
+  <!-- HCLK → APB2 / APB1 -->
+  <path d="M1065,182 L1065,226 L875,226 L875,241" fill="none" stroke="#546e7a" stroke-width="1.6" marker-end="url(#ah)"/>
+  <path d="M1065,182 L1065,241" fill="none" stroke="#546e7a" stroke-width="1.6" marker-end="url(#ah)"/>
+  <rect x="790" y="246" width="170" height="56" rx="6" fill="#fff8e1" stroke="#f9a825" stroke-width="1.5"/>
+  <text x="875" y="266" text-anchor="middle" font-size="14" font-weight="bold" fill="#263238">APB2 预分频</text>
+  <text x="875" y="283" text-anchor="middle" font-size="12" fill="#455a64">÷1/2/4/8/16</text>
+  <text x="875" y="296" text-anchor="middle" font-size="12" font-weight="bold" fill="#2e7d32">→ PCLK2</text>
+
+  <rect x="990" y="246" width="150" height="56" rx="6" fill="#fff8e1" stroke="#f9a825" stroke-width="1.5"/>
+  <text x="1065" y="266" text-anchor="middle" font-size="14" font-weight="bold" fill="#263238">APB1 预分频</text>
+  <text x="1065" y="283" text-anchor="middle" font-size="12" fill="#455a64">÷1/2/4/8/16</text>
+  <text x="1065" y="296" text-anchor="middle" font-size="12" font-weight="bold" fill="#2e7d32">→ PCLK1</text>
+
+  <!-- LSI / LSE 低速域 -->
+  <rect x="60" y="350" width="150" height="40" rx="6" fill="#e3f2fd" stroke="#1e88e5" stroke-width="1.5"/>
+  <text x="135" y="368" text-anchor="middle" font-size="15" font-weight="bold" fill="#263238">LSI</text>
+  <text x="135" y="382" text-anchor="middle" font-size="12" fill="#455a64">~32 kHz 内部RC</text>
+  <line x1="210" y1="370" x2="375" y2="370" stroke="#546e7a" stroke-width="1.6" marker-end="url(#ah)"/>
+  <rect x="380" y="350" width="170" height="40" rx="6" fill="#eceff1" stroke="#78909c" stroke-width="1.5"/>
+  <text x="465" y="375" text-anchor="middle" font-size="14" font-weight="bold" fill="#263238">独立看门狗 IWDG</text>
+
+  <rect x="60" y="420" width="150" height="40" rx="6" fill="#e3f2fd" stroke="#1e88e5" stroke-width="1.5"/>
+  <text x="135" y="438" text-anchor="middle" font-size="15" font-weight="bold" fill="#263238">LSE</text>
+  <text x="135" y="452" text-anchor="middle" font-size="12" fill="#455a64">32.768 kHz 外部</text>
+  <line x1="210" y1="440" x2="375" y2="440" stroke="#546e7a" stroke-width="1.6" marker-end="url(#ah)"/>
+  <rect x="380" y="420" width="170" height="40" rx="6" fill="#eceff1" stroke="#78909c" stroke-width="1.5"/>
+  <text x="465" y="445" text-anchor="middle" font-size="14" font-weight="bold" fill="#263238">实时时钟 RTC</text>
+
+  <!-- 图例 -->
+  <g font-size="11.5" fill="#455a64">
+    <rect x="60" y="480" width="14" height="12" fill="#e8f5e9" stroke="#43a047"/>
+    <text x="80" y="490">系统时钟 / 总线</text>
+    <rect x="200" y="480" width="14" height="12" fill="#fff8e1" stroke="#f9a825"/>
+    <text x="220" y="490">预分频 / 选择器</text>
+    <rect x="360" y="480" width="14" height="12" fill="#e3f2fd" stroke="#1e88e5"/>
+    <text x="380" y="490">振荡源</text>
+    <rect x="440" y="480" width="14" height="12" fill="#f3e5f5" stroke="#8e24aa"/>
+    <text x="460" y="490">PLL 倍频</text>
+    <rect x="540" y="480" width="14" height="12" fill="#eceff1" stroke="#78909c"/>
+    <text x="560" y="490">低功耗外设</text>
+  </g>
+
+  <text x="590" y="515" text-anchor="middle" font-size="12.5" fill="#607d8b">LSI / LSE 专供低功耗外设（IWDG、RTC），停止 / 待机模式下仍可运行、走时。</text>
+</svg>
